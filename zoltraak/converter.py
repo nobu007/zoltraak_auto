@@ -87,7 +87,7 @@ class MarkdownToPythonConverter:
         if self.prompt is not None:
             self.propose_target_diff(self.target_file_path, self.prompt)
             print(f"ターゲットファイル: {self.target_file_path}")
-            input("修正が完了したらEnterキーを押してください。")
+            # input("修正が完了したらEnterキーを押してください。")
         else:
             self.handle_target_file_modification()
 
@@ -162,9 +162,10 @@ class MarkdownToPythonConverter:
         # ユーザーに適用方法を尋ねる
         print("差分をどのように適用しますか？")
         print("1. AIで適用する")
-        print("2. 自分で行う")
-        print("3. 何もせず閉じる")
-        choice = input("選択してください (1, 2, 3): ")
+        # print("2. 自分で行う")
+        # print("3. 何もせず閉じる")
+        # choice = input("選択してください (1, 2, 3): ")
+        choice=1
 
         while True:
             if choice == '1':
