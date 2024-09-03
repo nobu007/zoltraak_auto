@@ -12,11 +12,11 @@ pip install -r requirements.txt
 # マークダウンファイルからPythonファイルを生成し、テストを実行
 for md_file in requirements/*.md; do
     py_file="generated/$(basename "${md_file%.md}").py"
-    zoltraak"$md_file" "$py_file"
-    
+    zoltraak "$md_file" "$py_file"
+
     # Pythonファイルの実行
     python "$py_file"
-    
+
     # テストの実行
     test_file="tests/test_$(basename "${md_file%.md}").py"
     if [ -f "$test_file" ]; then
