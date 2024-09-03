@@ -1,6 +1,6 @@
 import litellm
 
-
+litellm.set_verbose=True
 def generate_response(model, prompt, max_tokens, temperature):
     """
     LiteLLM APIを使用してプロンプトに対する応答を生成する関数。

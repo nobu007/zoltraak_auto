@@ -241,6 +241,7 @@ class TargetCodeGenerator:
                     except Exception as e:
                         print(f"修正後のコードでもエラーが発生しました。再度修正を試みます。")
                         print(f"\033[91m修正後のエラーメッセージ: {str(e)}\033[0m")
+                        print(code)
 
                 with open(self.target_file_path, "w", encoding="utf-8") as target_file:
                     target_file.write(code)
