@@ -3,14 +3,14 @@
 
 # モジュール情報
 以下出力pythonファイル冒頭に記載すること
-from zoltraak.llms.claude import `generate_response`
+from zoltraak.llms.litellm_api import `generate_response`
 from zoltraak.utils.process_text import `normal`
 
 ## 指示
 1. コードブロックは使用せず、Pythonコードでディレクトリとファイルの構成を作成する
 2. ディレクトリ構成は `ルートディレクトリ` の配下にすべて作成すること、README.md を除いて、それ以外のファイルは記述
     2.1 os.mkdirsを使用して`ルートディレクトリ`を作成する
-    2.2 os.path.joinとos.mkdirsを使用して、詳細なディレクトリ構成を作成する  
+    2.2 os.path.joinとos.mkdirsを使用して、詳細なディレクトリ構成を作成する
     ディレクトリ名をリストに記述し実行
     2.3 osモジュールの機能を使用して、必要なファイルを作成する（ディレクトリの中に何もない場合は新しく作る）
     以下参考、ただしメインファイルはプログラムを詳細に記載する
@@ -42,7 +42,7 @@ pythonのsubprocessを使って code `ルートディレクトリ`/README.md
 4. 生成したコードは即座に実行可能な状態にすること
 5. 出力先ファイルはpythonであり、プログラムコードのみを記載し文言はコメントアウトで記載すること
     必ず冒頭に以下を入れること
-    from zoltraak.llms.claude import `generate_response`
+    from zoltraak.llms.litellm_api import `generate_response`
     from zoltraak.utils.process_text import `normal`
 
 # 引用
@@ -55,7 +55,7 @@ pythonのsubprocessを使って code `ルートディレクトリ`/README.md
 # README.mdファイルを書き込みモードで開く
 # 要件定義ファイルを読み込みモードで開く
 # - 要件定義ファイルのパスを指定
-# - 
+# -
 # -- 要件定義ファイルの内容をREADME.mdに書き込む
 # -- 要件定義ファイルの内容を変数 readme_content に格納
 

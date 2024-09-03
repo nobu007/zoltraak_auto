@@ -1,14 +1,12 @@
 import subprocess
-import anthropic
 import os
 import hashlib
 from dotenv import load_dotenv
 from zoltraak.md_generator import generate_md_from_prompt
 import zoltraak
-
-import zoltraak.settings
-import zoltraak.llms.claude as claude
 import zoltraak.llms.litellm_api as litellm
+
+import zoltraak.settings as settings
 from zoltraak.gencode import TargetCodeGenerator
 
 
@@ -20,7 +18,6 @@ class MarkdownToPythonConverter:
         self.compiler_path = compiler_path
         self.formatter_path = formatter_path
         self.language = language
-        self.client = anthropic.Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY"))
         self.developer = developer
         self.model_name= model_name
 
@@ -106,7 +103,7 @@ class MarkdownToPythonConverter:
             generate_md_from_prompt(
                 self.prompt,
                 self.target_file_path,
-                developer=self.developer,                # "anthropic",
+                developer=self.developer,                # "litellm",
                 model_name=self.model_name,              # "claude-3-haiku-20240307",
                 compiler_path=self.compiler_path,
                 formatter_path=self.formatter_path,
@@ -146,7 +143,7 @@ class MarkdownToPythonConverter:
 
         '''
         response = self.client.messages.create(
-            model="claude-3-opus-20240229",
+            model=settings.model_name_lite,
             max_tokens=1000,
             temperature=0.0,
             system="You are a programmer.",
@@ -216,7 +213,7 @@ class MarkdownToPythonConverter:
 
 番号など変わった場合は振り直しもお願いします。
         '''
-        modified_content = claude.generate_response("claude-3-sonnet-20240229", prompt, 2000, 0.3)
+        modified_content = litellm.generate_response("claude-3-sonnet-20240229", prompt, 2000, 0.3)
 
         # 修正後の内容をターゲットファイルに書き込む
         with open(target_file_path, "w", encoding="utf-8") as file:

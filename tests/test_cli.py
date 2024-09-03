@@ -83,13 +83,13 @@ class TestzoltraakCommand(unittest.TestCase):  # TestzoltraakCommandクラスを
         """
         with open("test_file.md", "w") as f:
             f.write("# Test File\n\nThis is a test file.")
-        
+
         result = subprocess.run(['zoltraak', 'test_file.md', '-p', '足し算のプログラムを書きたい'], capture_output=True, text=True)  # zoltraakコマンドを-pオプションでプロンプトを指定して実行し、その結果をresultに格納します。
         print("STDOUT:", result.stdout)  # 標準出力の内容を出力
         print("STDERR:", result.stderr)  # 標準エラーの内容を出力
         self.assertEqual(result.returncode, 0)  # resultのリターンコードが0（正常終了）であることを確認します。
         self.assertEqual(result.stderr, "")  # result.stderrが空文字列（エラーメッセージなし）であることを確認します。
-        
+
         os.remove("test_file.md")
 
     def test_text_input(self):
@@ -100,7 +100,7 @@ class TestzoltraakCommand(unittest.TestCase):  # TestzoltraakCommandクラスを
         result = subprocess.run(['zoltraak', 'お腹減った'], capture_output=True, text=True)  # zoltraakコマンドにテキスト入力を与えて実行し、その結果をresultに格納します。
         print("STDOUT:", result.stdout)  # 標準出力の内容を出力
         print("STDERR:", result.stderr)  # 標準エラーの内容を出力
-        
+
         self.assertEqual(result.returncode, 0)  # resultのリターンコードが0（正常終了）であることを確認します。
         self.assertEqual(result.stderr, "")  # result.stderrが空文字列（エラーメッセージなし）であることを確認します。
         self.assertIn("新しい要件定義書 'def_", result.stdout)  # 標準出力に"新しい要件定義書 'def_"という文字列が含まれていることを確認します。
@@ -113,7 +113,7 @@ class TestCompilerFunctionality(unittest.TestCase):  # クラス名をTestCompil
 
     このクラスでは、以下のコンパイラの機能をテストします:
     - biz_consult copy.md: ビジネスコンサルティングドキュメントのコピーを生成するコンパイラ
-    - biz_consult.md: ビジネスコンサルティングドキュメントを生成するコンパイラ 
+    - biz_consult.md: ビジネスコンサルティングドキュメントを生成するコンパイラ
     - dev_akirapp.md: アプリ開発の手引きを生成するコンパイラ
     - dev_front.md: フロントエンド開発のドキュメントを生成するコンパイラ
     - dev_func.md: 機能開発のドキュメントを生成するコンパイラ
@@ -239,7 +239,7 @@ class TestCompilerFunctionality(unittest.TestCase):  # クラス名をTestCompil
         generate_md_from_prompt(
             goal_prompt=goal_prompt,
             target_file_path=expected_md_path,
-            developer="anthropic",
+            developer="litellm",
             model_name="claude-3-haiku-20240307",
             compiler_path=f"{setting_dir}/compiler/{compiler_path}",
             formatter_path=f"{setting_dir}/formatter/None.md",
@@ -274,7 +274,7 @@ class TestCompilerFunctionality(unittest.TestCase):  # クラス名をTestCompil
             os.makedirs(gomi_dir)
         new_file_path = os.path.join(gomi_dir, f"{timestamp}_{os.path.basename(expected_md_path)}")
         os.rename(expected_md_path, new_file_path)
-        
+
         if open_file:  # open_fileフラグがTrueの場合
             os.system(f"code {new_file_path}")  # ファイルを開く（VSCodeにおける`code syllabus_graph.png`に相当）
 
@@ -304,7 +304,7 @@ class TestGenerateResponse(unittest.TestCase):
 
         groq_models = [
             "llama3-8b-8192",
-            "llama3-70b-8192", 
+            "llama3-70b-8192",
             "llama2-70b-4096",
             "mixtral-8x7b-32768",
             "gemma-7b-it"
@@ -324,7 +324,7 @@ class TestGenerateResponse(unittest.TestCase):
         with self.assertRaises(ValueError):
             generate_response("invalid_developer", "model_name", "prompt")
 
-    
+
 
 if __name__ == '__main__':  # このスクリプトが直接実行された場合にのみ、以下のコードを実行します。
     # 全部を実行します

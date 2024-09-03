@@ -7,7 +7,8 @@ current_directory = os.path.dirname(os.path.abspath(__file__))
 # print(package_dir)
 # from zoltraak.md_generator import generate_md_from_prompt
 from zoltraak.converter import MarkdownToPythonConverter
-import zoltraak.llms.claude as claude
+import zoltraak.llms.litellm_api as litellm
+import zoltraak.settings as settings
 
 
 def main():
@@ -23,15 +24,16 @@ def main():
     parser.add_argument("-cc", "--custom-compiler", help="自作コンパイラー（自作定義書生成文書）")
     parser.add_argument("-v", "--version", action="store_true", help="バージョン情報を表示")  # 追加: バージョン情報表示オプション
     parser.add_argument("-l", "--language", help="出力言語を指定", default=None)  # 追加: 汎用言語指定オプション
-    
-    parser.add_argument("-d", "--developer", help="使用するプロバイダー (anthropic または litellm)", default="anthropic")
-    parser.add_argument("-m", "--model_name", help="使用するモデルの名前", default="claude-3-haiku-20240307")
+    parser.add_argument("-m", "--model_name", help="使用するモデルの名前", default="")
     args = parser.parse_args()
     if args.version:                                                         # バージョン情報表示オプションが指定された場合
         show_version_and_exit()                                              # - バージョン情報を表示して終了
 
     if args.input is None:                                                   # 入力ファイルまたはテキストが指定されていない場合
         show_usage_and_exit()                                                # - 使用方法を表示して終了
+
+    if args.model_name:                                                      # -- 使用するモデルの名前が指定された場合
+        settings.model_name = args.model_name                                # -- zoltraak全体設定に保存してどこからでも使えるようにする
 
     if args.input.endswith(".md") or os.path.isfile(args.input) or os.path.isdir(
         args.input
@@ -42,12 +44,12 @@ def main():
             args.compiler = "dev_obj"                                        # --- デフォルトのコンパイラー（general_def）を使用
         elif args.compiler and args.custom_compiler:                         # -- デフォルトのコンパイラーとカスタムコンパイラーの両方が指定されている場合
             show_compiler_conflict_error_and_exit()                          # --- コンパイラー競合エラーを表示して終了
-        
+
         process_markdown_file(args)                                          # - Markdownファイルを処理する関数を呼び出す
     else:                                                                    # 入力がテキストの場合
         if args.compiler and args.custom_compiler:                           # -- デフォルトのコンパイラーとカスタムコンパイラーの両方が指定されている場合
             show_compiler_conflict_error_and_exit()                          # --- コンパイラー競合エラーを表示して終了
-        
+
         process_text_input(args)                                             # - テキスト入力を処理する関数を呼び出す
 
 
@@ -118,7 +120,7 @@ def process_markdown_file(args):
     if compiler_path is not None and not os.path.exists(compiler_path):
         print(f"\033[31mファイル「{compiler_path}」が存在しないため検索モードに切り替わります。\033[0m")
         compiler_path = None
-        
+
 
     formatter_path = os.path.join(                                           # フォーマッタのパスを設定
         zoltraak_dir,                                                        # - zoltraakディレクトリ内のパスを設定
@@ -136,13 +138,13 @@ def process_markdown_file(args):
     py_file_path = os.path.join(output_dir, py_file_rel_path)                # 出力ディレクトリとPythonファイルの相対パスを結合
 
 
-    mtp = MarkdownToPythonConverter(md_file_path=md_file_path, 
+    mtp = MarkdownToPythonConverter(md_file_path=md_file_path,
                                     py_file_path=py_file_path,
-                                    developer=args.developer,
-                                    model_name=args.model_name,
-                                    prompt=prompt, 
-                                    compiler_path=compiler_path, 
-                                    formatter_path=formatter_path, 
+                                    developer="litellm",
+                                    model_name=settings.model_name,
+                                    prompt=prompt,
+                                    compiler_path=compiler_path,
+                                    formatter_path=formatter_path,
                                     language=language)
     os.makedirs(os.path.dirname(py_file_path), exist_ok=True)                # Pythonファイルの出力ディレクトリを作成（既に存在する場合は何もしない）
     mtp.convert()
@@ -197,6 +199,6 @@ def generate_md_file_name(prompt):
     file_name_prompt += f"ただし、以下の既存のファイル名と被らないようにしてください。\n{', '.join(existing_files)}\n"
     file_name_prompt += "ファイル名のみをアウトプットしてください。\n"
     # print("file_name_prompt:", file_name_prompt)
-    response = claude.generate_response("claude-3-haiku-20240307",file_name_prompt, 100, 0.7)
+    response = litellm.generate_response(settings.model_name_smart, file_name_prompt, 100, 0.7)
     file_name = response.strip()
     return f"{file_name}"

@@ -1,4 +1,4 @@
-import zoltraak.llms.claude as claude
+import zoltraak.llms.litellm_api as litellm
 
 def test_generate_response():
     """
@@ -9,7 +9,7 @@ def test_generate_response():
     max_tokens = 100
     temperature = 0.8
 
-    response = claude.generate_response(model, prompt, max_tokens, temperature)
+    response = litellm.generate_response(model, prompt, max_tokens, temperature)
 
     # レスポンスが文字列であることを確認
     assert isinstance(response, str)

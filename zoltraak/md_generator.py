@@ -1,6 +1,5 @@
 import os
 import pyperclip
-import anthropic
 from dotenv import load_dotenv
 from groq import Groq  # Groqをインポート
 import zoltraak
@@ -8,16 +7,15 @@ from tqdm import tqdm  # tqdmをインポート
 import threading
 import time
 import sys
-import zoltraak.settings
-import zoltraak.llms.claude as claude
+import zoltraak.settings as settings
 import zoltraak.llms.litellm_api as litellm
 import re
 
 def generate_md_from_prompt(
     goal_prompt,
     target_file_path,
-    developer="anthropic",  # デベロッパーを指定する引数を追加
-    model_name="claude-3-opus-20240229",  # モデル名の引数を独立させる
+    developer="litellm",  # デベロッパーを指定する引数を追加
+    model_name=settings.model_name_smart,  # モデル名の引数を独立させる
     compiler_path=None,
     formatter_path=None,
     language=None, #汎用言語指定
@@ -29,7 +27,7 @@ def generate_md_from_prompt(
     Args:
         goal_prompt (str): 要件定義書の生成に使用するプロンプト
         target_file_path (str): 生成する要件定義書のパス
-        developer (str): 使用するデベロッパー（デフォルトは "anthropic"）
+        developer (str): 使用するデベロッパー（デフォルトは "litellm"）
         model_name (str): 使用するモデルの名前（デフォルトは "claude-3-opus-20240229"）
         compiler_path (str): コンパイラのパス（デフォルトはNone）
         formatter_path (str): フォーマッタのパス（デフォルトはNone）
@@ -122,49 +120,13 @@ def generate_response(developer, model_name, prompt):
       - gemma-7b-it
 
     Args:
-        developer (str): 使用するデベロッパー名（"anthropic" または "groq"）
-        model_name (str): 使用するモデルの名前
         prompt (str): APIに送信するプロンプト
 
     Returns:
         str: APIから生成されたレスポンス
     """
-    if developer == "groq":  # Groqを使用する場合
-        response = create_prompt_and_get_response_groq(model_name, prompt)
-    elif developer == "anthropic":  # Anthropicを使用する場合
-        response = claude.generate_response(model_name, prompt, 4000, 0.7)
-    elif developer == "litellm":  # Anthropicを使用する場合
-        response = litellm.generate_response(model_name, prompt, 4000, 0.7)
-    else:  # 想定外のデベロッパーの場合
-        raise ValueError(
-            f"サポートされていないデベロッパー: {developer}。"
-            "サポートされているデベロッパーは 'anthropic' と 'groq' です。"
-        )
+    response = litellm.generate_response(model_name, prompt, 4000, 0.7)
     return response
-
-
-def create_prompt_and_get_response_groq(model, prompt):
-    """
-    Groq APIを使用して、指定されたモデルでプロンプトに基づいてテキストを生成する関数
-
-    Args:
-        model (str): 使用するモデルの名前
-        prompt (str): 送信するプロンプト
-
-    Returns:
-        str: 生成されたテキスト
-    """
-    client = Groq(api_key=groq_api_key)  # Groq APIクライアントを作成
-    chat_completion = client.chat.completions.create(
-        messages=[
-            {
-                "role": "user",
-                "content": prompt,
-            }
-        ],
-        model=model,
-    )
-    return chat_completion.choices[0].message.content.strip()
 
 def create_prompt(goal_prompt, compiler_path=None, formatter_path=None, language=None):
     """
