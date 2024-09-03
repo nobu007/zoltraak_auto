@@ -4,6 +4,8 @@ import subprocess
 import zoltraak
 import zoltraak.llms.litellm_api as litellm
 from zoltraak.utils.prompt_import import load_prompt
+import zoltraak.settings as settings
+
 class TargetCodeGenerator:
     def __init__(self, source_file_path, target_file_path, past_source_file_path, source_hash):
         self.source_file_path = source_file_path
@@ -181,8 +183,8 @@ class TargetCodeGenerator:
         code = litellm.generate_response(
             # "claude-3-haiku-20240307"
             # "claude-3-opus-20240229"
-            "claude-3-5-sonnet-20240620"
-            , prompt, 4000, 0.3
+            settings.model_name,
+            prompt, 4000, 0.3
         )
         code = code.replace("```python", "").replace("```", "")
         return code
@@ -224,8 +226,7 @@ class TargetCodeGenerator:
                     プログラムコードのみ記載してください。
                     """
                     code = litellm.generate_response(
-                        model="claude-3-haiku-20240307",
-                        # model="claude-3-opus-20240229",
+                        model=settings.model_name,
                         prompt=prompt,
                         max_tokens=4000,
                         temperature=0.3

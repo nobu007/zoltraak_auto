@@ -1,5 +1,4 @@
-from litellm import completion
-
+import litellm
 
 
 def generate_response(model, prompt, max_tokens, temperature):
@@ -14,11 +13,13 @@ def generate_response(model, prompt, max_tokens, temperature):
     Returns:
         str: 生成された応答テキスト。
     """
-    response = completion(
+    fallbacks=["claude-3-5-sonnet-20240620"]
+    response = litellm.completion(
         model=model,
         messages=[{"content": prompt, "role": "user"}],
         max_tokens=max_tokens,
-        temperature=temperature
+        temperature=temperature,
+        fallbacks=fallbacks
     )
     return response.choices[0].message.content.strip()
 

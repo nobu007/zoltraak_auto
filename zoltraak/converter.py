@@ -213,7 +213,7 @@ class MarkdownToPythonConverter:
 
 番号など変わった場合は振り直しもお願いします。
         '''
-        modified_content = litellm.generate_response("claude-3-sonnet-20240229", prompt, 2000, 0.3)
+        modified_content = litellm.generate_response(settings.model_name, prompt, 2000, 0.3)
 
         # 修正後の内容をターゲットファイルに書き込む
         with open(target_file_path, "w", encoding="utf-8") as file:

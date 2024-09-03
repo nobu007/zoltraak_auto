@@ -11,6 +11,7 @@ pprint.pprint(sys.path)
 import subprocess
 import unittest
 from zoltraak.md_generator import generate_md_from_prompt, generate_response
+import zoltraak.settings as settings
 
 from loguru import logger
 
@@ -240,7 +241,7 @@ class TestCompilerFunctionality(unittest.TestCase):  # クラス名をTestCompil
             goal_prompt=goal_prompt,
             target_file_path=expected_md_path,
             developer="litellm",
-            model_name="claude-3-haiku-20240307",
+            model_name=settings.model_name,
             compiler_path=f"{setting_dir}/compiler/{compiler_path}",
             formatter_path=f"{setting_dir}/formatter/None.md",
             open_file=False
