@@ -51,6 +51,7 @@ def main():
             show_compiler_conflict_error_and_exit()                          # --- コンパイラー競合エラーを表示して終了
 
         process_text_input(args)                                             # - テキスト入力を処理する関数を呼び出す
+    litellm.show_used_total_tokens()
 
 
 def show_version_and_exit():

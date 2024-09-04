@@ -123,7 +123,7 @@ class TargetCodeGenerator:
         結果の出力を行うメソッド
         """
         self.print_target_file_path()                                             # ターゲットファイルのパスを出力
-        self.open_target_file_in_vscode()                                         # ターゲットファイルをVS Codeで開く
+        # self.open_target_file_in_vscode()                                         # ターゲットファイルをVS Codeで開く
 
         # if self.target_file_path.endswith(".py"):                                 # ターゲットファイルがPythonファイルの場合
         #     self.run_python_file()                                                # - Pythonファイルを実行

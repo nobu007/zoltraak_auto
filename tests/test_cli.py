@@ -250,7 +250,7 @@ class TestCompilerFunctionality(unittest.TestCase):  # クラス名をTestCompil
         expected_md_path = "requirements/" + expected_md_path                 # 期待されるMDファイルのパスをrequirementsディレクトリ内に設定
                                                                               #
         self.check_generated_md_content(expected_md_path, compiler_path)      # 生成されたMDファイルの内容をチェックする
-        self.move_generated_md_to_gomi(expected_md_path, open_file=True)      # 生成されたMDファイルをgomiディレクトリに移動する
+        self.move_generated_md_to_gomi(expected_md_path, open_file=False)      # 生成されたMDファイルをgomiディレクトリに移動する
 
     def check_generated_md_content(self, expected_md_path, compiler_path):
         """
