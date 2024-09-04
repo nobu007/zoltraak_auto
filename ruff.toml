@@ -40,6 +40,7 @@ ignore = [
   "PLR0913",
   "PT009",
   "PTH103",
+  "PTH110",
   "PTH118",
   "PTH120",
   "PTH123",
@@ -50,7 +51,7 @@ ignore = [
 select = ["ALL"]
 
 fixable = ["ALL"]
-unfixable = ["F401"]
+unfixable = []
 
 dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
 
