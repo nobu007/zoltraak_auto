@@ -68,11 +68,10 @@ def process_text(text):
     for i, line in enumerate(lines):
         if line.startswith("```"):
             inside_code_block = not inside_code_block
+        elif inside_code_block:
+            result.append(line)
         else:
-            if inside_code_block:
-                result.append(line)
-            else:
-                result.append("# " + line)
+            result.append("# " + line)
 
     return "\n".join(result)
 
@@ -90,11 +89,10 @@ def process_text2(text, language=None):
                     inside_code_block = False
             else:
                 inside_code_block = False
+        elif inside_code_block:
+            result.append(line)
         else:
-            if inside_code_block:
-                result.append(line)
-            else:
-                result.append("# " + line)
+            result.append("# " + line)
 
     return "\n".join(result)
 

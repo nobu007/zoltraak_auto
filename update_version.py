@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-with open("setup.py", "r") as file:
+with open("setup.py") as file:
     content = file.read()
 start = content.find('version="') + 9
 end = content.find('",', start)

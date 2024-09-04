@@ -1,5 +1,5 @@
-import unittest
 import subprocess
+import unittest
 
 
 class MinimumTestCase(unittest.TestCase):
@@ -9,7 +9,7 @@ class MinimumTestCase(unittest.TestCase):
         実行例: `zoltraak` コマンドを引数なしで実行した場合、"エラー: 入力ファイルまたはテキストが指定されていません。"というエラーメッセージが表示されるべきです。
         """
         result = subprocess.run(
-            ["zoltraak"], capture_output=True, text=True
+            ["zoltraak"], capture_output=True, text=True, check=False
         )  # zoltraakコマンドを引数なしで実行し、その結果をresultに格納します。
         print("STDOUT:", result.stdout)  # 標準出力の内容を出力
         print("STDERR:", result.stderr)  # 標準エラーの内容を出力

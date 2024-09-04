@@ -11,10 +11,9 @@ def normal(text, language=None):
                     inside_code_block = False
             else:
                 inside_code_block = False
+        elif inside_code_block:
+            result.append(line)
         else:
-            if inside_code_block:
-                result.append(line)
-            else:
-                result.append("# " + line)
+            result.append("# " + line)
 
     return "\n".join(result)

@@ -1,10 +1,11 @@
 import os
 import shutil
 import subprocess
+
 import zoltraak
 import zoltraak.llms.litellm_api as litellm
+from zoltraak import settings
 from zoltraak.utils.prompt_import import load_prompt
-import zoltraak.settings as settings
 
 
 class TargetCodeGenerator:
@@ -142,7 +143,7 @@ class TargetCodeGenerator:
         """
         ソースファイルの内容を読み込むメソッド
         """
-        with open(self.source_file_path, "r", encoding="utf-8") as source_file:
+        with open(self.source_file_path, encoding="utf-8") as source_file:
             source_content = source_file.read()
         return source_content
 
@@ -219,15 +220,15 @@ class TargetCodeGenerator:
                 exec(code)
                 break
             except Exception as e:
-                print(f"Pythonファイルの実行中にエラーが発生しました。")
-                print(f"\033[91mエラーメッセージ: {str(e)}\033[0m")
+                print("Pythonファイルの実行中にエラーが発生しました。")
+                print(f"\033[91mエラーメッセージ: {e!s}\033[0m")
                 print(f"エラーが発生したPythonファイルのパス: \033[33m{self.target_file_path}\033[0m")
 
                 while True:
                     prompt = f"""
                     以下のPythonコードにエラーがあります。修正してください。
                     コード: {code}
-                    エラーメッセージ: {str(e)}
+                    エラーメッセージ: {e!s}
                     プログラムコードのみ記載してください。
                     """
                     code = litellm.generate_response(
@@ -241,8 +242,8 @@ class TargetCodeGenerator:
                         print("コードの実行が成功しました。")
                         break
                     except Exception as e:
-                        print(f"修正後のコードでもエラーが発生しました。再度修正を試みます。")
-                        print(f"\033[91m修正後のエラーメッセージ: {str(e)}\033[0m")
+                        print("修正後のコードでもエラーが発生しました。再度修正を試みます。")
+                        print(f"\033[91m修正後のエラーメッセージ: {e!s}\033[0m")
                         print(code)
 
                 with open(self.target_file_path, "w", encoding="utf-8") as target_file:
@@ -309,4 +310,4 @@ class TargetCodeGenerator:
         Pythonファイルを実行するメソッド
         """
         print(f"Pythonファイルを実行します: {self.target_file_path}")
-        subprocess.run(["python", self.target_file_path])
+        subprocess.run(["python", self.target_file_path], check=False)

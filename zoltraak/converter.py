@@ -1,13 +1,11 @@
-import subprocess
-import os
 import hashlib
-from dotenv import load_dotenv
-from zoltraak.md_generator import generate_md_from_prompt
-import zoltraak
-import zoltraak.llms.litellm_api as litellm
+import os
+import subprocess
 
-import zoltraak.settings as settings
+import zoltraak.llms.litellm_api as litellm
+from zoltraak import settings
 from zoltraak.gencode import TargetCodeGenerator
+from zoltraak.md_generator import generate_md_from_prompt
 
 
 class MarkdownToPythonConverter:
@@ -68,15 +66,15 @@ class MarkdownToPythonConverter:
             return hashlib.md5(content).hexdigest()
 
     def handle_existing_target_file(self):
-        with open(self.target_file_path, "r", encoding="utf-8") as target_file:
+        with open(self.target_file_path, encoding="utf-8") as target_file:
             lines = target_file.readlines()
             if len(lines) > 0 and lines[-1].startswith("# HASH: "):
                 embedded_hash = lines[-1].split("# HASH: ")[1].strip()
                 if self.source_hash == embedded_hash:
                     if self.prompt is None:
-                        subprocess.run(["python", self.target_file_path])
+                        subprocess.run(["python", self.target_file_path], check=False)
                     else:
-                        with open(self.target_file_path, "r", encoding="utf-8") as md_file:
+                        with open(self.target_file_path, encoding="utf-8") as md_file:
                             md_content = md_file.read()
                         return md_content
                 else:
@@ -88,9 +86,9 @@ class MarkdownToPythonConverter:
     def display_source_diff(self):
         import difflib
 
-        with open(self.past_source_file_path, "r", encoding="utf-8") as old_source_file:
+        with open(self.past_source_file_path, encoding="utf-8") as old_source_file:
             old_source_lines = old_source_file.readlines()
-        with open(self.source_file_path, "r", encoding="utf-8") as new_source_file:
+        with open(self.source_file_path, encoding="utf-8") as new_source_file:
             new_source_lines = new_source_file.readlines()
 
         source_diff = difflib.unified_diff(old_source_lines, new_source_lines, lineterm="", n=0)
@@ -138,7 +136,7 @@ class MarkdownToPythonConverter:
             prompt (str): promptの内容
         """
         # プロンプトにターゲットファイルの内容を変数として追加
-        with open(target_file_path, "r", encoding="utf-8") as target_file:
+        with open(target_file_path, encoding="utf-8") as target_file:
             current_target_code = target_file.read()
 
         prompt = f"""
@@ -186,18 +184,17 @@ class MarkdownToPythonConverter:
                 self.apply_diff_to_target_file(target_file_path, target_diff)
                 print(f"{target_file_path}に差分を自動で適用しました。")
                 break
-            elif choice == "2":
+            if choice == "2":
                 print("手動で差分を適用してください。")
                 break
-            elif choice == "3":
+            if choice == "3":
                 print("操作をキャンセルしました。")
                 break
-            else:
-                print("無効な選択です。もう一度選択してください。")
-                print("1. 自動で適用する")
-                print("2. エディタで行う")
-                print("3. 何もせず閉じる")
-                choice = input("選択してください (1, 2, 3): ")
+            print("無効な選択です。もう一度選択してください。")
+            print("1. 自動で適用する")
+            print("2. エディタで行う")
+            print("3. 何もせず閉じる")
+            choice = input("選択してください (1, 2, 3): ")
 
     def apply_diff_to_target_file(self, target_file_path, target_diff):
         """
@@ -208,7 +205,7 @@ class MarkdownToPythonConverter:
             target_diff (str): 適用する差分
         """
         # ターゲットファイルの現在の内容を読み込む
-        with open(target_file_path, "r", encoding="utf-8") as file:
+        with open(target_file_path, encoding="utf-8") as file:
             current_content = file.read()
 
         # プロンプトを作成してAPIに送信し、修正された内容を取得

@@ -9,7 +9,7 @@ def load_prompt(file_path, variables):
     Returns:
         str: 変数が置換されたプロンプト
     """
-    with open(file_path, "r", encoding="utf-8") as f:
+    with open(file_path, encoding="utf-8") as f:
         prompt_template = f.read()
 
     prompt = prompt_template

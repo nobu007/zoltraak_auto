@@ -1,7 +1,6 @@
 import os
-import sys
-import sys
 import pprint
+import sys
 
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 sys.path.append(os.path.join(os.path.dirname(__file__), "../zoltraak"))
@@ -10,10 +9,9 @@ pprint.pprint(sys.path)
 
 import subprocess
 import unittest
-from zoltraak.md_generator import generate_md_from_prompt, generate_response
-import zoltraak.settings as settings
 
-from loguru import logger
+from zoltraak import settings
+from zoltraak.md_generator import generate_md_from_prompt, generate_response
 
 
 class TestzoltraakCommand(unittest.TestCase):  # TestzoltraakCommandクラスを定義し、unittest.TestCaseを継承します。
@@ -73,7 +71,7 @@ class TestzoltraakCommand(unittest.TestCase):  # TestzoltraakCommandクラスを
         実行例: `zoltraak` コマンドを引数なしで実行した場合、"エラー: 入力ファイルまたはテキストが指定されていません。"というエラーメッセージが表示されるべきです。
         """
         result = subprocess.run(
-            ["zoltraak"], capture_output=True, text=True
+            ["zoltraak"], capture_output=True, text=True, check=False
         )  # zoltraakコマンドを引数なしで実行し、その結果をresultに格納します。
         print("STDOUT:", result.stdout)  # 標準出力の内容を出力
         print("STDERR:", result.stderr)  # 標準エラーの内容を出力
@@ -90,7 +88,7 @@ class TestzoltraakCommand(unittest.TestCase):  # TestzoltraakCommandクラスを
             f.write("# Test File\n\nThis is a test file.")
 
         result = subprocess.run(
-            ["zoltraak", "test_file.md", "-p", "足し算のプログラムを書きたい"], capture_output=True, text=True
+            ["zoltraak", "test_file.md", "-p", "足し算のプログラムを書きたい"], capture_output=True, text=True, check=False
         )  # zoltraakコマンドを-pオプションでプロンプトを指定して実行し、その結果をresultに格納します。
         print("STDOUT:", result.stdout)  # 標準出力の内容を出力
         print("STDERR:", result.stderr)  # 標準エラーの内容を出力
@@ -105,7 +103,7 @@ class TestzoltraakCommand(unittest.TestCase):  # TestzoltraakCommandクラスを
         実行例: `zoltraak "お腹減った"` コマンドを実行した場合、エラーが発生せずに正常に終了するはずです。
         """
         result = subprocess.run(
-            ["zoltraak", "お腹減った"], capture_output=True, text=True
+            ["zoltraak", "お腹減った"], capture_output=True, text=True, check=False
         )  # zoltraakコマンドにテキスト入力を与えて実行し、その結果をresultに格納します。
         print("STDOUT:", result.stdout)  # 標準出力の内容を出力
         print("STDERR:", result.stderr)  # 標準エラーの内容を出力
@@ -259,7 +257,6 @@ class TestCompilerFunctionality(unittest.TestCase):  # クラス名をTestCompil
         expected_md_path = (
             "requirements/" + expected_md_path
         )  # 期待されるMDファイルのパスをrequirementsディレクトリ内に設定
-        #
         self.check_generated_md_content(expected_md_path, compiler_path)  # 生成されたMDファイルの内容をチェックする
         self.move_generated_md_to_gomi(
             expected_md_path, open_file=False
@@ -269,7 +266,7 @@ class TestCompilerFunctionality(unittest.TestCase):  # クラス名をTestCompil
         """
         生成されたMDファイルの内容を確認する
         """
-        with open(expected_md_path, "r", encoding="utf-8") as f:
+        with open(expected_md_path, encoding="utf-8") as f:
             generated_content = f.read()
         self.assertGreater(len(generated_content), 0, f"生成されたMDファイルが空です。 コンパイラパス: {compiler_path}")
 

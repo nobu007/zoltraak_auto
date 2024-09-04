@@ -1,6 +1,7 @@
+from collections import defaultdict
+
 import litellm
 from litellm.integrations.custom_logger import CustomLogger
-from collections import defaultdict
 
 
 class ModelStatsLogger(CustomLogger):

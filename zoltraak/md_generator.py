@@ -1,15 +1,14 @@
 import os
-import pyperclip
-from dotenv import load_dotenv
-from groq import Groq  # Groqをインポート
-import zoltraak
-from tqdm import tqdm  # tqdmをインポート
+import re
+import sys
 import threading
 import time
-import sys
-import zoltraak.settings as settings
+
+import pyperclip
+
+import zoltraak
 import zoltraak.llms.litellm_api as litellm
-import re
+from zoltraak import settings
 
 
 def generate_md_from_prompt(
@@ -74,14 +73,14 @@ def generate_md_from_prompt(
     done = False  # スピナーの終了フラグを追加
     spinner_thread = threading.Thread(  # スピナーを表示するスレッドを作成し、終了フラグとgoalを渡す
         target=show_spinner,
-        args=(lambda: done, f"ステップ1. \033[31m起動術式\033[0mを用いて\033[32m魔法術式\033[0mを構築"),
-    )  #
+        args=(lambda: done, "ステップ1. \033[31m起動術式\033[0mを用いて\033[32m魔法術式\033[0mを構築"),
+    )
     spinner_thread.start()  # スピナーの表示を開始
     response = generate_response(  # developerごとの分岐を関数化して応答を生成
         developer,
         model_name,
-        prompt,  #
-    )  #
+        prompt,
+    )
     done = True  # 応答生成後にスピナーの終了フラグをTrueに設定
     spinner_thread.join()  # スピナーの表示を終了
     md_content = response.strip()  # 生成された要件定義書の内容を取得し、前後の空白を削除
@@ -168,7 +167,7 @@ def create_prompt(goal_prompt, compiler_path=None, formatter_path=None, language
 
         for file in compiler_files:
             file_path = os.path.join(compiler_folder, file)
-            with open(file_path, "r", encoding="utf-8") as f:
+            with open(file_path, encoding="utf-8") as f:
                 content = f.read().split("\n")[:3]
             prompt += f"## {file}\n```\n{' '.join(content)}\n```\n\n"
 
@@ -178,7 +177,7 @@ def create_prompt(goal_prompt, compiler_path=None, formatter_path=None, language
         また、それぞれの実行プロンプトを、zoltraak \"{goal_prompt}\" -c [ファイル名（拡張子なし）]で、code blockに入れて添付してください。"""
         prompt += prompt + formatter
     elif os.path.exists(compiler_path):  # プロンプトファイルが存在する場合
-        with open(compiler_path, "r", encoding="utf-8") as file:  # - プロンプトファイルを読み込みモードで開く
+        with open(compiler_path, encoding="utf-8") as file:  # - プロンプトファイルを読み込みモードで開く
             prompt = file.read().format(
                 prompt=goal_prompt
             )  # -- プロンプトファイルの内容を読み込み、goal_promptを埋め込む
@@ -215,19 +214,18 @@ def get_formatter(formatter_path, language=None):
     """
     if formatter_path is None:  # フォーマッタパスが指定されていない場合
         formatter = ""  # - フォーマッタを空文字列に設定
-    else:  # フォーマッタパスが指定されている場合
-        if os.path.exists(formatter_path):  # -- フォーマッタファイルが存在する場合
-            with open(formatter_path, "r", encoding="utf-8") as file:  # --- フォーマッタファイルを読み込みモードで開く
-                formatter = file.read()  # ---- フォーマッタの内容を読み込む
-                if language is not None:
-                    print(formatter_path)
-                    if formatter_path.endswith("_lang.md"):
-                        formatter = formatter.replace("{language}", language)
-                    else:
-                        formatter += f"\n- You must output everything including code block and diagrams, according to the previous instructions, but make sure you write your response in {language}.\n\n## Output Language\n- You must generate your response using {language}, which is the language of the formatter just above this sentence."
-        else:  # -- フォーマッタファイルが存在しない場合
-            print(f"フォーマッタファイル {formatter_path} が見つかりません。")  # --- エラーメッセージを表示
-            formatter = ""  # --- フォーマッタを空文字列に設定
+    elif os.path.exists(formatter_path):  # -- フォーマッタファイルが存在する場合
+        with open(formatter_path, encoding="utf-8") as file:  # --- フォーマッタファイルを読み込みモードで開く
+            formatter = file.read()  # ---- フォーマッタの内容を読み込む
+            if language is not None:
+                print(formatter_path)
+                if formatter_path.endswith("_lang.md"):
+                    formatter = formatter.replace("{language}", language)
+                else:
+                    formatter += f"\n- You must output everything including code block and diagrams, according to the previous instructions, but make sure you write your response in {language}.\n\n## Output Language\n- You must generate your response using {language}, which is the language of the formatter just above this sentence."
+    else:  # -- フォーマッタファイルが存在しない場合
+        print(f"フォーマッタファイル {formatter_path} が見つかりません。")  # --- エラーメッセージを表示
+        formatter = ""  # --- フォーマッタを空文字列に設定
 
     return formatter
 
@@ -261,7 +259,7 @@ def print_generation_result(target_file_path, compiler_path, open_file=True):
     """
     req = "requirements"
     target_file_path = f"{req}/{target_file_path}"
-    print("")
+    print()
     print(f"\033[32m魔法術式を構築しました: {target_file_path}\033[0m")  # 要件定義書の生成完了メッセージを緑色で表示
 
     # 検索結果生成以外ではユーザーに要件定義書からディレクトリを構築するかどうかを尋ねる
@@ -269,20 +267,20 @@ def print_generation_result(target_file_path, compiler_path, open_file=True):
         # ユーザーがyと答えた場合、zoltraakコマンドを実行してディレクトリを構築
         done = False  # スピナーの終了フラグを追加
         spinner_thread = threading.Thread(  # スピナーを表示するスレッドを作成し、終了フラグとgoalを渡す
-            target=show_spinner, args=(lambda: done, f"ステップ2. \033[32m魔法式\033[0mから\033[33m領域\033[0mを構築")
+            target=show_spinner, args=(lambda: done, "ステップ2. \033[32m魔法式\033[0mから\033[33m領域\033[0mを構築")
         )
         spinner_thread.start()  # スピナーの表示を開始
 
         import subprocess
 
-        subprocess.run(["zoltraak", target_file_path])
+        subprocess.run(["zoltraak", target_file_path], check=False)
 
         done = True  # zoltraakコマンド実行後にスピナーの終了フラグをTrueに設定
         spinner_thread.join()  # スピナーの表示を終了
     else:
         # ユーザーがnと答えた場合、既存の手順を表示
         print(
-            f"\033[33m以下のコマンドをコピーして、ターミナルに貼り付けて実行してください。\033[0m"
+            "\033[33m以下のコマンドをコピーして、ターミナルに貼り付けて実行してください。\033[0m"
         )  # 実行方法の説明を黄色で表示
         print(f"\033[36mzoltraak {target_file_path}\033[0m")  # 実行コマンドを水色で表示
         pyperclip.copy(f"zoltraak {target_file_path}")  # 実行コマンドをクリップボードにコピー
