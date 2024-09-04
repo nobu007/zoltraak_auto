@@ -1,0 +1,63 @@
+exclude = [
+  ".bzr",
+  ".direnv",
+  ".eggs",
+  ".git",
+  ".git-rewrite",
+  ".hg",
+  ".mypy_cache",
+  ".nox",
+  ".pants.d",
+  ".pytype",
+  ".ruff_cache",
+  ".svn",
+  ".tox",
+  ".venv",
+  "__pypackages__",
+  "_build",
+  "buck-out",
+  "build",
+  "dist",
+  "node_modules",
+  "venv",
+]
+
+indent-width = 4
+line-length = 120
+
+target-version = "py311"
+
+[lint]
+ignore = [
+  "ANN",
+  "COM812",
+  "D",
+  "E741",
+  "ERA001",
+  "FBT003",
+  "G004",
+  "ISC001",
+  "PLR0913",
+  "PT009",
+  "PTH103",
+  "PTH118",
+  "PTH120",
+  "PTH123",
+  "RUF003",
+  "RUF100",
+  "T201",
+]
+select = ["ALL"]
+
+fixable = ["ALL"]
+unfixable = ["F401"]
+
+dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
+
+[format]
+indent-style = "space"
+quote-style = "double"
+
+skip-magic-trailing-comma = false # list等の最後の要素の後のコンマを削除しない。
+
+line-ending = "lf" # "auto" | "lf" | "cr-lf" | "native"

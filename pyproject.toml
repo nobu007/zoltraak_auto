@@ -1,0 +1,44 @@
+[tool.poetry]
+authors = []
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Environment :: Console",
+  "Intended Audience :: Developers",
+  "License :: GPL-3.0 license",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python",
+  "Topic :: Software Development",
+]
+description = "zoltraak"
+license = "GPL-3.0"
+name = "zoltraak"
+readme = "README.md"
+repository = "https://github.com/nobu007/zoltraak_auto"
+version = "0.1.33"
+
+[tool.poetry.urls]
+"Source Code" = "https://github.com/nobu007/zoltraak_auto"
+
+[tool.poetry.dependencies]
+diagrams = "^0.23.4"
+litellm = "^1.43.4"
+pyperclip = "^1.9.0"
+python = ">=3.9,<3.13"
+python-dotenv = "^1.0.1"
+
+[tool.poetry.group.lint.dependencies]
+ruff = "^0.1.5"
+
+[tool.ruff.lint]
+select = [
+  "E", # pycodestyle
+  "F", # pyflakes
+  "I", # isort
+]
+
+[build-system]
+build-backend = "poetry.core.masonry.api"
+requires = ["poetry-core>=1.9.0"]
