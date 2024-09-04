@@ -1,11 +1,10 @@
-
 def normal(text, language=None):
-    lines = text.split('\n')
+    lines = text.split("\n")
     inside_code_block = False
     result = []
 
     for i, line in enumerate(lines):
-        if line.startswith('```'):
+        if line.startswith("```"):
             if not inside_code_block:
                 inside_code_block = True
                 if language is not None and language.lower() not in line.lower():
@@ -16,6 +15,6 @@ def normal(text, language=None):
             if inside_code_block:
                 result.append(line)
             else:
-                result.append('# ' + line)
+                result.append("# " + line)
 
-    return '\n'.join(result)
+    return "\n".join(result)

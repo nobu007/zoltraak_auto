@@ -17,8 +17,8 @@ setup(
         "google-generativeai",  # Google の生成 AI ライブラリを追加
     ],
     package_data={
-        '': ['*.txt', '*.md', '*.json', '*.csv', '*.yaml', '*.yml'],
-        'zoltraak': ['llms/*','utils/*', 'grimoires/**/*'],
+        "": ["*.txt", "*.md", "*.json", "*.csv", "*.yaml", "*.yml"],
+        "zoltraak": ["llms/*", "utils/*", "grimoires/**/*"],
     },
     entry_points={
         "console_scripts": [

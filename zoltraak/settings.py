@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 
 load_dotenv(verbose=True)
 
-dotenv_path = join(dirname(__file__), '.env')
+dotenv_path = join(dirname(__file__), ".env")
 load_dotenv(dotenv_path)
 
 
@@ -14,5 +14,5 @@ groq_api_key = os.getenv("GROQ_API_KEY")  # 環境変数からGroqのAPI keyを�
 
 # model_name
 model_name = os.getenv("MODEL_NAME", "gemini/gemini-1.5-pro-exp-0827")
-model_name_lite = os.getenv("MODEL_NAME_LITE", model_name) # 通常よりも簡単な処理用のllmモデル名
-model_name_smart = os.getenv("MODEL_NAME_SMART", model_name) # 通常よりも不雑な処理用のllmモデル名
+model_name_lite = os.getenv("MODEL_NAME_LITE", model_name)  # 通常よりも簡単な処理用のllmモデル名
+model_name_smart = os.getenv("MODEL_NAME_SMART", model_name)  # 通常よりも不雑な処理用のllmモデル名

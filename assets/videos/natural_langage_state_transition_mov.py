@@ -1,10 +1,11 @@
 from manim import *
 
+
 class FileStateTransition(Scene):
     def construct(self):
         # テキストを作成
         text_read = Text("プロンプト", color=RED, font_size=24)  # フォントサイズを24に変更
-        text_req = Text("ドキュメント\n(自然言語)", color=BLUE, font_size=24)   # フォントサイズを24に変更
+        text_req = Text("ドキュメント\n(自然言語)", color=BLUE, font_size=24)  # フォントサイズを24に変更
         text_lang = Text("プログラム\n(高級言語)", color=GREEN, font_size=24)  # フォントサイズを24に変更
         text_test = Text("システム\nテスト項目", color=ORANGE, font_size=24)  # テスト項目のテキストを追加
 
@@ -49,7 +50,7 @@ class FileStateTransition(Scene):
         command2 = Text("zoltraakdocument", font_size=24).next_to(circle_req, DOWN)
         self.play(
             FadeOut(command1),  # 前のコマンドを消す
-            Write(command2)
+            Write(command2),
         )
         self.wait(1)
 
@@ -70,62 +71,96 @@ class FileStateTransition(Scene):
         self.wait(1)
 
         # テスト項目からドキュメントへの矢印を作成
-        arrow4 = Arrow(square_test.get_right(), circle_req.get_right(), color=WHITE).shift(DOWN*1.7)  # 矢印の位置を上にずらす
+        arrow4 = Arrow(square_test.get_right(), circle_req.get_right(), color=WHITE).shift(
+            DOWN * 1.7
+        )  # 矢印の位置を上にずらす
         self.play(Create(arrow4), run_time=1)
         self.wait(1)
 
         # ドキュメントとプログラムの同期を表現
-        sync_text = Text("テスト項目を網羅されるまで、ドキュメントとプログラムの再構築が進む", font_size=24).next_to(shapes, DOWN*1.7, buff=1)
+        sync_text = Text("テスト項目を網羅されるまで、ドキュメントとプログラムの再構築が進む", font_size=24).next_to(
+            shapes, DOWN * 1.7, buff=1
+        )
         self.play(Write(sync_text))
         self.wait(1)  # 1秒待つ
         self.play(FadeOut(sync_text))  # sync_textを消す
-        
+
         # ドキュメントとプログラムの間に双方向の矢印を追加
-        
+
         sync_arrow1 = DoubleArrow(circle_req.get_bottom(), circle_lang.get_bottom(), color=YELLOW, buff=0.5)
         sync_arrow2 = DoubleArrow(circle_lang.get_bottom(), circle_req.get_bottom(), color=YELLOW, buff=0.5)
         # ドキュメントとプログラムの間に "Compile" というテキストを追加
-        compile_text = Text("Compile", font_size=24).move_to(sync_arrow1.get_center() + UP*0.5)
+        compile_text = Text("Compile", font_size=24).move_to(sync_arrow1.get_center() + UP * 0.5)
         self.play(Write(compile_text))
-        
+
         # "zoltraakドキュメント" コマンドを表示
         sync_command = Text("zoltraakdocument", font_size=24).next_to(shapes, DOWN)
         self.play(
             FadeOut(command2),  # 前のコマンドを消す
-            Write(sync_command)
+            Write(sync_command),
         )
-        
+
         # ドキュメントが変更されてピコンとなる
         self.play(
             circle_req.animate.set_fill(BLUE, opacity=0.5),
-            Flash(circle_req, line_length=0.5, num_lines=20, color=BLUE, flash_radius=circle_req.width/2+SMALL_BUFF, time_width=0.5),
-            run_time=1
+            Flash(
+                circle_req,
+                line_length=0.5,
+                num_lines=20,
+                color=BLUE,
+                flash_radius=circle_req.width / 2 + SMALL_BUFF,
+                time_width=0.5,
+            ),
+            run_time=1,
         )
-        
+
         # プログラムが変更されてピコンとなる
         self.play(
             circle_lang.animate.set_fill(GREEN, opacity=0.5),
-            Flash(circle_lang, line_length=0.5, num_lines=20, color=GREEN, flash_radius=circle_lang.width/2+SMALL_BUFF, time_width=0.5),
-            run_time=1
+            Flash(
+                circle_lang,
+                line_length=0.5,
+                num_lines=20,
+                color=GREEN,
+                flash_radius=circle_lang.width / 2 + SMALL_BUFF,
+                time_width=0.5,
+            ),
+            run_time=1,
         )
-        
+
         # プログラムが変更されてピコンとなる
         self.play(
             circle_lang.animate.set_fill(GREEN, opacity=0.5),
-            Flash(circle_lang, line_length=0.5, num_lines=20, color=GREEN, flash_radius=circle_lang.width/2+SMALL_BUFF, time_width=0.5),
-            run_time=1
+            Flash(
+                circle_lang,
+                line_length=0.5,
+                num_lines=20,
+                color=GREEN,
+                flash_radius=circle_lang.width / 2 + SMALL_BUFF,
+                time_width=0.5,
+            ),
+            run_time=1,
         )
-        
+
         # ドキュメントが変更されてピコンとなる
         self.play(
             circle_req.animate.set_fill(BLUE, opacity=0.5),
-            Flash(circle_req, line_length=0.5, num_lines=20, color=BLUE, flash_radius=circle_req.width/2+SMALL_BUFF, time_width=0.5),
-            run_time=1
+            Flash(
+                circle_req,
+                line_length=0.5,
+                num_lines=20,
+                color=BLUE,
+                flash_radius=circle_req.width / 2 + SMALL_BUFF,
+                time_width=0.5,
+            ),
+            run_time=1,
         )
-        
+
         self.play(Create(sync_arrow1), Create(sync_arrow2))
-        
+
         self.wait(1)
         # ドキュメントとプログラムの同期を表現
-        sync_text = Text("zoltraakdocument を行うたびにシステム実行と双方の同期がチェックされる", font_size=24).next_to(shapes, DOWN*1.7, buff=1)
+        sync_text = Text("zoltraakdocument を行うたびにシステム実行と双方の同期がチェックされる", font_size=24).next_to(
+            shapes, DOWN * 1.7, buff=1
+        )
         self.play(Write(sync_text))

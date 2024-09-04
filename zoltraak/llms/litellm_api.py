@@ -17,6 +17,7 @@ class ModelStatsLogger(CustomLogger):
     def get_stats(self):
         return dict(self.stats)
 
+
 # デバッグ用
 litellm.set_verbose = True
 
@@ -56,9 +57,7 @@ def show_used_total_tokens():
         print(f"Model: {model}")
         print(f"  Total requests: {data['count']}")
         print(f"  Total tokens: {data['total_tokens']}")
-        print(
-            f"  Average tokens per request: {data['total_tokens'] / data['count']:.2f}"
-        )
+        print(f"  Average tokens per request: {data['total_tokens'] / data['count']:.2f}")
 
 
 if __name__ == "__main__":

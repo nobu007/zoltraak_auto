@@ -6,6 +6,7 @@ import zoltraak.llms.litellm_api as litellm
 from zoltraak.utils.prompt_import import load_prompt
 import zoltraak.settings as settings
 
+
 class TargetCodeGenerator:
     def __init__(self, source_file_path, target_file_path, past_source_file_path, source_hash):
         self.source_file_path = source_file_path
@@ -39,18 +40,18 @@ class TargetCodeGenerator:
         Args:
             step_n (int): ステップ番号。デフォルトは2。
         """
-        create_domain_grimoire = "grimoires/architect/architect_claude.md"       # 領域術式（要件定義書）のパスを指定
-        target_dir = (                                                            # target_file_pathからdevと.mdを省いて、generated/ の下につなげたものをtarget_dirに設定
+        create_domain_grimoire = "grimoires/architect/architect_claude.md"  # 領域術式（要件定義書）のパスを指定
+        target_dir = (  # target_file_pathからdevと.mdを省いて、generated/ の下につなげたものをtarget_dirに設定
             f"generated/{os.path.splitext(os.path.basename(self.target_file_path))[0]}"
         )
 
         if step_n == 2:
-            self.print_step2_info(create_domain_grimoire, target_dir)             # ステップ2の情報を出力
+            self.print_step2_info(create_domain_grimoire, target_dir)  # ステップ2の情報を出力
         elif step_n == 3:
-            self.print_step3_info(target_dir)                                     # ステップ3の情報を出力
+            self.print_step3_info(target_dir)  # ステップ3の情報を出力
 
-        if self.past_source_file_path is not None:                                # 過去のソースファイルパスが指定されている場合
-            self.save_current_source_as_past()                                    # - 現在のソースファイルを過去のソースファイルとして保存
+        if self.past_source_file_path is not None:  # 過去のソースファイルパスが指定されている場合
+            self.save_current_source_as_past()  # - 現在のソースファイルを過去のソースファイルとして保存
 
         return create_domain_grimoire, target_dir
 
@@ -83,13 +84,14 @@ class TargetCodeGenerator:
 ==============================================================
         """
         )
+
     def load_source_and_create_variables(self):
         """
         ソースファイルの読み込みと変数の作成を行うメソッド
         """
-        source_content   = self.read_source_file()                                # ソースファイルの内容を読み込む
-        source_file_name = self.get_source_file_name()                            # ソースファイルのファイル名（拡張子なし）を取得
-        variables        = self.create_variables_dict(source_content, source_file_name)  # 変数の辞書を作成
+        source_content = self.read_source_file()  # ソースファイルの内容を読み込む
+        source_file_name = self.get_source_file_name()  # ソースファイルのファイル名（拡張子なし）を取得
+        variables = self.create_variables_dict(source_content, source_file_name)  # 変数の辞書を作成
 
         return source_content, source_file_name, variables
 
@@ -97,9 +99,11 @@ class TargetCodeGenerator:
         """
         プロンプトの読み込みとコード生成を行うメソッド
         """
-        prompt = self.load_prompt_with_variables(create_domain_grimoire, variables)  # 領域術式（要件定義書）からプロンプトを読み込み、変数を埋め込む
+        prompt = self.load_prompt_with_variables(
+            create_domain_grimoire, variables
+        )  # 領域術式（要件定義書）からプロンプトを読み込み、変数を埋め込む
         print(prompt)
-        code   = self.generate_code(prompt)                           # Claudeを使用してコードを生成
+        code = self.generate_code(prompt)  # Claudeを使用してコードを生成
         # print(code)
 
         return prompt, code
@@ -108,26 +112,25 @@ class TargetCodeGenerator:
         """
         生成されたコードの処理を行うメソッド
         """
-        self.write_code_to_target_file(code)                                      # 生成されたコードをターゲットファイルに書き込む
+        self.write_code_to_target_file(code)  # 生成されたコードをターゲットファイルに書き込む
 
-        if self.source_hash is not None:                                          # ソースファイルのハッシュ値が指定されている場合
-            self.append_source_hash_to_target_file()                              # - ソースファイルのハッシュ値をターゲットファイルに追記
+        if self.source_hash is not None:  # ソースファイルのハッシュ値が指定されている場合
+            self.append_source_hash_to_target_file()  # - ソースファイルのハッシュ値をターゲットファイルに追記
 
-        if self.target_file_path.endswith(".py"):                                 # ターゲットファイルがPythonファイルの場合
-            self.try_execute_generated_code(code)                                 # - 生成されたコードを実行
-        else:                                                                     # ターゲットファイルがマークダウンファイルの場合
-            return code                                                           # - 生成されたコードを返す
+        if self.target_file_path.endswith(".py"):  # ターゲットファイルがPythonファイルの場合
+            self.try_execute_generated_code(code)  # - 生成されたコードを実行
+        else:  # ターゲットファイルがマークダウンファイルの場合
+            return code  # - 生成されたコードを返す
 
     def output_results(self):
         """
         結果の出力を行うメソッド
         """
-        self.print_target_file_path()                                             # ターゲットファイルのパスを出力
+        self.print_target_file_path()  # ターゲットファイルのパスを出力
         # self.open_target_file_in_vscode()                                         # ターゲットファイルをVS Codeで開く
 
         # if self.target_file_path.endswith(".py"):                                 # ターゲットファイルがPythonファイルの場合
         #     self.run_python_file()                                                # - Pythonファイルを実行
-
 
     def save_current_source_as_past(self):
         """
@@ -184,7 +187,9 @@ class TargetCodeGenerator:
             # "claude-3-haiku-20240307"
             # "claude-3-opus-20240229"
             settings.model_name,
-            prompt, 4000, 0.3
+            prompt,
+            4000,
+            0.3,
         )
         code = code.replace("```python", "").replace("```", "")
         return code
@@ -226,10 +231,7 @@ class TargetCodeGenerator:
                     プログラムコードのみ記載してください。
                     """
                     code = litellm.generate_response(
-                        model=settings.model_name,
-                        prompt=prompt,
-                        max_tokens=4000,
-                        temperature=0.3
+                        model=settings.model_name, prompt=prompt, max_tokens=4000, temperature=0.3
                     )
                     code = code.replace("```python", "").replace("```", "")
 
@@ -289,6 +291,7 @@ class TargetCodeGenerator:
             #     import pyperclip
             #     pyperclip.copy(f"python {self.target_file_path}")
             #     print("コードをクリップボードにコピーしました。")
+
     def print_target_file_path(self):
         """
         ターゲットファイルのパスを出力するメソッド

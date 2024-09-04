@@ -3,8 +3,8 @@ import sys
 import sys
 import pprint
 
-sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
-sys.path.append(os.path.join(os.path.dirname(__file__), '../zoltraak'))
+sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
+sys.path.append(os.path.join(os.path.dirname(__file__), "../zoltraak"))
 print("===============================")
 pprint.pprint(sys.path)
 
@@ -14,6 +14,7 @@ from zoltraak.md_generator import generate_md_from_prompt, generate_response
 import zoltraak.settings as settings
 
 from loguru import logger
+
 
 class TestzoltraakCommand(unittest.TestCase):  # TestzoltraakCommandクラスを定義し、unittest.TestCaseを継承します。
     # def test_zoltraak_command(self):
@@ -71,12 +72,15 @@ class TestzoltraakCommand(unittest.TestCase):  # TestzoltraakCommandクラスを
         zoltraakコマンドをmdファイルの引数なしで実行した場合、正しいエラーメッセージが表示されることを確認します。
         実行例: `zoltraak` コマンドを引数なしで実行した場合、"エラー: 入力ファイルまたはテキストが指定されていません。"というエラーメッセージが表示されるべきです。
         """
-        result = subprocess.run(['zoltraak'], capture_output=True, text=True)  # zoltraakコマンドを引数なしで実行し、その結果をresultに格納します。
+        result = subprocess.run(
+            ["zoltraak"], capture_output=True, text=True
+        )  # zoltraakコマンドを引数なしで実行し、その結果をresultに格納します。
         print("STDOUT:", result.stdout)  # 標準出力の内容を出力
         print("STDERR:", result.stderr)  # 標準エラーの内容を出力
 
         self.assertEqual(result.returncode, 1)  # リターンコードが1（エラー）であることを確認
         self.assertNotEqual(result.stdout, "")  # 標準出力が空でないことを確認
+
     def test_prompt_argument(self):  # プロンプト引数のテストメソッドを定義します。
         """
         zoltraakコマンドに-pオプションでプロンプトを指定した場合、正常に実行されることを確認します。
@@ -85,7 +89,9 @@ class TestzoltraakCommand(unittest.TestCase):  # TestzoltraakCommandクラスを
         with open("test_file.md", "w") as f:
             f.write("# Test File\n\nThis is a test file.")
 
-        result = subprocess.run(['zoltraak', 'test_file.md', '-p', '足し算のプログラムを書きたい'], capture_output=True, text=True)  # zoltraakコマンドを-pオプションでプロンプトを指定して実行し、その結果をresultに格納します。
+        result = subprocess.run(
+            ["zoltraak", "test_file.md", "-p", "足し算のプログラムを書きたい"], capture_output=True, text=True
+        )  # zoltraakコマンドを-pオプションでプロンプトを指定して実行し、その結果をresultに格納します。
         print("STDOUT:", result.stdout)  # 標準出力の内容を出力
         print("STDERR:", result.stderr)  # 標準エラーの内容を出力
         self.assertEqual(result.returncode, 0)  # resultのリターンコードが0（正常終了）であることを確認します。
@@ -98,14 +104,17 @@ class TestzoltraakCommand(unittest.TestCase):  # TestzoltraakCommandクラスを
         zoltraakコマンドにテキスト入力を与えた場合のテストメソッドを定義します。
         実行例: `zoltraak "お腹減った"` コマンドを実行した場合、エラーが発生せずに正常に終了するはずです。
         """
-        result = subprocess.run(['zoltraak', 'お腹減った'], capture_output=True, text=True)  # zoltraakコマンドにテキスト入力を与えて実行し、その結果をresultに格納します。
+        result = subprocess.run(
+            ["zoltraak", "お腹減った"], capture_output=True, text=True
+        )  # zoltraakコマンドにテキスト入力を与えて実行し、その結果をresultに格納します。
         print("STDOUT:", result.stdout)  # 標準出力の内容を出力
         print("STDERR:", result.stderr)  # 標準エラーの内容を出力
 
         self.assertEqual(result.returncode, 0)  # resultのリターンコードが0（正常終了）であることを確認します。
         self.assertEqual(result.stderr, "")  # result.stderrが空文字列（エラーメッセージなし）であることを確認します。
-        self.assertIn("新しい要件定義書 'def_", result.stdout)  # 標準出力に"新しい要件定義書 'def_"という文字列が含まれていることを確認します。
-
+        self.assertIn(
+            "新しい要件定義書 'def_", result.stdout
+        )  # 標準出力に"新しい要件定義書 'def_"という文字列が含まれていることを確認します。
 
 
 class TestCompilerFunctionality(unittest.TestCase):  # クラス名をTestCompilerFunctionalityに変更
@@ -244,19 +253,23 @@ class TestCompilerFunctionality(unittest.TestCase):  # クラス名をTestCompil
             model_name=settings.model_name,
             compiler_path=f"{setting_dir}/compiler/{compiler_path}",
             formatter_path=f"{setting_dir}/formatter/None.md",
-            open_file=False
+            open_file=False,
         )
 
-        expected_md_path = "requirements/" + expected_md_path                 # 期待されるMDファイルのパスをrequirementsディレクトリ内に設定
-                                                                              #
-        self.check_generated_md_content(expected_md_path, compiler_path)      # 生成されたMDファイルの内容をチェックする
-        self.move_generated_md_to_gomi(expected_md_path, open_file=False)      # 生成されたMDファイルをgomiディレクトリに移動する
+        expected_md_path = (
+            "requirements/" + expected_md_path
+        )  # 期待されるMDファイルのパスをrequirementsディレクトリ内に設定
+        #
+        self.check_generated_md_content(expected_md_path, compiler_path)  # 生成されたMDファイルの内容をチェックする
+        self.move_generated_md_to_gomi(
+            expected_md_path, open_file=False
+        )  # 生成されたMDファイルをgomiディレクトリに移動する
 
     def check_generated_md_content(self, expected_md_path, compiler_path):
         """
         生成されたMDファイルの内容を確認する
         """
-        with open(expected_md_path, 'r', encoding='utf-8') as f:
+        with open(expected_md_path, "r", encoding="utf-8") as f:
             generated_content = f.read()
         self.assertGreater(len(generated_content), 0, f"生成されたMDファイルが空です。 コンパイラパス: {compiler_path}")
 
@@ -269,6 +282,7 @@ class TestCompilerFunctionality(unittest.TestCase):  # クラス名をTestCompil
             open_file (bool): ファイルを開くかどうかのフラグ（デフォルトはFalse）
         """
         import datetime
+
         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
         gomi_dir = "gomi"
         if not os.path.exists(gomi_dir):
@@ -285,11 +299,7 @@ class TestGenerateResponse(unittest.TestCase):
         """
         Anthropicのモデルを使用してgenerate_response関数をテストする
         """
-        anthropic_models = [
-            "claude-3-opus-20240229",
-            "claude-3-haiku-20240307",
-            "claude-3-sonnet-20240229"
-        ]
+        anthropic_models = ["claude-3-opus-20240229", "claude-3-haiku-20240307", "claude-3-sonnet-20240229"]
         prompt = "これはテストプロンプトです。"
 
         for model_name in anthropic_models:
@@ -303,13 +313,7 @@ class TestGenerateResponse(unittest.TestCase):
         Groqのモデルを使用してgenerate_response関数をテストする
         """
 
-        groq_models = [
-            "llama3-8b-8192",
-            "llama3-70b-8192",
-            "llama2-70b-4096",
-            "mixtral-8x7b-32768",
-            "gemma-7b-it"
-        ]
+        groq_models = ["llama3-8b-8192", "llama3-70b-8192", "llama2-70b-4096", "mixtral-8x7b-32768", "gemma-7b-it"]
         prompt = "これはテストプロンプトです。"
 
         for model_name in groq_models:
@@ -326,7 +330,6 @@ class TestGenerateResponse(unittest.TestCase):
             generate_response("invalid_developer", "model_name", "prompt")
 
 
-
-if __name__ == '__main__':  # このスクリプトが直接実行された場合にのみ、以下のコードを実行します。
+if __name__ == "__main__":  # このスクリプトが直接実行された場合にのみ、以下のコードを実行します。
     # 全部を実行します
     unittest.main()  # unittestのmain関数を呼び出し、テストを実行します。

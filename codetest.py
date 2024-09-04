@@ -59,28 +59,31 @@ OK
 このように、ユニットテストを書くことで、アプリケーションの個々の部分が正しく動作することを確認できます。これは、ソフトウェア開発の品質を高め、バグを早期に発見するのに役立ちます。
 """
 
+
 def process_text(text):
-    lines = text.split('\n')
+    lines = text.split("\n")
     inside_code_block = False
     result = []
 
     for i, line in enumerate(lines):
-        if line.startswith('```'):
+        if line.startswith("```"):
             inside_code_block = not inside_code_block
         else:
             if inside_code_block:
                 result.append(line)
             else:
-                result.append('# ' + line)
+                result.append("# " + line)
 
-    return '\n'.join(result)
+    return "\n".join(result)
+
+
 def process_text2(text, language=None):
-    lines = text.split('\n')
+    lines = text.split("\n")
     inside_code_block = False
     result = []
 
     for i, line in enumerate(lines):
-        if line.startswith('```'):
+        if line.startswith("```"):
             if not inside_code_block:
                 inside_code_block = True
                 if language is not None and language.lower() not in line.lower():
@@ -91,9 +94,10 @@ def process_text2(text, language=None):
             if inside_code_block:
                 result.append(line)
             else:
-                result.append('# ' + line)
+                result.append("# " + line)
 
-    return '\n'.join(result)
+    return "\n".join(result)
+
 
 aaa = process_text2(code, "python")
 print(aaa)

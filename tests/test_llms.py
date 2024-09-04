@@ -1,5 +1,6 @@
 import zoltraak.llms.litellm_api as litellm
 
+
 def test_generate_response():
     """
     generate_response関数のテスト
@@ -13,7 +14,6 @@ def test_generate_response():
 
     # レスポンスが文字列であることを確認
     assert isinstance(response, str)
-
 
     # レスポンスが空でないことを確認
     assert response.strip() != ""
