@@ -15,9 +15,13 @@ classifiers = [
 description = "zoltraak"
 license = "GPL-3.0"
 name = "zoltraak"
+
 readme = "README.md"
 repository = "https://github.com/nobu007/zoltraak_auto"
 version = "0.1.33"
+
+[tool.poetry.scripts]
+zoltraak = "zoltraak.cli:main"
 
 [tool.poetry.urls]
 "Source Code" = "https://github.com/nobu007/zoltraak_auto"
