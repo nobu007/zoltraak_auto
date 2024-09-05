@@ -58,7 +58,8 @@ def generate_md_from_prompt(
     else:  # grimoires/ディレクトリにフォーマッタパスが含まれていない場合
         prompt_formatter = formatter_path  # - フォーマッタパスをそのままprompt_formatterに代入
 
-    print(f"""
+    print(
+        f"""
 ステップ1. 起動術式を用いて魔法術式を構築する
 ==============================================================
 \033[31m起動術式\033[0m (プロンプトコンパイラ)   : {prompt_compiler}
@@ -67,7 +68,8 @@ def generate_md_from_prompt(
 \033[90m言霊\033[0m   (LLMベンダー・モデル 名)   : {developer}/{model_name}
 ファイルを開く                    : {open_file}
 ==============================================================
-    """)
+    """
+    )
 
     prompt = create_prompt(goal_prompt, compiler_path, formatter_path, language)  # プロンプトを作成
     done = False  # スピナーの終了フラグを追加

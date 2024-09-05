@@ -104,18 +104,22 @@ class MarkdownToPythonConverter:
 
     def handle_new_target_file(self):
         if self.prompt is None:
-            print(f"""
+            print(
+                f"""
 高級言語コンパイル中: {self.target_file_path}は新しいファイルです。少々お時間をいただきます。
 {self.source_file_path} -> {self.target_file_path}
-                  """)
+                  """
+            )
             target = TargetCodeGenerator(
                 self.source_file_path, self.target_file_path, self.past_source_file_path, self.source_hash
             )
             target.generate_target_code()
         else:
-            print(f"""
+            print(
+                f"""
 {"検索結果生成中" if self.compiler_path is None else "要件定義書執筆中"}: {self.target_file_path}は新しいファイルです。少々お時間をいただきます。
-                  """)
+                  """
+            )
             generate_md_from_prompt(
                 self.prompt,
                 self.target_file_path,

@@ -88,7 +88,10 @@ class TestzoltraakCommand(unittest.TestCase):  # TestzoltraakCommandクラスを
             f.write("# Test File\n\nThis is a test file.")
 
         result = subprocess.run(
-            ["zoltraak", "test_file.md", "-p", "足し算のプログラムを書きたい"], capture_output=True, text=True, check=False
+            ["zoltraak", "test_file.md", "-p", "足し算のプログラムを書きたい"],
+            capture_output=True,
+            text=True,
+            check=False,
         )  # zoltraakコマンドを-pオプションでプロンプトを指定して実行し、その結果をresultに格納します。
         print("STDOUT:", result.stdout)  # 標準出力の内容を出力
         print("STDERR:", result.stderr)  # 標準エラーの内容を出力
