@@ -30,7 +30,7 @@ from zoltraak.utils.process_text import `normal`
             モジュール記載忘れないように
             全てのファイルは`generate_response(model, prompt, max_tokens, temperature)`をもちいてfor文で然るべき内容を記載
                 <!-- - モデル名を指定: "claude-3-haiku-20240307" -->
-                - モデル名を指定: "gemini/gemini-1.5-pro-exp-0827"
+                - モデル名を指定: "gemini/gemini-1.5-flash"
                 - プロンプト: readme_content + 改行 + "上記の内容をもとにして" + prompt
                 - 最大トークン数を指定: 1000
                 - 温度パラメータを指定: 0.7

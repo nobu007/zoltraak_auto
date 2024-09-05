@@ -1,7 +1,8 @@
 from collections import defaultdict
-
+import os
 import litellm
 from litellm.integrations.custom_logger import CustomLogger
+from litellm import Router
 
 
 class ModelStatsLogger(CustomLogger):
@@ -40,13 +41,39 @@ def generate_response(model, prompt, max_tokens, temperature):
     Returns:
         str: 生成された応答テキスト。
     """
-    fallbacks = ["claude-3-5-sonnet-20240620"]
-    response = litellm.completion(
+    fallbacks_dict = [
+        {"gemini": ["claude"]},
+    ]
+    model_list = [
+        {
+            "model_name": "gemini",
+            "litellm_params": {
+                "model": model,
+                "api_key": os.getenv("GEMINI_API_KEY"),
+            },
+        },
+        {
+            "model_name": "gemini_bkup",
+            "litellm_params": {
+                "model": model,
+                "api_key": os.getenv("GEMINI_API_KEY2"),
+            },
+        },
+        {
+            "model_name": "claude",
+            "litellm_params": {
+                "model": "claude-3-5-sonnet-20240620",
+                "api_key": os.getenv("ANTHROPIC_API_KEY"),
+            },
+        },
+    ]
+
+    router = Router(model_list=model_list, fallbacks=fallbacks_dict)
+    response = router.completion(
         model=model,
         messages=[{"content": prompt, "role": "user"}],
         max_tokens=max_tokens,
         temperature=temperature,
-        fallbacks=fallbacks,
     )
     return response.choices[0].message.content.strip()
 
