@@ -162,14 +162,13 @@ class MarkdownToPythonConverter:
 +line4 modified
 
         """
-        response = self.client.messages.create(
+        response = litellm.generate_response(
             model=settings.model_name_lite,
+            prompt=prompt,
             max_tokens=1000,
             temperature=0.0,
-            system="You are a programmer.",
-            messages=[{"role": "user", "content": prompt}],
         )
-        target_diff = response.content[0].text.strip()
+        target_diff = response.strip()
         # ターゲットファイルの差分を表示
         print("ターゲットファイルの差分:")
         print(target_diff)
@@ -180,7 +179,7 @@ class MarkdownToPythonConverter:
         # print("2. 自分で行う")
         # print("3. 何もせず閉じる")
         # choice = input("選択してください (1, 2, 3): ")
-        choice = 1
+        choice = "1"
 
         while True:
             if choice == "1":
@@ -196,9 +195,11 @@ class MarkdownToPythonConverter:
                 break
             print("無効な選択です。もう一度選択してください。")
             print("1. 自動で適用する")
-            print("2. エディタで行う")
-            print("3. 何もせず閉じる")
-            choice = input("選択してください (1, 2, 3): ")
+            # print("2. エディタで行う")
+            # print("3. 何もせず閉じる")
+            # choice = input("選択してください (1, 2, 3): ")
+            choice = "1"
+
 
     def apply_diff_to_target_file(self, target_file_path, target_diff):
         """
