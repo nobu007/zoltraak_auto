@@ -21,9 +21,6 @@ class ModelStatsLogger(CustomLogger):
         return dict(self.stats)
 
 
-# デバッグ用
-litellm.set_verbose = True
-
 # ロガーを設定
 logger = ModelStatsLogger()
 completion = litellm.completion
