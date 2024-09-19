@@ -65,7 +65,7 @@ class MarkdownToPythonConverter:
             content = file.read()
             return hashlib.md5(content).hexdigest()
 
-    def handle_existing_target_file(self):
+    def handle_existing_target_file(self)->str:
         with open(self.target_file_path, encoding="utf-8") as target_file:
             lines = target_file.readlines()
             if len(lines) > 0 and lines[-1].startswith("# HASH: "):
@@ -75,13 +75,13 @@ class MarkdownToPythonConverter:
                         subprocess.run(["python", self.target_file_path], check=False)
                     else:
                         with open(self.target_file_path, encoding="utf-8") as md_file:
-                            md_content = md_file.read()
-                        return md_content
+                            return md_file.read()
                 else:
                     print(f"{self.source_file_path}の変更を検知しました。")
                     print("ソースファイルの差分:")
                     if os.path.exists(self.past_source_file_path):
                         self.display_source_diff()
+        return ""
 
     def display_source_diff(self):
         import difflib
