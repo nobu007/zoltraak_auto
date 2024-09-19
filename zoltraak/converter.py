@@ -50,10 +50,10 @@ class MarkdownToPythonConverter:
 
         if os.path.exists(self.source_file_path):  # ソースファイルが存在する場合
             self.source_hash = self.calculate_file_hash(self.source_file_path)  # - ソースファイルのハッシュ値を計算
-            os.makedirs(self.past_source_folder, exist_ok=True)  # - 過去のソースフォルダを作成（既存の場合はスキップ）
-            self.past_source_file_path = os.path.join(
-                self.past_source_folder, os.path.basename(self.source_file_path)
-            )  # - 過去のソースファイルパスを設定
+        os.makedirs(self.past_source_folder, exist_ok=True)  # - 過去のソースフォルダを作成（既存の場合はスキップ）
+        self.past_source_file_path = os.path.join(
+            self.past_source_folder, os.path.basename(self.source_file_path)
+        )  # - 過去のソースファイルパスを設定
 
         if os.path.exists(self.target_file_path):  # ターゲットファイルが存在する場合
             self.handle_existing_target_file()  # - 既存のターゲットファイルを処理
