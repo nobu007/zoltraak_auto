@@ -1,8 +1,9 @@
-from collections import defaultdict
 import os
+from collections import defaultdict
+
 import litellm
-from litellm.integrations.custom_logger import CustomLogger
 from litellm import Router
+from litellm.integrations.custom_logger import CustomLogger
 
 
 class ModelStatsLogger(CustomLogger):
