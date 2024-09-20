@@ -36,11 +36,8 @@ from zoltraak.utils.process_text import `normal`
                 - 温度パラメータを指定: 0.7
             出力結果は normal(response, "python")   にて加工して
         フォーマットしたレスポンスをファイルに書き込む
-3. ディレクトリを新しく開く
-pythonのsubprocessを使って code `ルートディレクトリ`
-pythonのsubprocessを使って code `ルートディレクトリ`/README.md
-4. 生成したコードは即座に実行可能な状態にすること
-5. 出力先ファイルはpythonであり、プログラムコードのみを記載し文言はコメントアウトで記載すること
+3. 生成したコードは即座に実行可能な状態にすること
+4. 出力先ファイルはpythonであり、プログラムコードのみを記載し文言はコメントアウトで記載すること
     必ず冒頭に以下を入れること
     from zoltraak.llms.litellm_api import `generate_response`
     from zoltraak.utils.process_text import `normal`
