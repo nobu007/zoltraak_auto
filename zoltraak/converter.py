@@ -65,7 +65,7 @@ class MarkdownToPythonConverter:
             content = file.read()
             return hashlib.md5(content).hexdigest()
 
-    def handle_existing_target_file(self)->str:
+    def handle_existing_target_file(self) -> str:
         with open(self.target_file_path, encoding="utf-8") as target_file:
             lines = target_file.readlines()
             if len(lines) > 0 and lines[-1].startswith("# HASH: "):
@@ -95,12 +95,9 @@ class MarkdownToPythonConverter:
         source_diff_text = "".join(source_diff)
         print(source_diff_text)
 
-        if self.prompt is not None:
-            self.propose_target_diff(self.target_file_path, self.prompt)
-            print(f"ターゲットファイル: {self.target_file_path}")
-            # input("修正が完了したらEnterキーを押してください。")
-        else:
-            self.handle_target_file_modification()
+        self.propose_target_diff(self.target_file_path, self.prompt)
+        print(f"ターゲットファイル: {self.target_file_path}")
+        # input("修正が完了したらEnterキーを押してください。")
 
     def handle_new_target_file(self):
         if self.prompt is None:
@@ -131,7 +128,7 @@ class MarkdownToPythonConverter:
                 open_file=True,
             )
 
-    def propose_target_diff(self, target_file_path, prompt):
+    def propose_target_diff(self, target_file_path, prompt=None):
         """
         ターゲットファイルの変更差分を提案する関数
 
@@ -142,13 +139,19 @@ class MarkdownToPythonConverter:
         # プロンプトにターゲットファイルの内容を変数として追加
         with open(target_file_path, encoding="utf-8") as target_file:
             current_target_code = target_file.read()
-
+        prompt_additional_part = ""
+        if prompt:
+            prompt_additional_part = f"""
+promptの内容:
+{prompt}
+をもとに、
+"""
         prompt = f"""
 現在のターゲットファイルの内容:
 {current_target_code}
-上記からpromptの内容:
-{prompt}
-をもとに、
+
+上記から
+{prompt_additional_part}
 
 ターゲットファイルの変更が必要な部分"のみ"をプログラムで出力してください。
 出力はunified diff形式で、削除した文を薄い赤色、追加した文を薄い緑色にして
@@ -199,7 +202,6 @@ class MarkdownToPythonConverter:
             # print("3. 何もせず閉じる")
             # choice = input("選択してください (1, 2, 3): ")
             choice = "1"
-
 
     def apply_diff_to_target_file(self, target_file_path, target_diff):
         """
