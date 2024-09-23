@@ -513,7 +513,7 @@ pip install zoltraak
 shell
 
 ```
-zoltraak "本書きたい"
+zoltraak "本を書きたい"
 ```
 
 ↓
