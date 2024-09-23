@@ -241,9 +241,9 @@ class TargetCodeGenerator:
                         exec(code)
                         print("コードの実行が成功しました。")
                         break
-                    except Exception as e:
+                    except Exception as e2:
                         print("修正後のコードでもエラーが発生しました。再度修正を試みます。")
-                        print(f"\033[91m修正後のエラーメッセージ: {e!s}\033[0m")
+                        print(f"\033[91m修正後のエラーメッセージ: {e2!s}\033[0m")
                         print(code)
 
                 with open(self.target_file_path, "w", encoding="utf-8") as target_file:
