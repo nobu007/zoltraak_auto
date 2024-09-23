@@ -28,6 +28,7 @@ class MarkdownToPythonConverter:
         self.language = language
         self.developer = developer
         self.model_name = model_name
+        self.source_hash = None
 
     def convert(self):
         if self.prompt is None:  # プロンプトが指定されていない場合
