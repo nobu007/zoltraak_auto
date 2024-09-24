@@ -9,6 +9,7 @@ import pyperclip
 import zoltraak
 import zoltraak.llms.litellm_api as litellm
 from zoltraak import settings
+from zoltraak.utils.rich_console import generate_response_with_spinner, MagicInfo
 
 
 def generate_md_from_prompt(
@@ -58,33 +59,14 @@ def generate_md_from_prompt(
     else:  # grimoires/ディレクトリにフォーマッタパスが含まれていない場合
         prompt_formatter = formatter_path  # - フォーマッタパスをそのままprompt_formatterに代入
 
-    print(
-        f"""
-ステップ1. 起動術式を用いて魔法術式を構築する
-==============================================================
-\033[31m起動術式\033[0m (プロンプトコンパイラ)   : {prompt_compiler}
-\033[32m魔法術式\033[0m (要件定義書)             : {target_file_path}
-\033[34m錬成術式\033[0m (プロンプトフォーマッタ) : {prompt_formatter}
-\033[90m言霊\033[0m   (LLMベンダー・モデル 名)   : {developer}/{model_name}
-ファイルを開く                    : {open_file}
-==============================================================
-    """
-    )
-
     prompt = create_prompt(goal_prompt, compiler_path, formatter_path, language)  # プロンプトを作成
-    done = False  # スピナーの終了フラグを追加
-    spinner_thread = threading.Thread(  # スピナーを表示するスレッドを作成し、終了フラグとgoalを渡す
-        target=show_spinner,
-        args=(lambda: done, "ステップ1. \033[31m起動術式\033[0mを用いて\033[32m魔法術式\033[0mを構築"),
-    )
-    spinner_thread.start()  # スピナーの表示を開始
-    response = generate_response(  # developerごとの分岐を関数化して応答を生成
-        developer,
-        model_name,
-        prompt,
-    )
-    done = True  # 応答生成後にスピナーの終了フラグをTrueに設定
-    spinner_thread.join()  # スピナーの表示を終了
+    magic_info = MagicInfo()
+    magic_info.current_grimoire_name = prompt_compiler
+    magic_info.grimoire_formatter = prompt_formatter
+    magic_info.target_file_path = target_file_path
+    magic_info.description = "ステップ1. \033[31m起動術式\033[0mを用いて\033[32m魔法術式\033[0mを構築"
+    magic_info.prompt = prompt
+    response = generate_response_with_spinner(magic_info)
     md_content = response.strip()  # 生成された要件定義書の内容を取得し、前後の空白を削除
     save_md_content(md_content, target_file_path)  # 生成された要件定義書の内容をファイルに保存
     print_generation_result(
