@@ -12,28 +12,15 @@ from zoltraak import settings
 from zoltraak.utils.rich_console import generate_response_with_spinner, MagicInfo
 
 
-def generate_md_from_prompt(
-    goal_prompt,
-    target_file_path,
-    developer="litellm",  # デベロッパーを指定する引数を追加
-    model_name=settings.model_name_smart,  # モデル名の引数を独立させる
-    compiler_path=None,
-    formatter_path=None,
-    language=None,  # 汎用言語指定
-    open_file=True,  # ファイルを開くかどうかのフラグを追加
-):
+def generate_md_from_prompt(magic_info: MagicInfo):
+    file_info = magic_info.file_info
     """
     promptから要件定義書（マークダウンファイル）を生成する関数
-
-    Args:
-        goal_prompt (str): 要件定義書の生成に使用するプロンプト
-        target_file_path (str): 生成する要件定義書のパス
-        developer (str): 使用するデベロッパー（デフォルトは "litellm"）
-        model_name (str): 使用するモデルの名前（デフォルトは "claude-3-opus-20240229"）
-        compiler_path (str): コンパイラのパス（デフォルトはNone）
-        formatter_path (str): フォーマッタのパス（デフォルトはNone）
-        open_file (bool): ファイルを開くかどうかのフラグ（デフォルトはTrue）
     """
+    compiler_path = magic_info.grimoire_compiler
+    formatter_path = magic_info.grimoire_formatter
+    language = magic_info.language
+
     # プロンプトコンパイラとプロンプトフォーマッタを変数として受け取る
     if (
         compiler_path is not None and "grimoires" in compiler_path
@@ -44,9 +31,24 @@ def generate_md_from_prompt(
     else:  # grimoires/ディレクトリにコンパイラパスが含まれていない場合
         prompt_compiler = compiler_path  # - コンパイラパスをそのままprompt_compilerに代入
 
+    prompt_formatter = get_prompt_formatter(language, formatter_path)
+    prompt = create_prompt(magic_info.prompt, compiler_path, formatter_path, language)  # プロンプトを作成
+    magic_info.current_grimoire_name = prompt_compiler
+    magic_info.grimoire_formatter = prompt_formatter
+    magic_info.description = "ステップ1. \033[31m起動術式\033[0mを用いて\033[32m魔法術式\033[0mを構築"
+    magic_info.prompt = prompt
+    file_info.canonical_name = os.path.basename(file_info.target_file_path)
+    file_info.target_file_path = f"requirements/{file_info.canonical_name}"
+    response = generate_response_with_spinner(magic_info)
+    md_content = response.strip()  # 生成された要件定義書の内容を取得し、前後の空白を削除
+    save_md_content(md_content, file_info.target_file_path)  # 生成された要件定義書の内容をファイルに保存
+    print_generation_result(file_info.target_file_path, compiler_path)  # 生成結果を出力
+
+
+def get_prompt_formatter(language: str, formatter_path: str):
     # 汎用言語フォーマッタへの変更
-    if language is not None:
-        # formatter_pathに_lang.mdが存在するならそれを、しないならformatter_pathのまま
+    if language:
+        # grimoire_formatter に_lang.mdが存在するならそれを、しないならformatter_pathのまま
         lang_formatter_path = os.path.splitext(formatter_path)[0] + "_lang.md"
         if os.path.exists(lang_formatter_path):
             formatter_path = lang_formatter_path
@@ -58,20 +60,7 @@ def generate_md_from_prompt(
         )  # - フォーマッタパスからファイル名のみを取得してprompt_formatterに代入
     else:  # grimoires/ディレクトリにフォーマッタパスが含まれていない場合
         prompt_formatter = formatter_path  # - フォーマッタパスをそのままprompt_formatterに代入
-
-    prompt = create_prompt(goal_prompt, compiler_path, formatter_path, language)  # プロンプトを作成
-    magic_info = MagicInfo()
-    magic_info.current_grimoire_name = prompt_compiler
-    magic_info.grimoire_formatter = prompt_formatter
-    magic_info.target_file_path = target_file_path
-    magic_info.description = "ステップ1. \033[31m起動術式\033[0mを用いて\033[32m魔法術式\033[0mを構築"
-    magic_info.prompt = prompt
-    response = generate_response_with_spinner(magic_info)
-    md_content = response.strip()  # 生成された要件定義書の内容を取得し、前後の空白を削除
-    save_md_content(md_content, target_file_path)  # 生成された要件定義書の内容をファイルに保存
-    print_generation_result(
-        target_file_path, compiler_path, open_file
-    )  # 生成結果を出力し、open_fileフラグに応じてファイルを開く
+    return prompt_formatter
 
 
 def show_spinner(done, goal):
@@ -241,8 +230,6 @@ def print_generation_result(target_file_path, compiler_path, open_file=True):
         compiler_path (str): コンパイラのパス
         open_file (bool): ファイルを開くかどうかのフラグ（デフォルトはTrue）
     """
-    req = "requirements"
-    target_file_path = f"{req}/{target_file_path}"
     print()
     print(f"\033[32m魔法術式を構築しました: {target_file_path}\033[0m")  # 要件定義書の生成完了メッセージを緑色で表示
 

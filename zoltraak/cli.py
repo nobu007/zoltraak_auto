@@ -10,6 +10,7 @@ current_directory = os.path.dirname(os.path.abspath(__file__))
 import zoltraak.llms.litellm_api as litellm
 from zoltraak import settings
 from zoltraak.converter import MarkdownToPythonConverter
+from zoltraak.utils.rich_console import MagicInfo
 
 
 def main():
@@ -158,16 +159,18 @@ def process_markdown_file(args):
     py_file_rel_path = os.path.splitext(md_file_rel_path)[0] + ".py"  # Markdownファイルの拡張子を.pyに変更
     py_file_path = os.path.join(output_dir, py_file_rel_path)  # 出力ディレクトリとPythonファイルの相対パスを結合
 
-    mtp = MarkdownToPythonConverter(
-        md_file_path=md_file_path,
-        py_file_path=py_file_path,
-        developer="litellm",
-        model_name=settings.model_name,
-        prompt=prompt,
-        compiler_path=compiler_path,
-        formatter_path=formatter_path,
-        language=language,
-    )
+    magic_info = MagicInfo()
+    magic_info.current_grimoire_name = compiler_path
+    magic_info.grimoire_compiler = compiler_path
+    magic_info.grimoire_architect = ""  # 後で設定する
+    magic_info.grimoire_formatter = formatter_path
+    magic_info.model_name = settings.model_name
+    magic_info.prompt = prompt
+    magic_info.language = language
+    magic_info.file_info.md_file_path = md_file_path
+    magic_info.file_info.py_file_path = py_file_path
+
+    mtp = MarkdownToPythonConverter(magic_info)
     os.makedirs(
         os.path.dirname(py_file_path), exist_ok=True
     )  # Pythonファイルの出力ディレクトリを作成（既に存在する場合は何もしない）

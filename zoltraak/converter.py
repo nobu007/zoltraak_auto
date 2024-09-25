@@ -6,57 +6,45 @@ import zoltraak.llms.litellm_api as litellm
 from zoltraak import settings
 from zoltraak.gencode import TargetCodeGenerator
 from zoltraak.md_generator import generate_md_from_prompt
+from zoltraak.utils.rich_console import MagicInfo
 
 
 class MarkdownToPythonConverter:
-    def __init__(
-        self,
-        md_file_path,
-        py_file_path,
-        developer,
-        model_name,
-        prompt=None,
-        compiler_path=None,
-        formatter_path=None,
-        language=None,
-    ):
-        self.md_file_path = md_file_path
-        self.py_file_path = py_file_path
-        self.prompt = prompt
-        self.compiler_path = compiler_path
-        self.formatter_path = formatter_path
-        self.language = language
-        self.developer = developer
-        self.model_name = model_name
-        self.source_hash = None
+    def __init__(self, magic_info: MagicInfo):
+        self.magic_info = magic_info
 
     def convert(self):
-        if self.prompt is None:  # プロンプトが指定されていない場合
-            self.source_file_path = self.md_file_path  # - ソースファイルパスをマークダウンファイルパスに設定
-            self.target_file_path = self.py_file_path  # - ターゲットファイルパスをPythonファイルパスに設定
-            self.past_source_folder = "past_md_files"  # - 過去のソースフォルダを "past_md_files" に設定
+        file_info = self.magic_info.file_info
+        if self.magic_info.prompt is None:  # プロンプトが指定されていない場合
+            file_info.source_file_path = file_info.md_file_path  # - ソースファイルパスをマークダウンファイルパスに設定
+            file_info.target_file_path = file_info.py_file_path  # - ターゲットファイルパスをPythonファイルパスに設定
+            file_info.past_source_folder = "past_md_files"  # - 過去のソースフォルダを "past_md_files" に設定
         else:  # プロンプトが指定されている場合
-            self.source_file_path = self.md_file_path  # - ソースファイルパスをマークダウンファイルパスに設定
-            self.target_file_path = self.md_file_path  # - ターゲットファイルパスをマークダウンファイルパスに設定
-            self.past_source_folder = "past_prompt_files"  # - 過去のソースフォルダを "past_prompt_files" に設定
+            file_info.source_file_path = file_info.md_file_path  # - ソースファイルパスをマークダウンファイルパスに設定
+            file_info.target_file_path = (
+                file_info.md_file_path
+            )  # - ターゲットファイルパスをマークダウンファイルパスに設定
+            file_info.past_source_folder = "past_prompt_files"  # - 過去のソースフォルダを "past_prompt_files" に設定
 
-            if os.path.exists(self.md_file_path):  # -- マークダウンファイルが存在する場合
+            if os.path.exists(file_info.md_file_path):  # -- マークダウンファイルが存在する場合
                 print(
-                    f"{self.md_file_path}は既存のファイルです。promptに従って変更を提案します。"
+                    f"{file_info.md_file_path}は既存のファイルです。promptに従って変更を提案します。"
                 )  # --- ファイルが既存であることを示すメッセージを表示
                 self.propose_target_diff(
-                    self.target_file_path, self.prompt
+                    file_info.target_file_path, self.magic_info.prompt
                 )  # --- プロンプトに従ってターゲットファイルの差分を提案
                 return  # --- 関数を終了
 
-        if os.path.exists(self.source_file_path):  # ソースファイルが存在する場合
-            self.source_hash = self.calculate_file_hash(self.source_file_path)  # - ソースファイルのハッシュ値を計算
-        os.makedirs(self.past_source_folder, exist_ok=True)  # - 過去のソースフォルダを作成（既存の場合はスキップ）
-        self.past_source_file_path = os.path.join(
-            self.past_source_folder, os.path.basename(self.source_file_path)
+        if os.path.exists(file_info.source_file_path):  # ソースファイルが存在する場合
+            file_info.source_hash = self.calculate_file_hash(
+                file_info.source_file_path
+            )  # - ソースファイルのハッシュ値を計算
+        os.makedirs(file_info.past_source_folder, exist_ok=True)  # - 過去のソースフォルダを作成（既存の場合はスキップ）
+        file_info.past_source_file_path = os.path.join(
+            file_info.past_source_folder, os.path.basename(file_info.source_file_path)
         )  # - 過去のソースファイルパスを設定
 
-        if os.path.exists(self.target_file_path):  # ターゲットファイルが存在する場合
+        if os.path.exists(file_info.target_file_path):  # ターゲットファイルが存在する場合
             self.handle_existing_target_file()  # - 既存のターゲットファイルを処理
         else:  # ターゲットファイルが存在しない場合
             self.handle_new_target_file()  # - 新しいターゲットファイルを処理
@@ -67,67 +55,59 @@ class MarkdownToPythonConverter:
             return hashlib.md5(content).hexdigest()
 
     def handle_existing_target_file(self) -> str:
-        with open(self.target_file_path, encoding="utf-8") as target_file:
+        file_info = self.magic_info.file_info
+        with open(file_info.target_file_path, encoding="utf-8") as target_file:
             lines = target_file.readlines()
             if len(lines) > 0 and lines[-1].startswith("# HASH: "):
                 embedded_hash = lines[-1].split("# HASH: ")[1].strip()
-                if self.source_hash == embedded_hash:
-                    if self.prompt is None:
-                        subprocess.run(["python", self.target_file_path], check=False)
+                if file_info.source_hash == embedded_hash:
+                    if self.magic_info.prompt is None:
+                        subprocess.run(["python", file_info.target_file_path], check=False)
                     else:
-                        with open(self.target_file_path, encoding="utf-8") as md_file:
+                        with open(file_info.target_file_path, encoding="utf-8") as md_file:
                             return md_file.read()
                 else:
-                    print(f"{self.source_file_path}の変更を検知しました。")
+                    print(f"{file_info.source_file_path}の変更を検知しました。")
                     print("ソースファイルの差分:")
-                    if os.path.exists(self.past_source_file_path):
+                    if os.path.exists(file_info.past_source_file_path):
                         self.display_source_diff()
         return ""
 
     def display_source_diff(self):
+        file_info = self.magic_info.file_info
         import difflib
 
-        with open(self.past_source_file_path, encoding="utf-8") as old_source_file:
+        with open(file_info.past_source_file_path, encoding="utf-8") as old_source_file:
             old_source_lines = old_source_file.readlines()
-        with open(self.source_file_path, encoding="utf-8") as new_source_file:
+        with open(file_info.source_file_path, encoding="utf-8") as new_source_file:
             new_source_lines = new_source_file.readlines()
 
         source_diff = difflib.unified_diff(old_source_lines, new_source_lines, lineterm="", n=0)
         source_diff_text = "".join(source_diff)
         print(source_diff_text)
 
-        self.propose_target_diff(self.target_file_path, self.prompt)
-        print(f"ターゲットファイル: {self.target_file_path}")
+        self.propose_target_diff(file_info.target_file_path, self.magic_info.prompt)
+        print(f"ターゲットファイル: {file_info.target_file_path}")
         # input("修正が完了したらEnterキーを押してください。")
 
     def handle_new_target_file(self):
-        if self.prompt is None:
+        file_info = self.magic_info.file_info
+        if self.magic_info.prompt is None:
             print(
                 f"""
-高級言語コンパイル中: {self.target_file_path}は新しいファイルです。少々お時間をいただきます。
-{self.source_file_path} -> {self.target_file_path}
+高級言語コンパイル中: {file_info.target_file_path}は新しいファイルです。少々お時間をいただきます。
+{file_info.source_file_path} -> {file_info.target_file_path}
                   """
             )
-            target = TargetCodeGenerator(
-                self.source_file_path, self.target_file_path, self.past_source_file_path, self.source_hash
-            )
+            target = TargetCodeGenerator(self.magic_info)
             target.generate_target_code()
         else:
             print(
                 f"""
-{"検索結果生成中" if self.compiler_path is None else "要件定義書執筆中"}: {self.target_file_path}は新しいファイルです。少々お時間をいただきます。
+{"検索結果生成中" if self.magic_info.current_grimoire_name is None else "要件定義書執筆中"}: {file_info.target_file_path}は新しいファイルです。少々お時間をいただきます。
                   """
             )
-            generate_md_from_prompt(
-                self.prompt,
-                self.target_file_path,
-                developer=self.developer,  # "litellm",
-                model_name=self.model_name,  # "claude-3-haiku-20240307",
-                compiler_path=self.compiler_path,
-                formatter_path=self.formatter_path,
-                language=self.language,
-                open_file=True,
-            )
+            generate_md_from_prompt(self.magic_info)
 
     def propose_target_diff(self, target_file_path, prompt=None):
         """

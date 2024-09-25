@@ -6,14 +6,13 @@ import zoltraak
 import zoltraak.llms.litellm_api as litellm
 from zoltraak import settings
 from zoltraak.utils.prompt_import import load_prompt
+from zoltraak.utils.rich_console import generate_response_with_spinner, MagicInfo
 
 
 class TargetCodeGenerator:
-    def __init__(self, source_file_path, target_file_path, past_source_file_path, source_hash):
-        self.source_file_path = source_file_path
-        self.target_file_path = target_file_path
-        self.past_source_file_path = past_source_file_path
-        self.source_hash = source_hash
+    def __init__(self, magic_info: MagicInfo):
+        self.magic_info = magic_info
+        self.file_info = magic_info.file_info
 
     def generate_target_code(self):
         """
@@ -43,7 +42,7 @@ class TargetCodeGenerator:
         """
         create_domain_grimoire = "grimoires/architect/architect_claude.md"  # 領域術式（要件定義書）のパスを指定
         target_dir = (  # target_file_pathからdevと.mdを省いて、generated/ の下につなげたものをtarget_dirに設定
-            f"generated/{os.path.splitext(os.path.basename(self.target_file_path))[0]}"
+            f"generated/{os.path.splitext(os.path.basename(self.file_info.target_file_path))[0]}"
         )
 
         if step_n == 2:
@@ -51,7 +50,7 @@ class TargetCodeGenerator:
         elif step_n == 3:
             self.print_step3_info(target_dir)  # ステップ3の情報を出力
 
-        if self.past_source_file_path is not None:  # 過去のソースファイルパスが指定されている場合
+        if self.file_info.past_source_file_path is not None:  # 過去のソースファイルパスが指定されている場合
             self.save_current_source_as_past()  # - 現在のソースファイルを過去のソースファイルとして保存
 
         return create_domain_grimoire, target_dir
@@ -66,7 +65,7 @@ class TargetCodeGenerator:
 ==============================================================
 ステップ2. 魔法術式を用いて領域術式を実行する
 \033[32m領域術式\033[0m                      : {create_domain_grimoire}
-\033[32m実行術式\033[0m                      : {self.target_file_path}
+\033[32m実行術式\033[0m                      : {self.file_info.target_file_path}
 \033[32m領域対象\033[0m (ディレクトリパス)    : {target_dir}
 ==============================================================
         """
@@ -115,10 +114,10 @@ class TargetCodeGenerator:
         """
         self.write_code_to_target_file(code)  # 生成されたコードをターゲットファイルに書き込む
 
-        if self.source_hash is not None:  # ソースファイルのハッシュ値が指定されている場合
+        if self.file_info.source_hash is not None:  # ソースファイルのハッシュ値が指定されている場合
             self.append_source_hash_to_target_file()  # - ソースファイルのハッシュ値をターゲットファイルに追記
 
-        if self.target_file_path.endswith(".py"):  # ターゲットファイルがPythonファイルの場合
+        if self.file_info.target_file_path.endswith(".py"):  # ターゲットファイルがPythonファイルの場合
             self.try_execute_generated_code(code)  # - 生成されたコードを実行
         else:  # ターゲットファイルがマークダウンファイルの場合
             return code  # - 生成されたコードを返す
@@ -137,13 +136,13 @@ class TargetCodeGenerator:
         """
         現在のソースファイルを過去のソースファイルとして保存するメソッド
         """
-        shutil.copy(self.source_file_path, self.past_source_file_path)
+        shutil.copy(self.file_info.source_file_path, self.file_info.past_source_file_path)
 
     def read_source_file(self):
         """
         ソースファイルの内容を読み込むメソッド
         """
-        with open(self.source_file_path, encoding="utf-8") as source_file:
+        with open(self.file_info.source_file_path, encoding="utf-8") as source_file:
             source_content = source_file.read()
         return source_content
 
@@ -151,7 +150,7 @@ class TargetCodeGenerator:
         """
         ソースファイルのファイル名（拡張子なし）を取得するメソッド
         """
-        source_file_name = os.path.splitext(os.path.basename(self.source_file_path))[0]
+        source_file_name = os.path.splitext(os.path.basename(self.file_info.source_file_path))[0]
         if source_file_name.startswith("def_"):
             source_file_name = source_file_name[4:]
         return source_file_name
@@ -161,7 +160,7 @@ class TargetCodeGenerator:
         変数の辞書を作成するメソッド
         """
         variables = {
-            "source_file_path": self.source_file_path,
+            "source_file_path": self.file_info.source_file_path,
             "source_file_name": source_file_name,
             "source_content": source_content,
         }
@@ -199,17 +198,17 @@ class TargetCodeGenerator:
         """
         生成されたコードをターゲットファイルに書き込むメソッド
         """
-        os.makedirs(os.path.dirname(self.target_file_path), exist_ok=True)
-        with open(self.target_file_path, "w", encoding="utf-8") as target_file:
+        os.makedirs(os.path.dirname(self.file_info.target_file_path), exist_ok=True)
+        with open(self.file_info.target_file_path, "w", encoding="utf-8") as target_file:
             target_file.write(code)
 
     def append_source_hash_to_target_file(self):
         """
         ソースファイルのハッシュ値をターゲットファイルに追記するメソッド
         """
-        with open(self.target_file_path, "a", encoding="utf-8") as target_file:
-            target_file.write(f"\n# HASH: {self.source_hash}\n")
-        print(f"ターゲットファイルにハッシュ値を埋め込みました: {self.source_hash}")
+        with open(self.file_info.target_file_path, "a", encoding="utf-8") as target_file:
+            target_file.write(f"\n# HASH: {self.file_info.source_hash}\n")
+        print(f"ターゲットファイルにハッシュ値を埋め込みました: {self.file_info.source_hash}")
 
     def try_execute_generated_code(self, code):
         """
@@ -222,7 +221,7 @@ class TargetCodeGenerator:
             except Exception as e:
                 print("Pythonファイルの実行中にエラーが発生しました。")
                 print(f"\033[91mエラーメッセージ: {e!s}\033[0m")
-                print(f"エラーが発生したPythonファイルのパス: \033[33m{self.target_file_path}\033[0m")
+                print(f"エラーが発生したPythonファイルのパス: \033[33m{self.file_info.target_file_path}\033[0m")
 
                 while True:
                     prompt = f"""
@@ -246,7 +245,7 @@ class TargetCodeGenerator:
                         print(f"\033[91m修正後のエラーメッセージ: {e2!s}\033[0m")
                         print(code)
 
-                with open(self.target_file_path, "w", encoding="utf-8") as target_file:
+                with open(self.file_info.target_file_path, "w", encoding="utf-8") as target_file:
                     target_file.write(code)
 
             # except Exception as e:
@@ -297,17 +296,17 @@ class TargetCodeGenerator:
         """
         ターゲットファイルのパスを出力するメソッド
         """
-        print(f"ターゲットファイルのパス: {self.target_file_path}")
+        print(f"ターゲットファイルのパス: {self.file_info.target_file_path}")
 
     def open_target_file_in_vscode(self):
         """
         ターゲットファイルをVS Codeで開くメソッド
         """
-        os.system(f"code {self.target_file_path}")
+        os.system(f"code {self.file_info.target_file_path}")
 
     def run_python_file(self):
         """
         Pythonファイルを実行するメソッド
         """
-        print(f"Pythonファイルを実行します: {self.target_file_path}")
-        subprocess.run(["python", self.target_file_path], check=False)
+        print(f"Pythonファイルを実行します: {self.file_info.target_file_path}")
+        subprocess.run(["python", self.file_info.target_file_path], check=False)
