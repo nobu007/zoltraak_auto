@@ -25,13 +25,18 @@ jobs:                                                                         # 
         uses: actions/setup-python@v2                                         # --- Python環境のセットアップ（v2）
         with:                                                                 # --- オプション
           python-version: ${{ matrix.python-version }}                        # ---- マトリクスで指定したPythonバージョンを使用
-      - name: Install dependencies                                            # -- 依存関係のインストール
+      - name: Install Poetry
+        run: |
+          pip install poetry                                                  # Poetryをインストール
+          poetry config virtualenvs.create false                              # グローバル環境でインストール
+      - name: Install dependencies
+        run: poetry install                                                   # pyproject.tomlに基づいて依存関係をインストール
+      - name: Install Playwright Browsers
+        run: python -m playwright install                                     # Playwrightに必要なブラウザをインストール
+      - name: Install dependencies                                          # -- 依存関係のインストール
         run: |                                                                # --- 以下のコマンドを実行
           python -m pip install --upgrade pip                                 # ---- pipのアップグレード
-          pip install -e .                                                    # ---- 現在のディレクトリを編集可能モードでインストール
-      - name: Run tests                                                       # -- テストの実行
-        run: |                                                                # --- 以下のコマンドを実行
-          pip install pytest                                                  # ---- pytestをインストール
+          pip install -e .                                                    # ---- 現在のディレクトリを編集可能モードでインストール(不要？)
       - name: Run test_sample.py                                              # -- test_sample.pyの実行
         run: |                                                                # --- 以下のコマンドを実行
           pytest tests/test_sample.py                                         # ---- test_sample.pyをpytestで実行
