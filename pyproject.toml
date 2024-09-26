@@ -32,6 +32,7 @@ litellm = "^1.43.4"
 pyperclip = "^1.9.0"
 python = ">=3.9,<3.13"
 python-dotenv = "^1.0.1"
+rich = "^13.8.1"
 
 [tool.poetry.group.lint.dependencies]
 ruff = "^0.1.5"

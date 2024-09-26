@@ -161,11 +161,19 @@ def create_prompt(goal_prompt, compiler_path=None, formatter_path=None, language
 
     if prompt != "" and language is not None:
         if not formatter_path.endswith("_lang.md"):
-            prompt = (
-                formatter[formatter.rindex("## Output Language") :]
-                + "\n- Follow the format defined in the format section. DO NOT output the section itself."
-                + prompt
-            )  # 言語指定の強調前出しでサンドイッチにしてみる。
+            try:
+                start_index = formatter.rindex("## Output Language")
+                prompt = (
+                    formatter[start_index:]
+                    + "\n- Follow the format defined in the format section. DO NOT output the section itself."
+                    + prompt
+                )  # 言語指定の強調前出しでサンドイッチにしてみる。
+            except ValueError:
+                # rindexが取れなかった場合の処理
+                prompt = (
+                    "\n- Follow the format defined in the format section. DO NOT output the section itself." + prompt
+                )
+
         elif re.match("(english|英語|en)", language.lower()):
             prompt = (
                 formatter + prompt

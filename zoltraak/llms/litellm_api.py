@@ -39,31 +39,55 @@ def generate_response(model, prompt, max_tokens, temperature):
     Returns:
         str: 生成された応答テキスト。
     """
+    # エラー時のリトライ定義
     fallbacks_dict = [
-        {"gemini": ["claude"]},
+        {"main": ["gemini_bkup1", "gemini_bkup2"]},
+        {"gemini_bkup1": ["claude_bkup"]},
+        {"gemini_bkup2": ["claude_bkup"]},
     ]
-    model_list = [
+    DEFAULT_MODEL_GEMINI = "gemini/gemini-1.5-flash-latest"
+    DEFAULT_MODEL_CLAUDE = "claude-3-5-sonnet-20240620"
+    default_model_list = [
         {
-            "model_name": "gemini",
+            "model_name": "gemini_bkup1",
             "litellm_params": {
-                "model": model,
+                "model": DEFAULT_MODEL_GEMINI,
                 "api_key": os.getenv("GEMINI_API_KEY"),
             },
         },
         {
-            "model_name": "gemini_bkup",
+            "model_name": "gemini_bkup2",
             "litellm_params": {
-                "model": model,
+                "model": DEFAULT_MODEL_GEMINI,
                 "api_key": os.getenv("GEMINI_API_KEY2"),
             },
         },
         {
-            "model_name": "claude",
+            "model_name": "claude_bkup",
             "litellm_params": {
-                "model": "claude-3-5-sonnet-20240620",
+                "model": DEFAULT_MODEL_CLAUDE,
                 "api_key": os.getenv("ANTHROPIC_API_KEY"),
             },
         },
+    ]
+
+    # modelに応じたapi_keyを準備
+    api_key_env = "GEMINI_API_KEY"
+    if "claude" in model:
+        api_key_env = "ANTHROPIC_API_KEY"
+    if "groq" in model:
+        api_key_env = "GROQ_API_KEY"
+    api_key = os.getenv(api_key_env)
+
+    model_list = [
+        {
+            "model_name": "main",
+            "litellm_params": {
+                "model": model,
+                "api_key": api_key,
+            },
+        },
+        *default_model_list, # 配列を展開して追加
     ]
 
     router = Router(model_list=model_list, fallbacks=fallbacks_dict)

@@ -1,6 +1,7 @@
 import os
 import pprint
 import sys
+import litellm
 
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 sys.path.append(os.path.join(os.path.dirname(__file__), "../zoltraak"))
@@ -12,6 +13,7 @@ import unittest
 
 from zoltraak import settings
 from zoltraak.md_generator import generate_md_from_prompt, generate_response
+from zoltraak.utils.rich_console import MagicInfo
 
 
 class TestzoltraakCommand(unittest.TestCase):  # TestzoltraakCommandクラスを定義し、unittest.TestCaseを継承します。
@@ -247,15 +249,11 @@ class TestCompilerFunctionality(unittest.TestCase):  # クラス名をTestCompil
         指定されたコンパイラパスとプロンプトを使用してテストを実行する
         """
         # generate_md_from_prompt関数を呼び出し、追加の引数を渡す
-        generate_md_from_prompt(
-            goal_prompt=goal_prompt,
-            target_file_path=expected_md_path,
-            developer="litellm",
-            model_name=settings.model_name,
-            compiler_path=f"{setting_dir}/compiler/{compiler_path}",
-            formatter_path=f"{setting_dir}/formatter/None.md",
-            open_file=False,
-        )
+        magic_info = MagicInfo()
+        magic_info.grimoire_compiler = f"{setting_dir}/compiler/{compiler_path}"
+        magic_info.grimoire_formatter = f"{setting_dir}/formatter/None.md"
+        magic_info.file_info.target_file_path = expected_md_path
+        generate_md_from_prompt(magic_info)
 
         expected_md_path = (
             "requirements/" + expected_md_path
@@ -313,7 +311,13 @@ class TestGenerateResponse(unittest.TestCase):
         Groqのモデルを使用してgenerate_response関数をテストする
         """
 
-        groq_models = ["llama3-8b-8192", "llama3-70b-8192", "llama2-70b-4096", "mixtral-8x7b-32768", "gemma-7b-it"]
+        groq_models = [
+            "groq/llama3-8b-8192",
+            "groq/llama3-70b-8192",
+            "groq/llama-3.1-8b-instant",
+            "groq/mixtral-8x7b-32768",
+            "groq/gemma-7b-it",
+        ]
         prompt = "これはテストプロンプトです。"
 
         for model_name in groq_models:
@@ -326,7 +330,7 @@ class TestGenerateResponse(unittest.TestCase):
         """
         サポートされていないデベロッパーを指定した場合のgenerate_response関数のテスト
         """
-        with self.assertRaises(ValueError):
+        with self.assertRaises(litellm.exceptions.BadRequestError):
             generate_response("invalid_developer", "model_name", "prompt")
 
 
