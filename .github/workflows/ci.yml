@@ -77,7 +77,7 @@ jobs:                                                                         # 
       - name: Install dependencies                                            # -- 依存関係のインストール
         run: |                                                                # --- 以下のコマンドを実行
           python -m pip install --upgrade pip                                 # ---- pipのアップグレード
-          pip install -e .                                                    # ---- 現在のディレクトリを編集可能モードでインストール
+          pip install -e .[dev,test,lint]                                     # ---- 現在のディレクトリを編集可能モードでインストール
       - name: Update version and upload to PyPI                               # -- バージョンの更新とPyPIへのアップロード
         env:                                                                  # --- 環境変数の設定
           PYPI_USERNAME: ${{ secrets.PYPI_USERNAME }}                        # ---- PyPIユーザー名（シークレットから取得）

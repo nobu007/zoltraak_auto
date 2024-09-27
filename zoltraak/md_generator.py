@@ -4,13 +4,12 @@ import sys
 import threading
 import time
 
-import pyperclip
 
 import zoltraak
 import zoltraak.llms.litellm_api as litellm
 from zoltraak import settings
 from zoltraak.utils.rich_console import generate_response_with_spinner, MagicInfo
-
+from zoltraak.utils.gui_util import GuiUtil
 
 def generate_md_from_prompt(magic_info: MagicInfo):
     file_info = magic_info.file_info
@@ -262,7 +261,7 @@ def print_generation_result(target_file_path, compiler_path, open_file=True):
             "\033[33m以下のコマンドをコピーして、ターミナルに貼り付けて実行してください。\033[0m"
         )  # 実行方法の説明を黄色で表示
         print(f"\033[36mzoltraak {target_file_path}\033[0m")  # 実行コマンドを水色で表示
-        pyperclip.copy(f"zoltraak {target_file_path}")  # 実行コマンドをクリップボードにコピー
+        GuiUtil.copy_to_clipboard(f"zoltraak {target_file_path}")  # 実行コマンドをクリップボードにコピー
         print(
             "\033[35mコマンドをクリップボードにコピーしました。ターミナルに貼り付けて実行できます。\033[0m"
         )  # コピー完了メッセージを紫色で表示
