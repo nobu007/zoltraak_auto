@@ -125,7 +125,7 @@ class TestCompilerFunctionality(unittest.TestCase):  # クラス名をTestCompil
     各コンパイラの機能をテストするクラス
 
     このクラスでは、以下のコンパイラの機能をテストします:
-    - biz_consult copy.md: ビジネスコンサルティングドキュメントのコピーを生成するコンパイラ
+    - biz_consult_copy.md: ビジネスコンサルティングドキュメントのコピーを生成するコンパイラ
     - biz_consult.md: ビジネスコンサルティングドキュメントを生成するコンパイラ
     - dev_akirapp.md: アプリ開発の手引きを生成するコンパイラ
     - dev_front.md: フロントエンド開発のドキュメントを生成するコンパイラ
@@ -138,9 +138,9 @@ class TestCompilerFunctionality(unittest.TestCase):  # クラス名をTestCompil
 
     def test_biz_consult_copy_compiler(self):
         """
-        biz_consult copy.mdコンパイラの機能をテストする
+        biz_consult_copy.mdコンパイラの機能をテストする
         """
-        compiler_path = "biz_consult2.md"
+        compiler_path = "biz_consult_copy.md"
         goal_prompt = "今月中にビジネスコンサルティングドキュメントを作成する"
         expected_md_path = "def_work_book_1.md"
         self.run_compiler_test(compiler_path, goal_prompt, expected_md_path)
