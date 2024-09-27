@@ -30,13 +30,13 @@ jobs:                                                                         # 
           pip install poetry                                                  # Poetryをインストール
           poetry config virtualenvs.create false                              # グローバル環境でインストール
       - name: Install dependencies
-        run: poetry install                                                   # pyproject.tomlに基づいて依存関係をインストール
-      - name: Install Playwright Browsers
-        run: python -m playwright install                                     # Playwrightに必要なブラウザをインストール
-      - name: Install dependencies                                          # -- 依存関係のインストール
+        run: poetry install                                                   # pyproject.tomlに基づいて依存関係をインストール                                   # Playwrightに必要なブラウザをインストール
+      - name: Install dependencies                                            # -- 依存関係のインストール
         run: |                                                                # --- 以下のコマンドを実行
           python -m pip install --upgrade pip                                 # ---- pipのアップグレード
           pip install -e .                                                    # ---- 現在のディレクトリを編集可能モードでインストール(不要？)
+      - name: Install Playwright Browsers
+        run: python -m playwright install
       - name: Run test_sample.py                                              # -- test_sample.pyの実行
         run: |                                                                # --- 以下のコマンドを実行
           pytest tests/test_sample.py                                         # ---- test_sample.pyをpytestで実行
