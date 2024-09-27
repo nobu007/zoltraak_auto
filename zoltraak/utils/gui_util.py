@@ -5,6 +5,7 @@ import tkinter
 class GuiUtil:
     @staticmethod
     def can_use_gui():
+        root = None
         try:
             # Tkinterのウィンドウを作成
             root = tkinter.Tk()
@@ -14,7 +15,8 @@ class GuiUtil:
             return False
         finally:
             # ウィンドウを破棄
-            root.destroy()
+            if root:
+                root.destroy()
 
     @staticmethod
     def copy_to_clipboard(text: str) -> bool:
