@@ -33,10 +33,9 @@ jobs:                                                                         # 
         run: poetry install --with test,lint                                  # pyproject.tomlに基づいて依存関係をインストール
       - name: Set SPLIT_NUM
         run: echo "SPLIT_NUM=4" >> $GITHUB_ENV                                # pytestを何分割して実行するか(4なら4分割してランダムで1つを実行)
-      - name: Generate random index
-        id: random
+      - name: Generate random index (1 to SPLIT_NUM)
         run: |
-          echo "random_index=$(shuf -i 0-$(($SPLIT_NUM - 1)) -n 1)" >> $GITHUB_ENV
+          echo "random_index=$(shuf -i 1-$(($SPLIT_NUM)) -n 1)" >> $GITHUB_ENV
       - name: Run pytest(test_minimal.py)
         run: |
           poetry run pytest tests/test_minimal.py
