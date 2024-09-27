@@ -202,7 +202,6 @@ def get_custom_compiler_path(custom_compiler):
 def process_text_input(args):
     text = args.input
     md_file_path = generate_md_file_name(text)
-    # print(f"新しい要件定義書 '{md_file_path}' が生成されました。")
     prompt = f"{text}"
 
     if args.custom_compiler:

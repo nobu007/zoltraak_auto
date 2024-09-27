@@ -116,8 +116,8 @@ class TestzoltraakCommand(unittest.TestCase):  # TestzoltraakCommandクラスを
         self.assertEqual(result.returncode, 0)  # resultのリターンコードが0（正常終了）であることを確認します。
         self.assertEqual(result.stderr, "")  # result.stderrが空文字列（エラーメッセージなし）であることを確認します。
         self.assertIn(
-            "新しい要件定義書 'def_", result.stdout
-        )  # 標準出力に"新しい要件定義書 'def_"という文字列が含まれていることを確認します。
+            "検索結果生成中: def_", result.stdout
+        )  # 標準出力に指定の文字列が含まれていることを確認します。
 
 
 class TestCompilerFunctionality(unittest.TestCase):  # クラス名をTestCompilerFunctionalityに変更
