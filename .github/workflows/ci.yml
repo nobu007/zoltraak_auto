@@ -18,7 +18,7 @@ jobs:                                                                         # 
     environment: dev
     strategy:
       matrix:
-        python-version: ["3.10", "3.11"]                                      # 複数のPythonバージョン（3.7〜3.11）でテストを実行
+        python-version: ["3.10", "3.11"]                                      # 複数のPythonバージョンでテストを実行
     steps:                                                                    # - ステップの定義
       - uses: actions/checkout@v2                                             # -- リポジトリのチェックアウト（v2）
       - name: Set up Python ${{ matrix.python-version }}                      # -- 指定したバージョンのPythonをセットアップ
@@ -30,27 +30,22 @@ jobs:                                                                         # 
           pip install poetry                                                  # Poetryをインストール
           poetry config virtualenvs.create false                              # グローバル環境でインストール
       - name: Install dependencies
-        run: poetry install                                                   # pyproject.tomlに基づいて依存関係をインストール                                   # Playwrightに必要なブラウザをインストール
-      - name: Install dependencies                                            # -- 依存関係のインストール
-        run: |                                                                # --- 以下のコマンドを実行
-          python -m pip install --upgrade pip                                 # ---- pipのアップグレード
-          pip install -e .                                                    # ---- 現在のディレクトリを編集可能モードでインストール(不要？)
-      - name: Install Playwright Browsers
-        run: python -m playwright install
-      - name: Run test_sample.py                                              # -- test_sample.pyの実行
-        run: |                                                                # --- 以下のコマンドを実行
-          pytest tests/test_sample.py                                         # ---- test_sample.pyをpytestで実行
-      - name: Run test_llms.py                                                # -- test_llms.pyの実行
+        run: poetry install --with test,lint                                  # pyproject.tomlに基づいて依存関係をインストール
+      - name: Set SPLIT_NUM
+        run: echo "SPLIT_NUM=4" >> $GITHUB_ENV                                # pytestを何分割して実行するか(4なら4分割してランダムで1つを実行)
+      - name: Generate random index
+        id: random
+        run: |
+          echo "random_index=$(shuf -i 0-$(($SPLIT_NUM - 1)) -n 1)" >> $GITHUB_ENV
+      - name: Run pytest                                                      # pytestの実行
+        run: |
+          # ランダムな数が0の場合にテストを実行
+          echo "random_index=$random_index"
+          poetry run pytest --splits $SPLIT_NUM --group $random_index --durations-path=.test_durations
         env:                                                                  # --- 環境変数の設定
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}                 # ---- AnthropicのAPIキー（シークレットから取得）
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}                       # ---- GeminiのAPIキー（シークレットから取得）
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}                           # ---- GroqのAPIキー（シークレットから取得）
-        run: |                                                                # --- 以下のコマンドを実行
-          pytest tests/test_llms.py -s                                        # ---- test_llms.pyをpytestで実行
-      - name: Run test_minimal.py                                             # -- test_minimal.pyの実行
-        run: |                                                                # --- 以下のコマンドを実行
-          pytest tests/test_minimal.py -s                                     # ---- test_minimal.pyをpytestで実行し、print内容を出力
-
 
       # - name: Run test_sample.py                                              # -- test_sample.pyの実行
       #   if: matrix.python-version == '3.11'                                   # --- Python 3.11の場合のみ実行
