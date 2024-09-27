@@ -37,9 +37,12 @@ jobs:                                                                         # 
         id: random
         run: |
           echo "random_index=$(shuf -i 0-$(($SPLIT_NUM - 1)) -n 1)" >> $GITHUB_ENV
-      - name: Run pytest                                                      # pytestの実行
+      - name: Run pytest(test_minimal.py)
         run: |
-          # ランダムな数が0の場合にテストを実行
+          poetry run pytest tests/test_minimal.py
+      - name: Run pytest(random)
+        run: |
+          # pytest全体からランダムで選択したテストを実行
           echo "random_index=$random_index"
           poetry run pytest --splits $SPLIT_NUM --group $random_index --durations-path=.test_durations
         env:                                                                  # --- 環境変数の設定
