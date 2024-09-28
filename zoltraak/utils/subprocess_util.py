@@ -4,6 +4,8 @@ from typing import Any
 
 
 class SubprocessUtil:
+    CompletedProcess = subprocess.CompletedProcess
+
     @staticmethod
     def quote(s: str | list[str]) -> str | list[str]:
         """
