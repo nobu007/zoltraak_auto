@@ -85,6 +85,20 @@ def display_magic_info_post(magic_info: MagicInfo):
     console.print(Panel(table, title="魔法術式情報(完了)", border_style="green"))
 
 
+def display_magic_info_full(magic_info: MagicInfo):
+    """
+    実行した魔法術式の情報を整形して表示します。
+    """
+    table = Table(title="MagicInfoFull", title_style="bold")
+    table.add_column("項目", style="cyan", no_wrap=True)
+    table.add_column("内容", style="magenta")
+
+    for key, value in magic_info.model_dump().items():
+        table.add_row(key, str(value))
+
+    console.print(Panel(table, title="魔法術式情報(詳細)", border_style="white"))
+
+
 def generate_response_with_spinner(
     magic_info: MagicInfo,
 ):

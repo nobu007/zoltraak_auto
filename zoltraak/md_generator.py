@@ -4,8 +4,8 @@ import sys
 import threading
 import time
 
-import zoltraak
 import zoltraak.llms.litellm_api as litellm
+from zoltraak import settings
 from zoltraak.utils.gui_util import GuiUtil
 from zoltraak.utils.rich_console import MagicInfo, generate_response_with_spinner
 
@@ -15,8 +15,8 @@ def generate_md_from_prompt(magic_info: MagicInfo):
     """
     promptから要件定義書（マークダウンファイル）を生成する関数
     """
-    compiler_path = magic_info.grimoire_compiler
-    formatter_path = magic_info.grimoire_formatter
+    compiler_path = magic_info.get_compiler_path()
+    formatter_path = magic_info.get_formatter_path()
     language = magic_info.language
 
     # プロンプトコンパイラとプロンプトフォーマッタを変数として受け取る
@@ -129,14 +129,13 @@ def create_prompt(goal_prompt, compiler_path=None, formatter_path=None, language
 
     if compiler_path is None:
         # 検索関数の起動
-        zoltraak_dir = os.path.dirname(zoltraak.__file__)
-        compiler_folder = f"{zoltraak_dir}/grimoires/compiler"
-        compiler_files = [file for file in os.listdir(compiler_folder) if file.endswith(".md")]
+        compiler_dir = settings.compiler_dir
+        compiler_files = [file for file in os.listdir(compiler_dir) if file.endswith(".md")]
 
         prompt = "以下のファイルから、goal_promptに最も適したものを選んでください。\n\n"
 
         for file in compiler_files:
-            file_path = os.path.join(compiler_folder, file)
+            file_path = os.path.join(compiler_dir, file)
             with open(file_path, encoding="utf-8") as f:
                 content = f.read().split("\n")[:3]
             prompt += f"## {file}\n```\n{' '.join(content)}\n```\n\n"
@@ -154,6 +153,7 @@ def create_prompt(goal_prompt, compiler_path=None, formatter_path=None, language
         prompt = prompt + formatter  # - プロンプトにフォーマッタを追加
     else:  # プロンプトファイルが存在しない場合
         print(f"プロンプトファイル {compiler_path} が見つかりません。")  # - エラーメッセージを表示
+        os.system("pwd")
         prompt = ""
 
     if prompt != "" and language is not None:
