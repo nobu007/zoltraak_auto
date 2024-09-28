@@ -1,23 +1,45 @@
 import os
-import subprocess
 
 import zoltraak.llms.litellm_api as litellm
 from zoltraak import settings
-from zoltraak.md_generator import generate_md_from_prompt
-from zoltraak.schema.schema import MagicInfo, MagicMode
+from zoltraak.gen_markdown import generate_md_from_prompt
+from zoltraak.schema.schema import MagicInfo, MagicLayer, MagicMode
 from zoltraak.utils.file_util import FileUtil
-from zoltraak.utils.log_util import log_inout
+from zoltraak.utils.log_util import log, log_inout
 from zoltraak.utils.rich_console import display_magic_info_full
 
 
 class MarkdownToMarkdownConverter:
-    """マークダウンを更新するコンバーター"""
+    """マークダウンを更新するコンバーター
+    前提：
+      MagicInfoにモードとレイヤーが展開済み
+        MagicMode
+        MagicLayer
+      MagicInfo.FileInfoに入出力ファイルが展開済み
+        pre_md_file_path
+        md_file_path
+        py_file_path
+
+    MagicLayer によってsourceとtargetファイルが変化する
+    どのレイヤーでもsourceのマークダウンにはtargetへの要求が書かれている。
+    この処理はsourceの要求をtargetのマークダウンに反映することである。
+
+    <LAYER_1>
+      source => None
+      target => pre_md_file_path
+    <LAYER_2>
+      source => pre_md_file_path
+      target => md_file_path
+    <LAYER_3(not active)>
+      source => md_file_path
+      target => py_file_path
+    """
 
     def __init__(self, magic_info: MagicInfo):
         self.magic_info = magic_info
 
     @log_inout
-    def convert(self):
+    def convert(self) -> str:
         """prompt + ユーザ要求記述書(pre_md_file) => 要件定義書(md_file)"""
 
         # step1: ファイル情報を更新
@@ -27,64 +49,88 @@ class MarkdownToMarkdownConverter:
         file_info.update_source_target_past("past_pre_md_files", "past_md_files")
         file_info.update_hash()
 
-        # step2: ユーザ要求記述書を作成
+        # step2: ユーザ要求記述書を作成(TODO: 実際に変換する？)
+        if self.magic_info.magic_layer is MagicLayer.LAYER_1_REQUEST_GEN:
+            file_info.source_file_path = file_info.pre_md_file_path
+            file_info.target_file_path = file_info.pre_md_file_path
 
-        # step3: 要件定義書を作成
+        # step3: 要件定義書を作成(TODO: 実際に変換する？)
+        if self.magic_info.magic_layer is MagicLayer.LAYER_2_REQUIREMENT_GEN:
+            file_info.source_file_path = file_info.pre_md_file_path
+            file_info.target_file_path = file_info.md_file_path
+        file_info.update()
 
+        # step4: 変換処理
+        self.convert_one()
+
+    @log_inout
+    def convert_one(self) -> str:
+        """生成処理を１回実行する"""
+        file_info = self.magic_info.file_info
+        self.update_grimoire_and_prompt()
+
+        # ソースファイルの有無による分岐
         if os.path.exists(file_info.source_file_path):  # -- マークダウンファイルが存在する場合
-            print(
-                f"ユーザ要求記述書は既存のファイル {file_info.source_file_path}です。{self.magic_info.magic_mode}で変更を提案します。"
-            )
-            if self.magic_info.magic_mode is MagicMode.GRIMOIRE_MODE:
-                prompt = FileUtil.read_file(self.magic_info.get_compiler_path())
-                if self.magic_info.prompt:
-                    prompt += "\n\n<<追加指示>>\n"
-                    prompt += self.magic_info.prompt
+            log(f"既存のソースファイル {file_info.source_file_path} が存在しました。")
+            self.magic_info.prompt += "\n\n<<追加指示>>\n"
+            self.magic_info.prompt += FileUtil.read_file(file_info.source_file_path)
 
-            self.propose_target_diff(
-                file_info.target_file_path, self.magic_info.prompt
-            )  # --- プロンプトに従ってターゲットファイルの差分を提案
-            return  # --- 関数を終了
-        print(f"ユーザ要求記述書 {file_info.source_file_path}を新規作成します。")
-        prompt = self.magic_info.prompt
-
-        if os.path.exists(file_info.source_file_path):  # ソースファイルが存在する場合
-            file_info.source_hash = self.calculate_file_hash(
-                file_info.source_file_path
-            )  # - ソースファイルのハッシュ値を計算
-        os.makedirs(file_info.past_source_folder, exist_ok=True)  # - 過去のソースフォルダを作成（既存の場合はスキップ）
-        file_info.past_source_file_path = os.path.join(
-            file_info.past_source_folder, os.path.basename(file_info.source_file_path)
-        )  # - 過去のソースファイルパスを設定
-
+        # ソースファイルまでプロンプトに反映できた時点でデバッグ表示
         display_magic_info_full(self.magic_info)
+
+        # ターゲットファイルの有無による分岐
         if os.path.exists(file_info.target_file_path):  # ターゲットファイルが存在する場合
-            self.handle_existing_target_file()  # - 既存のターゲットファイルを処理
-        else:  # ターゲットファイルが存在しない場合
-            self.handle_new_target_file()  # - 新しいターゲットファイルを処理
+            return self.handle_existing_target_file()  # - 既存のターゲットファイルを処理
+        # ターゲットファイルが存在しない場合
+        return self.handle_new_target_file()  # - 新しいターゲットファイルを処理
+
+    @log_inout
+    def update_grimoire_and_prompt(self):
+        # モードによる分岐
+        log(f"{self.magic_info.magic_mode}で変更を提案します。")
+        if self.magic_info.magic_mode is MagicMode.GRIMOIRE_ONLY:
+            # グリモアのみ
+            if not os.path.isfile(self.magic_info.get_compiler_path()):
+                log("コンパイラが存在しないため、一般的なプロンプトを使用します。")
+                self.magic_info.grimoire_compiler = "general_prompt.md"
+            self.magic_info.prompt = ""
+        elif self.magic_info.magic_mode is MagicMode.GRIMOIRE_AND_PROMPT:
+            # グリモアまたはプロンプトどちらか
+            if not os.path.isfile(self.magic_info.get_compiler_path()):
+                self.magic_info.grimoire_compiler = ""
+                if not self.magic_info.prompt:
+                    log("コンパイラもプロンプトも未設定のため、一般的なプロンプトを使用します。")
+                    self.magic_info.prompt = FileUtil.read_grimoire("general_prompt.md")
+        elif self.magic_info.magic_mode is MagicMode.PROMPT_ONLY:
+            # プロンプトのみ
+            self.magic_info.grimoire_compiler = ""
+            if not self.magic_info.prompt:
+                log("プロンプトが未設定のため、一般的なプロンプトを使用します。")
+                self.magic_info.prompt = FileUtil.read_grimoire("general_prompt.md")
+        else:
+            # SEARCH_GRIMOIRE(ノーケア、別のところで処理すること！)
+            log("(SEARCH_GRIMOIRE)一般的なプロンプトを使用します。")
+            if not os.path.isfile(self.magic_info.get_compiler_path()):
+                self.magic_info.grimoire_compiler = ""
+                self.magic_info.prompt = FileUtil.read_grimoire("general_prompt.md")
 
     @log_inout
     def handle_existing_target_file(self) -> str:
         file_info = self.magic_info.file_info
-        with open(file_info.target_file_path, encoding="utf-8") as target_file:
-            lines = target_file.readlines()
-            if len(lines) > 0 and lines[-1].startswith("# HASH: "):
-                embedded_hash = lines[-1].split("# HASH: ")[1].strip()
-                if file_info.source_hash == embedded_hash:
-                    if self.magic_info.prompt is None:
-                        subprocess.run(["python", file_info.target_file_path], check=False)
-                    else:
-                        with open(file_info.target_file_path, encoding="utf-8") as md_file:
-                            return md_file.read()
-                else:
-                    print(f"{file_info.source_file_path}の変更を検知しました。")
-                    print("ソースファイルの差分:")
-                    if os.path.exists(file_info.past_source_file_path):
-                        self.display_source_diff()
-        return ""
+        is_source_changed = True  # TODO: hash check
+        if is_source_changed:
+            print(f"{file_info.source_file_path}の変更を検知しました。")
+            if os.path.exists(file_info.past_source_file_path):
+                self.update_target_file_from_source_diff()
+            else:
+                self.update_target_file_propose_and_apply(file_info.target_file_path, self.magic_info.prompt)
+        else:
+            # ソースファイルが変わってない場合は再処理する
+            self.update_target_file_propose_and_apply(file_info.target_file_path, self.magic_info.prompt)
+        return file_info.target_file_path
 
     @log_inout
-    def display_source_diff(self):
+    def update_target_file_from_source_diff(self) -> str:
         file_info = self.magic_info.file_info
         import difflib
 
@@ -95,25 +141,16 @@ class MarkdownToMarkdownConverter:
 
         source_diff = difflib.unified_diff(old_source_lines, new_source_lines, lineterm="", n=0)
         source_diff_text = "".join(source_diff)
-        print(source_diff_text)
+        log(f"source_diff_text={source_diff_text}")
 
-        self.propose_target_diff(file_info.target_file_path, self.magic_info.prompt)
-        print(f"ターゲットファイル: {file_info.target_file_path}")
-        # input("修正が完了したらEnterキーを押してください。")
+        self.magic_info.prompt += "\n\n<<(注意)重要な変化点(注意)>>\n"
+        self.magic_info.prompt += source_diff_text
 
-    @log_inout
-    def handle_new_target_file(self):
-        file_info = self.magic_info.file_info
-        print(f"""
-{file_info.target_file_path}は新しいファイルです。少々お時間をいただきます。
-{file_info.source_file_path} -> {file_info.target_file_path}
-                  """)
+        return self.update_target_file_propose_and_apply(file_info.target_file_path, self.magic_info.prompt)
 
-        generate_md_from_prompt(self.magic_info)
-
-    def propose_target_diff(self, target_file_path, prompt=None):
+    def update_target_file_propose_and_apply(self, target_file_path, prompt=None) -> str:
         """
-        ターゲットファイルの変更差分を提案する関数
+        ターゲットファイルの変更差分を提案して適用する関数
 
         Args:
             target_file_path (str): 現在のターゲットファイルのパス
@@ -129,7 +166,7 @@ promptの内容:
 {prompt}
 をもとに、
 """
-        prompt = f"""
+        final_prompt = f"""
 現在のターゲットファイルの内容:
 {current_target_code}
 
@@ -150,7 +187,7 @@ promptの内容:
         """
         response = litellm.generate_response(
             model=settings.model_name_lite,
-            prompt=prompt,
+            prompt=final_prompt,
             max_tokens=1000,
             temperature=0.0,
         )
@@ -186,8 +223,10 @@ promptの内容:
             # choice = input("選択してください (1, 2, 3): ")
             choice = "1"
 
+        return target_file_path
+
     @log_inout
-    def apply_diff_to_target_file(self, target_file_path, target_diff):
+    def apply_diff_to_target_file(self, target_file_path, target_diff) -> str:
         """
         提案された差分をターゲットファイルに適用する関数
 
@@ -222,9 +261,28 @@ promptの内容:
         FileUtil.write_file(target_file_path, modified_content)
 
         print(f"{target_file_path}に修正を適用しました。")
+        return target_file_path
+
+    @log_inout
+    def handle_new_target_file(self):
+        file_info = self.magic_info.file_info
+        print(f"""
+{file_info.target_file_path}は新しいファイルです。少々お時間をいただきます。
+{file_info.source_file_path} -> {file_info.target_file_path}
+                  """)
+
+        return generate_md_from_prompt(self.magic_info)
 
 
 if __name__ == "__main__":  # このスクリプトが直接実行された場合にのみ、以下のコードを実行します。
     magic_info_ = MagicInfo()
+
+    # レイヤ１
+    magic_info_.magic_layer = MagicLayer.LAYER_1_REQUEST_GEN
+    converter = MarkdownToMarkdownConverter(magic_info_)
+    converter.convert()
+
+    # レイヤ２
+    magic_info_.magic_layer = MagicLayer.LAYER_2_REQUIREMENT_GEN
     converter = MarkdownToMarkdownConverter(magic_info_)
     converter.convert()

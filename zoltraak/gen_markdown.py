@@ -6,11 +6,17 @@ from zoltraak.utils.log_util import log
 from zoltraak.utils.rich_console import MagicInfo, generate_response_with_spinner
 
 
-def generate_md_from_prompt(magic_info: MagicInfo):
+def generate_md_from_prompt(magic_info: MagicInfo) -> str:
     file_info = magic_info.file_info
     """
     promptから任意のマークダウンファイルを生成する関数
     利用するグリモアはMagicInfoに展開済みの前提
+
+    設計：
+        利用するグリモアとプロンプトは上位処理で設定済みなので、
+        ここではプロンプトを作成し、それを利用してマークダウンファイルを生成する。
+        プロンプトにはsourceとtargetのファイルコンテンツ情報も反映済みである。
+
     """
     compiler_path = magic_info.get_compiler_path()
     formatter_path = magic_info.get_formatter_path()
@@ -21,6 +27,7 @@ def generate_md_from_prompt(magic_info: MagicInfo):
     response = generate_response_with_spinner(magic_info)
     md_content = response.strip()  # 生成された要件定義書の内容を取得し、前後の空白を削除
     save_md_content(md_content, file_info.target_file_path)  # 生成された要件定義書の内容をファイルに保存
+    return file_info.target_file_path
 
 
 def create_prompt(goal_prompt: str, compiler_path: str, formatter_path: str, language: str):
@@ -31,9 +38,10 @@ def create_prompt(goal_prompt: str, compiler_path: str, formatter_path: str, lan
         str: 作成されたプロンプト
     """
 
-    prompt = ""
-    if os.path.exists(compiler_path):
-        prompt += FileUtil.read_grimoire(compiler_path, goal_prompt, language)
+    prompt = goal_prompt
+    if os.path.isfile(compiler_path):
+        # コンパイラが存在する場合、コンパイラベースでプロンプトを取得
+        prompt = FileUtil.read_grimoire(compiler_path, goal_prompt, language)
         prompt += "\n\n"
     if os.path.exists(formatter_path):
         prompt = modify_prompt(prompt, formatter_path, language)

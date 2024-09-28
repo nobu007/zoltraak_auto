@@ -8,10 +8,16 @@ from zoltraak import settings
 
 
 class MagicMode(Enum):
-    GRIMOIRE_MODE = "grimoire_mode"  # プロンプト指定なしでグリモアのみ指定して実行
-    PROMPT_MODE = "prompt_mode"  # グリモア＋プロンプト
-    PROMPT_ONLY_MODE = "prompt_only_mode"  # プロンプト（グリモアなし）
-    SEARCH_GRIMOIRE_MODE = "search_grimoire_mode"  # 最適なグリモアを検索
+    GRIMOIRE_ONLY = "grimoire_only"  # プロンプト指定なしでグリモアのみ指定
+    GRIMOIRE_AND_PROMPT = "grimoire_and_prompt"  # グリモア＋プロンプト
+    PROMPT_ONLY = "prompt_only"  # プロンプト（グリモアなし）
+    SEARCH_GRIMOIRE = "search_grimoire"  # 最適なグリモアを検索
+
+
+class MagicLayer(Enum):
+    LAYER_1_REQUEST_GEN = "layer_1_request_gen"  # レイヤ１： 生のprompt => ユーザ要求記述書
+    LAYER_2_REQUIREMENT_GEN = "layer_2_requirement_gen"  # レイヤ２： ユーザ要求記述書 => 要件定義書
+    LAYER_3_CODE_GEN = "layer_3_code_gen"  # レイヤ３： 要件定義書 => コード
 
 
 DEFAULT_COMPILER = "general_prompt.md"
@@ -108,10 +114,15 @@ class FileInfo(BaseModel):
 
 class MagicInfo(BaseModel):
     # コア情報
-    magic_mode: str = Field(default=MagicMode.GRIMOIRE_MODE, description="実行モード")
+    magic_mode: MagicMode = Field(default=MagicMode.PROMPT_ONLY, description="実行モード")
+    magic_layer: MagicLayer = Field(default=MagicLayer.LAYER_1_REQUEST_GEN, description="実行モード")
     model_name: str = Field(default=settings.model_name, description="使用するLLMモデルの名前")
     prompt: str = Field(
-        default="zoltraakシステムのARCHITECTURE.mdを更新してください。", description="使用するグリモアのプロンプト"
+        default="""
+        zoltraakシステムは曖昧なユーザー入力を、ユーザ要求記述書 => 要件定義書 => Pythonコードと段階的に詳細化します。
+        このシステムの情報を提供しますので作業指示に従ってください。
+        """,
+        description="使用するグリモアのプロンプト",
     )
 
     # grimoire関連
@@ -121,12 +132,14 @@ class MagicInfo(BaseModel):
     description: str = Field(
         default="汎用魔法式を展開します", description="現在実行中の説明(generate_xx関数の先頭で設定)"
     )
-    grimoire_compiler: str = Field(default=DEFAULT_COMPILER, description="使用するグリモアコンパイラのファイル名")
+    grimoire_compiler: str = Field(
+        default=DEFAULT_COMPILER, description="使用するグリモアコンパイラのファイル名(未使用なら空文字)"
+    )
     grimoire_architect: str = Field(
-        default="architect_claude.md", description="使用するグリモアアーキテクトのファイル名"
+        default="architect_claude.md", description="使用するグリモアアーキテクトのファイル名(未使用なら空文字)"
     )
     grimoire_formatter: str = Field(
-        default="md_comment.md", description="使用するグリモアフォーマッタのファイル名(=language)"
+        default="md_comment.md", description="使用するグリモアフォーマッタのファイル名(未使用なら空文字)"
     )
 
     # file関連
