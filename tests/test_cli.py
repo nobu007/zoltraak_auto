@@ -7,13 +7,13 @@ sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 sys.path.append(os.path.join(os.path.dirname(__file__), "../zoltraak"))
 print("===============================")
 
-import subprocess
 import unittest
 
 import pytest
 
 from zoltraak.md_generator import generate_md_from_prompt, generate_response
 from zoltraak.utils.rich_console import MagicInfo
+from zoltraak.utils.subprocess_util import SubprocessUtil
 
 
 class TestzoltraakCommand(unittest.TestCase):  # TestzoltraakCommandクラスを定義し、unittest.TestCaseを継承します。
@@ -36,35 +36,35 @@ class TestzoltraakCommand(unittest.TestCase):  # TestzoltraakCommandクラスを
     #     - `zoltraak --version` : バージョン情報を表示
     #     """
     #     # mdファイルの引数を指定したテスト
-    #     result = subprocess.run(['zoltraak', 'sample.md'], capture_output=True, text=True)
+    #     result = SubprocessUtil.run(['zoltraak', 'sample.md'], capture_output=True, text=True)
     #     self.assertEqual(result.returncode, 0)
     #     self.assertIn("sample.md", result.stdout)
 
     #     # -pオプションでプロンプトを指定したテスト
-    #     result = subprocess.run(['zoltraak', 'sample.md', '-p', 'サンプルプロンプト'], capture_output=True, text=True)
+    #     result = SubprocessUtil.run(['zoltraak', 'sample.md', '-p', 'サンプルプロンプト'], capture_output=True, text=True)
     #     self.assertEqual(result.returncode, 0)
     #     self.assertIn("sample.md", result.stdout)
     #     self.assertIn("サンプルプロンプト", result.stdout)
 
     #     # -cオプションでコンパイラを指定したテスト
-    #     result = subprocess.run(['zoltraak', 'sample.md', '-c', 'compiler.md'], capture_output=True, text=True)
+    #     result = SubprocessUtil.run(['zoltraak', 'sample.md', '-c', 'compiler.md'], capture_output=True, text=True)
     #     self.assertEqual(result.returncode, 0)
     #     self.assertIn("sample.md", result.stdout)
     #     self.assertIn("compiler.md", result.stdout)
 
     #     # -fオプションでフォーマッタを指定したテスト
-    #     result = subprocess.run(['zoltraak', 'sample.md', '-f', 'formatter.md'], capture_output=True, text=True)
+    #     result = SubprocessUtil.run(['zoltraak', 'sample.md', '-f', 'formatter.md'], capture_output=True, text=True)
     #     self.assertEqual(result.returncode, 0)
     #     self.assertIn("sample.md", result.stdout)
     #     self.assertIn("formatter.md", result.stdout)
 
     #     # --helpオプションを指定したテスト
-    #     result = subprocess.run(['zoltraak', '--help'], capture_output=True, text=True)
+    #     result = SubprocessUtil.run(['zoltraak', '--help'], capture_output=True, text=True)
     #     self.assertEqual(result.returncode, 0)
     #     self.assertIn("使用方法:", result.stdout)
 
     #     # --versionオプションを指定したテスト
-    #     result = subprocess.run(['zoltraak', '--version'], capture_output=True, text=True)
+    #     result = SubprocessUtil.run(['zoltraak', '--version'], capture_output=True, text=True)
     #     self.assertEqual(result.returncode, 0)
     #     self.assertIn("zoltraak version", result.stdout)
     def test_missing_md_file_argument(self):  # mdファイルの引数がない場合のテストメソッドを定義します.
@@ -72,7 +72,7 @@ class TestzoltraakCommand(unittest.TestCase):  # TestzoltraakCommandクラスを
         zoltraakコマンドをmdファイルの引数なしで実行した場合、正しいエラーメッセージが表示されることを確認します。
         実行例: `zoltraak` コマンドを引数なしで実行した場合、"エラー: 入力ファイルまたはテキストが指定されていません。"というエラーメッセージが表示されるべきです。
         """
-        result = subprocess.run(
+        result = SubprocessUtil.run(
             ["zoltraak"], capture_output=True, text=True, check=False
         )  # zoltraakコマンドを引数なしで実行し、その結果をresultに格納します。
         print("STDOUT:", result.stdout)  # 標準出力の内容を出力
@@ -89,7 +89,7 @@ class TestzoltraakCommand(unittest.TestCase):  # TestzoltraakCommandクラスを
         with open("test_file.md", "w") as f:
             f.write("# Test File\n\nThis is a test file.")
 
-        result = subprocess.run(
+        result = SubprocessUtil.run(
             ["zoltraak", "test_file.md", "-p", "足し算のプログラムを書きたい"],
             capture_output=True,
             text=True,
@@ -107,7 +107,7 @@ class TestzoltraakCommand(unittest.TestCase):  # TestzoltraakCommandクラスを
         zoltraakコマンドにテキスト入力を与えた場合のテストメソッドを定義します。
         実行例: `zoltraak "お腹減った"` コマンドを実行した場合、エラーが発生せずに正常に終了するはずです。
         """
-        result = subprocess.run(
+        result = SubprocessUtil.run(
             ["zoltraak", "お腹減った"], capture_output=True, text=True, check=False
         )  # zoltraakコマンドにテキスト入力を与えて実行し、その結果をresultに格納します。
         print("STDOUT:", result.stdout)  # 標準出力の内容を出力

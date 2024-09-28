@@ -1,4 +1,3 @@
-import subprocess
 from collections.abc import Callable
 from typing import Any
 
@@ -9,6 +8,7 @@ from rich.table import Table
 
 import zoltraak.llms.litellm_api as litellm
 from zoltraak import settings
+from zoltraak.utils.subprocess_util import SubprocessUtil
 
 console = Console()
 
@@ -63,19 +63,19 @@ class MagicInfo(BaseModel):
 
 def run_command_with_spinner(
     magic_info: MagicInfo, command: list[str], check: bool = False
-) -> subprocess.CompletedProcess:
+) -> SubprocessUtil.CompletedProcess:
     """
     指定されたコマンドを実行し、その間スピナーを表示します。
     """
     with console.status(f"[bold green]{magic_info.description}"):
         try:
-            result = subprocess.run(command, shell=False, check=check, capture_output=True, text=True)
+            result = SubprocessUtil.run(command, shell=False, check=check, capture_output=True, text=True)
             if result.returncode == 0:
                 console.print(Panel(magic_info.success_message, style="green"))
             else:
                 console.print(Panel(f"{magic_info.error_message}\n{result.stderr}", style="red"))
             return result  # noqa: TRY300
-        except subprocess.CalledProcessError as e:
+        except SubprocessUtil.CalledProcessError as e:
             console.print(Panel(f"{magic_info.error_message}\n{e}", style="red"))
             raise
     return None
