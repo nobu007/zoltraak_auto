@@ -11,6 +11,7 @@ from zoltraak import settings
 from zoltraak.utils.rich_console import generate_response_with_spinner, MagicInfo
 from zoltraak.utils.gui_util import GuiUtil
 
+
 def generate_md_from_prompt(magic_info: MagicInfo):
     file_info = magic_info.file_info
     """

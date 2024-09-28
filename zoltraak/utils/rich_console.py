@@ -59,7 +59,6 @@ class MagicInfo(BaseModel):
     language: str = Field(default="", description="汎用言語指定(現状ではgrimoire_formatterに影響)")
 
 
-
 def run_command_with_spinner(
     magic_info: MagicInfo, command: List[str], check: bool = False
 ) -> subprocess.CompletedProcess:

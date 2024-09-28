@@ -87,7 +87,7 @@ def generate_response(model, prompt, max_tokens, temperature):
                 "api_key": api_key,
             },
         },
-        *default_model_list, # 配列を展開して追加
+        *default_model_list,  # 配列を展開して追加
     ]
 
     router = Router(model_list=model_list, fallbacks=fallbacks_dict)
