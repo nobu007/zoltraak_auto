@@ -11,7 +11,7 @@ from zoltraak.utils.rich_console import display_magic_info_full
 
 class MarkdownToMarkdownConverter:
     """マークダウンを更新するコンバーター
-    前提：
+    前提:
       MagicInfoにモードとレイヤーが展開済み
         MagicMode
         MagicLayer
@@ -48,7 +48,7 @@ class MarkdownToMarkdownConverter:
 
         # step2: ユーザ要求記述書を作成(TODO: ここで実際に変換すると一気に要件定義書まで作れる)
         if self.magic_info.magic_layer is MagicLayer.LAYER_1_REQUEST_GEN:
-            file_info.update_source_target("", file_info.pre_md_file_path_abs)
+            file_info.update_source_target(file_info.prompt_file_path_abs, file_info.pre_md_file_path_abs)
             file_info.update_hash()
 
         # step3: 要件定義書を作成(TODO: ここで実際に変換すると一気に要件定義書まで作れる)
@@ -57,7 +57,13 @@ class MarkdownToMarkdownConverter:
             file_info.update_hash()
 
         # step4: 変換処理
-        return self.convert_one()
+        new_file_path = self.convert_one()
+        new_file_path_abs = os.path.abspath(new_file_path)
+        target_file_path_abs = os.path.abspath(file_info.target_file_path)
+        if new_file_path_abs != target_file_path_abs:
+            # copy to file_info.target_file_path
+            return FileUtil.copy_file(new_file_path, target_file_path_abs)
+        return target_file_path_abs
 
     @log_inout
     def convert_one(self) -> str:
@@ -70,6 +76,9 @@ class MarkdownToMarkdownConverter:
             log(f"既存のソースファイル {file_info.source_file_path} が存在しました。")
             self.magic_info.prompt += "\n\n<<追加指示>>\n"
             self.magic_info.prompt += FileUtil.read_file(file_info.source_file_path)
+        else:
+            # 次回に備えてソースファイルを保存
+            FileUtil.write_file(file_info.source_file_path, self.magic_info.prompt)
 
         # ソースファイルまでプロンプトに反映できた時点でデバッグ表示
         display_magic_info_full(self.magic_info)
@@ -118,11 +127,9 @@ class MarkdownToMarkdownConverter:
             print(f"{file_info.source_file_path}の変更を検知しました。")
             if os.path.exists(file_info.past_source_file_path):
                 return self.update_target_file_from_source_diff()
-            else:
-                return self.update_target_file_propose_and_apply(file_info.target_file_path, self.magic_info.prompt)
-        else:
-            # ソースファイルが変わってない場合は再処理する
             return self.update_target_file_propose_and_apply(file_info.target_file_path, self.magic_info.prompt)
+        # ソースファイルが変わってない場合は再処理する
+        return self.update_target_file_propose_and_apply(file_info.target_file_path, self.magic_info.prompt)
 
     @log_inout
     def update_target_file_from_source_diff(self) -> str:
@@ -191,7 +198,7 @@ promptの内容:
         print(target_diff)
 
         # ユーザーに適用方法を尋ねる
-        print("差分をどのように適用しますか？")
+        print("差分をどのように適用しますか?")
         print("1. AIで適用する")
         # print("2. 自分で行う")
         # print("3. 何もせず閉じる")
@@ -240,7 +247,7 @@ promptの内容:
 提案された差分:
 {target_diff}
 
-例）
+例)
 変更前
 - graph.node(week_node_name, shape='box', style='filled', fillcolor='#FFCCCC')
 

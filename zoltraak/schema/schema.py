@@ -21,6 +21,7 @@ class MagicLayer(Enum):
 
 
 DEFAULT_COMPILER = "general_prompt.md"
+DEFAULT_PROMPT_FILE = "PROMPT.md"
 DEFAULT_PRE_MD_FILE = "REQUEST.md"
 DEFAULT_MD_FILE = "ARCHITECTURE.md"
 DEFAULT_PY_FILE = "ARCHITECTURE.py"
@@ -33,6 +34,14 @@ class FileInfo(BaseModel):
     )
 
     # Input/Outputファイル
+    prompt_file_path: str = Field(
+        default=DEFAULT_PROMPT_FILE,
+        description="ユーザ要求を保存するファイル(カレントからの相対パス or 絶対パス)",
+    )
+    prompt_file_path_abs: str = Field(
+        default=os.path.abspath(DEFAULT_PROMPT_FILE),
+        description="ユーザ要求を保存するファイル(絶対パス)",
+    )
     pre_md_file_path: str = Field(
         default=DEFAULT_PRE_MD_FILE,
         description="ユーザ要求記述書のmdファイル(カレントからの相対パス or grimoires_dirからの相対パス or 絶対パス)",

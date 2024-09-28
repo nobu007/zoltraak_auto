@@ -1,4 +1,5 @@
 import os
+import shutil
 
 from zoltraak.utils.log_util import log
 
@@ -33,3 +34,7 @@ class FileUtil:
         # TODO: 何かグリモアに特化した前処理などを追加する
         FileUtil.write_file(file_path_abs, md_content)
         return file_path_abs
+
+    @staticmethod
+    def copy_file(src_file_path: str, dis_file_path: str) -> str:
+        return shutil.copy(src_file_path, dis_file_path)
