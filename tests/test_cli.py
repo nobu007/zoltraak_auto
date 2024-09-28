@@ -1,5 +1,4 @@
 import os
-import pprint
 import sys
 
 import litellm
@@ -7,10 +6,11 @@ import litellm
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 sys.path.append(os.path.join(os.path.dirname(__file__), "../zoltraak"))
 print("===============================")
-pprint.pprint(sys.path)
 
 import subprocess
 import unittest
+
+import pytest
 
 from zoltraak.md_generator import generate_md_from_prompt, generate_response
 from zoltraak.utils.rich_console import MagicInfo
@@ -328,7 +328,7 @@ class TestGenerateResponse(unittest.TestCase):
         """
         サポートされていないデベロッパーを指定した場合のgenerate_response関数のテスト
         """
-        with self.assertRaises(litellm.exceptions.BadRequestError):
+        with pytest.raises(litellm.exceptions.BadRequestError):
             generate_response("invalid_developer", "model_name", "prompt")
 
 

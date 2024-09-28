@@ -119,8 +119,9 @@ class TargetCodeGenerator:
 
         if self.file_info.target_file_path.endswith(".py"):  # ターゲットファイルがPythonファイルの場合
             self.try_execute_generated_code(code)  # - 生成されたコードを実行
-        else:  # ターゲットファイルがマークダウンファイルの場合
-            return code  # - 生成されたコードを返す
+            return None
+        # ターゲットファイルがマークダウンファイルの場合
+        return code  # - 生成されたコードを返す
 
     def output_results(self):
         """
@@ -143,8 +144,7 @@ class TargetCodeGenerator:
         ソースファイルの内容を読み込むメソッド
         """
         with open(self.file_info.source_file_path, encoding="utf-8") as source_file:
-            source_content = source_file.read()
-        return source_content
+            return source_file.read()
 
     def get_source_file_name(self):
         """
@@ -159,20 +159,18 @@ class TargetCodeGenerator:
         """
         変数の辞書を作成するメソッド
         """
-        variables = {
+        return {
             "source_file_path": self.file_info.source_file_path,
             "source_file_name": source_file_name,
             "source_content": source_content,
         }
-        return variables
 
     def load_prompt_with_variables(self, create_domain_grimoire, variables):
         """
         領域術式（要件定義書）からプロンプトを読み込み、変数を埋め込むメソッド
         """
         zoltraak_dir = os.path.dirname(zoltraak.__file__)
-        prompt = load_prompt(f"{zoltraak_dir}/{create_domain_grimoire}", variables)
-        return prompt
+        return load_prompt(f"{zoltraak_dir}/{create_domain_grimoire}", variables)
 
     def generate_code(self, prompt):
         """
@@ -191,8 +189,7 @@ class TargetCodeGenerator:
             4000,
             0.3,
         )
-        code = code.replace("```python", "").replace("```", "")
-        return code
+        return code.replace("```python", "").replace("```", "")
 
     def write_code_to_target_file(self, code):
         """

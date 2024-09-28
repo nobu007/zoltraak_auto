@@ -1,4 +1,4 @@
-import tkinter
+import tkinter as tk
 
 import pyperclip
 
@@ -9,7 +9,7 @@ class GuiUtil:
         root = None
         try:
             # Tkinterのウィンドウを作成
-            root = tkinter.Tk()
+            root = tk.Tk()
             root.withdraw()  # ウィンドウを表示しない
             return True
         except Exception:

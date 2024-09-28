@@ -3,7 +3,7 @@ def normal(text, language=None):
     inside_code_block = False
     result = []
 
-    for i, line in enumerate(lines):
+    for _i, line in enumerate(lines):
         if line.startswith("```"):
             if not inside_code_block:
                 inside_code_block = True

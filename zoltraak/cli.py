@@ -7,6 +7,8 @@ import zoltraak
 current_directory = os.path.dirname(os.path.abspath(__file__))
 # print(package_dir)
 # from zoltraak.md_generator import generate_md_from_prompt
+import sys
+
 import zoltraak.llms.litellm_api as litellm
 from zoltraak import settings
 from zoltraak.converter import MarkdownToPythonConverter
@@ -14,9 +16,6 @@ from zoltraak.utils.rich_console import MagicInfo
 
 
 def main():
-    current_dir = os.getcwd()
-    package_dir = os.path.dirname(os.path.abspath(__file__))
-
     parser = argparse.ArgumentParser(description="MarkdownファイルをPythonファイルに変換します")
     parser.add_argument("input", help="変換対象のMarkdownファイルのパスまたはテキスト", nargs="?")
     parser.add_argument("--output-dir", help="生成されたPythonファイルの出力ディレクトリ", default="generated")
@@ -64,7 +63,7 @@ def main():
 
 def show_version_and_exit():
     print(f"zoltraak version {zoltraak.__version__}")
-    exit(0)
+    sys.exit(0)
 
 
 def show_usage_and_exit():
@@ -79,7 +78,7 @@ def show_usage_and_exit():
     print('\033[33m例3:\033[0m zoltraak "レストランの予約管理システムの要件定義書" -cc custom_compiler.md')
     print("  説明: プロンプトテキストを入力とし、レストランの予約管理システムの要件定義書を生成します。")
     print("        カスタムコンパイラー（custom_compiler.md）を使用します。")
-    exit(1)
+    sys.exit(1)
 
 
 def show_compiler_error_and_exit():
@@ -107,12 +106,12 @@ def show_compiler_error_and_exit():
     print(
         "  説明: システム開発以外の一般的な要求事項について、要件定義書を生成します。プロジェクトの目標、スコープ、制約条件などを明確にします。"
     )
-    exit(1)
+    sys.exit(1)
 
 
 def show_compiler_conflict_error_and_exit():
     print("\033[31mエラー: -c オプションと -cc オプションは同時に指定できません。\033[0m")
-    exit(1)
+    sys.exit(1)
 
 
 def process_markdown_file(args):

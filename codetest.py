@@ -65,7 +65,7 @@ def process_text(text):
     inside_code_block = False
     result = []
 
-    for i, line in enumerate(lines):
+    for _i, line in enumerate(lines):
         if line.startswith("```"):
             inside_code_block = not inside_code_block
         elif inside_code_block:
@@ -81,7 +81,7 @@ def process_text2(text, language=None):
     inside_code_block = False
     result = []
 
-    for i, line in enumerate(lines):
+    for _i, line in enumerate(lines):
         if line.startswith("```"):
             if not inside_code_block:
                 inside_code_block = True
