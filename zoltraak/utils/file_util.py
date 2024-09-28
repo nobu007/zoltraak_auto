@@ -32,3 +32,4 @@ class FileUtil:
     def write_grimoire(md_content: str, file_path_abs: str) -> str:
         # TODO: 何かグリモアに特化した前処理などを追加する
         FileUtil.write_file(file_path_abs, md_content)
+        return file_path_abs

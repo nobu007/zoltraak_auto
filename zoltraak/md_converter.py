@@ -45,23 +45,19 @@ class MarkdownToMarkdownConverter:
         # step1: ファイル情報を更新
         file_info = self.magic_info.file_info
         file_info.update_path_abs()
-        file_info.update_source_target(file_info.pre_md_file_path_abs, file_info.md_file_path_abs)
-        file_info.update_source_target_past("past_pre_md_files", "past_md_files")
-        file_info.update_hash()
 
-        # step2: ユーザ要求記述書を作成(TODO: 実際に変換する？)
+        # step2: ユーザ要求記述書を作成(TODO: ここで実際に変換すると一気に要件定義書まで作れる)
         if self.magic_info.magic_layer is MagicLayer.LAYER_1_REQUEST_GEN:
-            file_info.source_file_path = file_info.pre_md_file_path
-            file_info.target_file_path = file_info.pre_md_file_path
+            file_info.update_source_target("", file_info.pre_md_file_path_abs)
+            file_info.update_hash()
 
-        # step3: 要件定義書を作成(TODO: 実際に変換する？)
+        # step3: 要件定義書を作成(TODO: ここで実際に変換すると一気に要件定義書まで作れる)
         if self.magic_info.magic_layer is MagicLayer.LAYER_2_REQUIREMENT_GEN:
-            file_info.source_file_path = file_info.pre_md_file_path
-            file_info.target_file_path = file_info.md_file_path
-        file_info.update()
+            file_info.update_source_target(file_info.pre_md_file_path_abs, file_info.md_file_path_abs)
+            file_info.update_hash()
 
         # step4: 変換処理
-        self.convert_one()
+        return self.convert_one()
 
     @log_inout
     def convert_one(self) -> str:
@@ -121,13 +117,12 @@ class MarkdownToMarkdownConverter:
         if is_source_changed:
             print(f"{file_info.source_file_path}の変更を検知しました。")
             if os.path.exists(file_info.past_source_file_path):
-                self.update_target_file_from_source_diff()
+                return self.update_target_file_from_source_diff()
             else:
-                self.update_target_file_propose_and_apply(file_info.target_file_path, self.magic_info.prompt)
+                return self.update_target_file_propose_and_apply(file_info.target_file_path, self.magic_info.prompt)
         else:
             # ソースファイルが変わってない場合は再処理する
-            self.update_target_file_propose_and_apply(file_info.target_file_path, self.magic_info.prompt)
-        return file_info.target_file_path
+            return self.update_target_file_propose_and_apply(file_info.target_file_path, self.magic_info.prompt)
 
     @log_inout
     def update_target_file_from_source_diff(self) -> str:
@@ -157,8 +152,7 @@ class MarkdownToMarkdownConverter:
             prompt (str): promptの内容
         """
         # プロンプトにターゲットファイルの内容を変数として追加
-        with open(target_file_path, encoding="utf-8") as target_file:
-            current_target_code = target_file.read()
+        current_target_code = FileUtil.read_file(target_file_path)
         prompt_additional_part = ""
         if prompt:
             prompt_additional_part = f"""
@@ -258,10 +252,10 @@ promptの内容:
         modified_content = litellm.generate_response(settings.model_name, prompt, 2000, 0.3)
 
         # 修正後の内容をターゲットファイルに書き込む
-        FileUtil.write_file(target_file_path, modified_content)
+        new_target_file_path = FileUtil.write_file(target_file_path, modified_content)
 
-        print(f"{target_file_path}に修正を適用しました。")
-        return target_file_path
+        print(f"{new_target_file_path}に修正を適用しました。")
+        return new_target_file_path
 
     @log_inout
     def handle_new_target_file(self):

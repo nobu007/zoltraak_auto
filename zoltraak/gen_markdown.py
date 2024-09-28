@@ -26,8 +26,7 @@ def generate_md_from_prompt(magic_info: MagicInfo) -> str:
     magic_info.prompt = prompt
     response = generate_response_with_spinner(magic_info)
     md_content = response.strip()  # 生成された要件定義書の内容を取得し、前後の空白を削除
-    save_md_content(md_content, file_info.target_file_path)  # 生成された要件定義書の内容をファイルに保存
-    return file_info.target_file_path
+    return save_md_content(md_content, file_info.target_file_path)  # 生成された要件定義書の内容をファイルに保存
 
 
 def create_prompt(goal_prompt: str, compiler_path: str, formatter_path: str, language: str):
@@ -102,7 +101,7 @@ def get_formatter_prompt(formatter_path: str, language: str = None):
     return formatter_prompt
 
 
-def save_md_content(md_content, target_file_path):
+def save_md_content(md_content, target_file_path)->str:
     """
     生成された要件定義書の内容をファイルに保存する関数
 
@@ -115,7 +114,7 @@ def save_md_content(md_content, target_file_path):
     target_file_path = os.path.join(
         requirements_dir, target_file_name
     )  # - requirements/ディレクトリとファイル名を結合してターゲットファイルのパスを生成
-    FileUtil.write_grimoire(md_content, target_file_path)
+    return FileUtil.write_grimoire(md_content, target_file_path)
 
 
 if __name__ == "__main__":  # このスクリプトが直接実行された場合にのみ、以下のコードを実行します。
