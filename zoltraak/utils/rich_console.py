@@ -1,11 +1,13 @@
 import subprocess
-import threading
+from collections.abc import Callable
+from typing import Any
+
+from pydantic import BaseModel, Field
 from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
-from typing import List, Callable, Any
+
 import zoltraak.llms.litellm_api as litellm
-from pydantic import BaseModel, Field
 from zoltraak import settings
 
 console = Console()
@@ -60,14 +62,14 @@ class MagicInfo(BaseModel):
 
 
 def run_command_with_spinner(
-    magic_info: MagicInfo, command: List[str], check: bool = False
+    magic_info: MagicInfo, command: list[str], check: bool = False
 ) -> subprocess.CompletedProcess:
     """
     指定されたコマンドを実行し、その間スピナーを表示します。
     """
     with console.status(f"[bold green]{magic_info.description}"):
         try:
-            result = subprocess.run(command, check=check, capture_output=True, text=True)
+            result = subprocess.run(command, shell=False, check=check, capture_output=True, text=True)
             if result.returncode == 0:
                 console.print(Panel(magic_info.success_message, style="green"))
             else:
@@ -111,7 +113,7 @@ def display_magic_info_pre(magic_info: MagicInfo):
     table.add_row("起動術式 (プロンプトコンパイラ)", magic_info.grimoire_compiler)
     table.add_row("魔法術式 (要件定義書)", magic_info.file_info.target_file_path)
     table.add_row("錬成術式 (プロンプトフォーマッタ)", magic_info.grimoire_formatter)
-    table.add_row("領域術式 (領域作成＋コード展開)", magic_info.grimoire_architect)
+    table.add_row("領域術式 (領域作成+コード展開)", magic_info.grimoire_architect)
     table.add_row("言霊   (LLMモデル名) ", magic_info.model_name)
 
     console.print(Panel(table, title="魔法術式情報(構築中)", border_style="green"))
@@ -141,7 +143,7 @@ def generate_response_with_spinner(
     display_magic_info_pre(magic_info)
     result = run_function_with_spinner(magic_info, generate_response, magic_info.model_name, magic_info.prompt)
     display_magic_info_post(magic_info)
-    if result == None:
+    if result is None:
         return "グリモアの展開に失敗しました"
 
     return result

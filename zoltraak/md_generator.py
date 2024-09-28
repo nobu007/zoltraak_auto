@@ -4,12 +4,10 @@ import sys
 import threading
 import time
 
-
 import zoltraak
 import zoltraak.llms.litellm_api as litellm
-from zoltraak import settings
-from zoltraak.utils.rich_console import generate_response_with_spinner, MagicInfo
 from zoltraak.utils.gui_util import GuiUtil
+from zoltraak.utils.rich_console import MagicInfo, generate_response_with_spinner
 
 
 def generate_md_from_prompt(magic_info: MagicInfo):

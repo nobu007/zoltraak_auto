@@ -1,6 +1,7 @@
 import os
 import pprint
 import sys
+
 import litellm
 
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
@@ -11,7 +12,6 @@ pprint.pprint(sys.path)
 import subprocess
 import unittest
 
-from zoltraak import settings
 from zoltraak.md_generator import generate_md_from_prompt, generate_response
 from zoltraak.utils.rich_console import MagicInfo
 

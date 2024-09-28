@@ -1,5 +1,6 @@
-import pyperclip
 import tkinter
+
+import pyperclip
 
 
 class GuiUtil:

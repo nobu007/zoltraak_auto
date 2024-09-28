@@ -6,7 +6,7 @@ import zoltraak
 import zoltraak.llms.litellm_api as litellm
 from zoltraak import settings
 from zoltraak.utils.prompt_import import load_prompt
-from zoltraak.utils.rich_console import generate_response_with_spinner, MagicInfo
+from zoltraak.utils.rich_console import MagicInfo
 
 
 class TargetCodeGenerator:
