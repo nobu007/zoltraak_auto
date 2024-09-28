@@ -1,3 +1,4 @@
+import hashlib
 import os
 from enum import Enum
 
@@ -19,14 +20,22 @@ class FileInfo(BaseModel):
         default="zoltraak", description="対象のファイル群をシステム全体で一意に識別するための標準的な名前"
     )
 
-    # Inputファイル
+    # Input/Outputファイル
+    pre_md_file_path: str = Field(
+        default="REQUEST.md",
+        description="ユーザ要求記述書のmdファイル(カレントからの相対パス or grimoires_dirからの相対パス or 絶対パス)",
+    )
+    pre_md_file_path_abs: str = Field(
+        default=os.path.join(settings.zoltraak_dir, "REQUEST.md"),
+        description="ユーザ要求記述書のmdファイル(絶対パス)",
+    )
     md_file_path: str = Field(
         default="ARCHITECTURE.md",
-        description="処理対象のmdファイル(カレントからの相対パス or grimoires_dirからの相対パス or 絶対パス)",
+        description="要件定義書のmdファイル(カレントからの相対パス or grimoires_dirからの相対パス or 絶対パス)",
     )
     md_file_path_abs: str = Field(
         default=os.path.join(settings.zoltraak_dir, "ARCHITECTURE.md"),
-        description="処理対象のmdファイル(絶対パス)",
+        description="要件定義書のmdファイル(絶対パス)",
     )
     py_file_path: str = Field(
         default="ARCHITECTURE.py", description="処理対象のpyファイル(カレントからの相対パス or 絶対パス)"
@@ -35,21 +44,56 @@ class FileInfo(BaseModel):
         default=os.path.join(settings.zoltraak_dir, "ARCHITECTURE.py"), description="処理対象のpyファイル(絶対パス)"
     )
 
-    # 処理対象ファイル
+    # 処理対象ファイル(convert source => target)
     source_file_path: str = Field(default="", description="ソースファイルパス(絶対パス)")
     target_file_path: str = Field(default="", description="処理対象のファイルパス(絶対パス)")
     past_source_file_path: str = Field(default="", description="過去のソースファイル")
-
     past_target_file_path: str = Field(default="", description="過去の出力先ファイル(絶対パス)")
     past_source_folder: str = Field(default="past_md_files", description="過去のソースフォルダ")
+    past_target_folder: str = Field(default="past_py_files", description="過去の出力先ファイルフォルダ")
     target_dir: str = Field(default="./output", description="出力先のディレクトリ")
 
     # その他
-    source_hash: str = Field(default="", description="ソースファイルのハッシュ値")
+    source_hash: str = Field(default="1", description="ソースファイルのハッシュ値")
+    target_hash: str = Field(default="2", description="出力先ファイルのハッシュ値")
+    past_source_hash: str = Field(default="3", description="過去のソースファイルのハッシュ値")
+    past_target_hash: str = Field(default="4", description="過去の出力先ファイルのハッシュ値")
 
-    def update(self):
+    def update_path_abs(self):
+        self.pre_md_file_path_abs = os.path.abspath(self.pre_md_file_path)
         self.md_file_path_abs = os.path.abspath(self.md_file_path)
         self.py_file_path_abs = os.path.abspath(self.py_file_path)
+
+    def update_source_target(self, source_file_path, target_file_path):
+        self.source_file_path = source_file_path
+        self.target_file_path = target_file_path
+
+    def update_source_target_past(self, past_source_folder, past_target_folder):
+        self.past_source_folder = past_source_folder
+        self.past_target_folder = past_target_folder
+        os.makedirs(past_source_folder, exist_ok=True)
+        os.makedirs(past_target_folder, exist_ok=True)
+
+    def update_hash(self):
+        self.source_hash = self.calculate_file_hash(self.source_file_path)
+        self.target_hash = self.calculate_file_hash(self.target_file_path)
+        self.past_source_hash = self.calculate_file_hash(self.past_source_file_path)
+        self.past_target_hash = self.calculate_file_hash(self.past_target_file_path)
+
+    def is_same_hash_source_target(self) -> bool:
+        if not self.source_hash:
+            return False
+        if not self.target_hash:
+            return False
+        return self.source_hash == self.target_hash
+
+    @staticmethod
+    def calculate_file_hash(file_path) -> str:
+        if os.path.isfile(file_path):
+            with open(file_path, "rb") as file:
+                content = file.read()
+                return hashlib.md5(content).hexdigest()
+        return ""
 
 
 class MagicInfo(BaseModel):

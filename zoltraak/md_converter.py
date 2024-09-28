@@ -1,10 +1,8 @@
-import hashlib
 import os
 import subprocess
 
 import zoltraak.llms.litellm_api as litellm
 from zoltraak import settings
-from zoltraak.gencode import TargetCodeGenerator
 from zoltraak.md_generator import generate_md_from_prompt
 from zoltraak.schema.schema import MagicInfo, MagicMode
 from zoltraak.utils.file_util import FileUtil
@@ -20,12 +18,23 @@ class MarkdownToMarkdownConverter:
 
     @log_inout
     def convert(self):
+        """prompt + ユーザ要求記述書(pre_md_file) => 要件定義書(md_file)"""
+
+        # step1: ファイル情報を更新
         file_info = self.magic_info.file_info
-        file_info.source_file_path = file_info.md_file_path_abs
-        file_info.target_file_path = file_info.md_file_path_abs
-        file_info.past_source_folder = "past_md_files"  # - 過去のソースフォルダを "past_md_files" に設定
+        file_info.update_path_abs()
+        file_info.update_source_target(file_info.pre_md_file_path_abs, file_info.md_file_path_abs)
+        file_info.update_source_target_past("past_pre_md_files", "past_md_files")
+        file_info.update_hash()
+
+        # step2: ユーザ要求記述書を作成
+
+        # step3: 要件定義書を作成
+
         if os.path.exists(file_info.source_file_path):  # -- マークダウンファイルが存在する場合
-            print(f"既存のファイル {file_info.source_file_path}です。{self.magic_info.magic_mode}で変更を提案します。")
+            print(
+                f"ユーザ要求記述書は既存のファイル {file_info.source_file_path}です。{self.magic_info.magic_mode}で変更を提案します。"
+            )
             if self.magic_info.magic_mode is MagicMode.GRIMOIRE_MODE:
                 prompt = FileUtil.read_file(self.magic_info.get_compiler_path())
                 if self.magic_info.prompt:
@@ -36,6 +45,8 @@ class MarkdownToMarkdownConverter:
                 file_info.target_file_path, self.magic_info.prompt
             )  # --- プロンプトに従ってターゲットファイルの差分を提案
             return  # --- 関数を終了
+        print(f"ユーザ要求記述書 {file_info.source_file_path}を新規作成します。")
+        prompt = self.magic_info.prompt
 
         if os.path.exists(file_info.source_file_path):  # ソースファイルが存在する場合
             file_info.source_hash = self.calculate_file_hash(
@@ -51,12 +62,6 @@ class MarkdownToMarkdownConverter:
             self.handle_existing_target_file()  # - 既存のターゲットファイルを処理
         else:  # ターゲットファイルが存在しない場合
             self.handle_new_target_file()  # - 新しいターゲットファイルを処理
-
-    @log_inout
-    def calculate_file_hash(self, file_path):
-        with open(file_path, "rb") as file:
-            content = file.read()
-            return hashlib.md5(content).hexdigest()
 
     @log_inout
     def handle_existing_target_file(self) -> str:
@@ -99,22 +104,12 @@ class MarkdownToMarkdownConverter:
     @log_inout
     def handle_new_target_file(self):
         file_info = self.magic_info.file_info
-        if self.magic_info.prompt is None:
-            print(
-                f"""
-高級言語コンパイル中: {file_info.target_file_path}は新しいファイルです。少々お時間をいただきます。
+        print(f"""
+{file_info.target_file_path}は新しいファイルです。少々お時間をいただきます。
 {file_info.source_file_path} -> {file_info.target_file_path}
-                  """
-            )
-            target = TargetCodeGenerator(self.magic_info)
-            target.generate_target_code()
-        else:
-            print(
-                f"""
-{"検索結果生成中" if self.magic_info.current_grimoire_name is None else "要件定義書執筆中"}: {file_info.target_file_path}は新しいファイルです。少々お時間をいただきます。
-                  """
-            )
-            generate_md_from_prompt(self.magic_info)
+                  """)
+
+        generate_md_from_prompt(self.magic_info)
 
     def propose_target_diff(self, target_file_path, prompt=None):
         """

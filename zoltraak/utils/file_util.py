@@ -1,3 +1,8 @@
+import os
+
+from zoltraak.utils.log_util import log
+
+
 class FileUtil:
     @staticmethod
     def read_file(file_path: str) -> str:
@@ -13,13 +18,16 @@ class FileUtil:
             return file_path
         return ""
 
-    # pyautogui版は封印（importチェックすれば使えると思う）
-    # @staticmethod
-    # def can_use_gui() -> bool:
-    #     try:
-    #         # マウスの位置を取得してみる
-    #         _, _ = pyautogui.position()
-    #         return True
-    #     except Exception as e:
-    #         print("GUI環境が利用できません:", e)
-    #     return False
+    @staticmethod
+    def read_grimoire(file_path: str, prompt: str = "", language: str = "") -> str:
+        # グリモアをpromptとlanguageをreplaceして読み込む
+        content = FileUtil.read_file(file_path)
+        content = content.replace("{prompt}", prompt)
+        content = content.replace("{language}", language)
+        log(f"read_grimoire content:\n {content}")
+        return content
+
+    @staticmethod
+    def write_grimoire(md_content: str, file_path_abs: str) -> str:
+        os.makedirs(os.dirname(file_path_abs), exist_ok=True)
+        FileUtil.write_file(file_path_abs, md_content)
