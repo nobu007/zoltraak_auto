@@ -13,6 +13,7 @@ class FileUtil:
 
     @staticmethod
     def write_file(file_path: str, content: str) -> str:
+        os.makedirs(os.path.dirname(file_path), exist_ok=True)
         with open(file_path, "w", encoding="utf-8") as file:
             file.write(content)
             return file_path
@@ -29,5 +30,5 @@ class FileUtil:
 
     @staticmethod
     def write_grimoire(md_content: str, file_path_abs: str) -> str:
-        os.makedirs(os.dirname(file_path_abs), exist_ok=True)
+        # TODO: 何かグリモアに特化した前処理などを追加する
         FileUtil.write_file(file_path_abs, md_content)

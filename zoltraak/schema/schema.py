@@ -14,6 +14,12 @@ class MagicMode(Enum):
     SEARCH_GRIMOIRE_MODE = "search_grimoire_mode"  # 最適なグリモアを検索
 
 
+DEFAULT_COMPILER = "general_prompt.md"
+DEFAULT_PRE_MD_FILE = "REQUEST.md"
+DEFAULT_MD_FILE = "ARCHITECTURE.md"
+DEFAULT_PY_FILE = "ARCHITECTURE.py"
+
+
 class FileInfo(BaseModel):
     # 識別子
     canonical_name: str = Field(
@@ -22,31 +28,31 @@ class FileInfo(BaseModel):
 
     # Input/Outputファイル
     pre_md_file_path: str = Field(
-        default="REQUEST.md",
+        default=DEFAULT_PRE_MD_FILE,
         description="ユーザ要求記述書のmdファイル(カレントからの相対パス or grimoires_dirからの相対パス or 絶対パス)",
     )
     pre_md_file_path_abs: str = Field(
-        default=os.path.join(settings.zoltraak_dir, "REQUEST.md"),
+        default=os.path.abspath(DEFAULT_PRE_MD_FILE),
         description="ユーザ要求記述書のmdファイル(絶対パス)",
     )
     md_file_path: str = Field(
-        default="ARCHITECTURE.md",
+        default=DEFAULT_MD_FILE,
         description="要件定義書のmdファイル(カレントからの相対パス or grimoires_dirからの相対パス or 絶対パス)",
     )
     md_file_path_abs: str = Field(
-        default=os.path.join(settings.zoltraak_dir, "ARCHITECTURE.md"),
+        default=os.path.abspath(DEFAULT_MD_FILE),
         description="要件定義書のmdファイル(絶対パス)",
     )
     py_file_path: str = Field(
-        default="ARCHITECTURE.py", description="処理対象のpyファイル(カレントからの相対パス or 絶対パス)"
+        default=DEFAULT_PY_FILE, description="処理対象のpyファイル(カレントからの相対パス or 絶対パス)"
     )
     py_file_path_abs: str = Field(
-        default=os.path.join(settings.zoltraak_dir, "ARCHITECTURE.py"), description="処理対象のpyファイル(絶対パス)"
+        default=os.path.abspath(DEFAULT_PY_FILE), description="処理対象のpyファイル(絶対パス)"
     )
 
     # 処理対象ファイル(convert source => target)
-    source_file_path: str = Field(default="", description="ソースファイルパス(絶対パス)")
-    target_file_path: str = Field(default="", description="処理対象のファイルパス(絶対パス)")
+    source_file_path: str = Field(default=DEFAULT_PRE_MD_FILE, description="ソースファイルパス(絶対パス)")
+    target_file_path: str = Field(default=DEFAULT_MD_FILE, description="処理対象のファイルパス(絶対パス)")
     past_source_file_path: str = Field(default="", description="過去のソースファイル")
     past_target_file_path: str = Field(default="", description="過去の出力先ファイル(絶対パス)")
     past_source_folder: str = Field(default="past_md_files", description="過去のソースフォルダ")
@@ -58,6 +64,10 @@ class FileInfo(BaseModel):
     target_hash: str = Field(default="2", description="出力先ファイルのハッシュ値")
     past_source_hash: str = Field(default="3", description="過去のソースファイルのハッシュ値")
     past_target_hash: str = Field(default="4", description="過去の出力先ファイルのハッシュ値")
+
+    def update(self):
+        self.update_path_abs()
+        self.update_hash()
 
     def update_path_abs(self):
         self.pre_md_file_path_abs = os.path.abspath(self.pre_md_file_path)
@@ -111,7 +121,7 @@ class MagicInfo(BaseModel):
     description: str = Field(
         default="汎用魔法式を展開します", description="現在実行中の説明(generate_xx関数の先頭で設定)"
     )
-    grimoire_compiler: str = Field(default="dev_obj.md", description="使用するグリモアコンパイラのファイル名")
+    grimoire_compiler: str = Field(default=DEFAULT_COMPILER, description="使用するグリモアコンパイラのファイル名")
     grimoire_architect: str = Field(
         default="architect_claude.md", description="使用するグリモアアーキテクトのファイル名"
     )

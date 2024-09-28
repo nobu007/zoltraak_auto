@@ -67,7 +67,7 @@ def modify_prompt(final_prompt: str, formatter_path: str, language: str):
             modified_prompt = (
                 final_prompt + formatter_prompt
             )  # 特に英語指示が「デフォルト言語指示」と混同されやすく、効きがやたら悪いので英語の場合は挟み撃ちにする
-    log("modify_prompt modified_prompt=", modified_prompt)
+    log("modify_prompt modified_prompt=" + modified_prompt)
     return modified_prompt
 
 
@@ -108,3 +108,9 @@ def save_md_content(md_content, target_file_path):
         requirements_dir, target_file_name
     )  # - requirements/ディレクトリとファイル名を結合してターゲットファイルのパスを生成
     FileUtil.write_grimoire(md_content, target_file_path)
+
+
+if __name__ == "__main__":  # このスクリプトが直接実行された場合にのみ、以下のコードを実行します。
+    magic_info_ = MagicInfo()
+    magic_info_.file_info.update()
+    generate_md_from_prompt(magic_info_)
