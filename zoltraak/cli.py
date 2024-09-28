@@ -12,7 +12,7 @@ import sys
 import zoltraak.llms.litellm_api as litellm
 from zoltraak import settings
 from zoltraak.converter import MarkdownToPythonConverter
-from zoltraak.utils.rich_console import MagicInfo
+from zoltraak.schema.schema import MagicInfo
 
 
 def main():
