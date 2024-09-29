@@ -4,10 +4,7 @@ import logging
 import zoltraak
 from zoltraak import settings
 
-if settings.is_debug:
-    level = logging.INFO
-else:
-    level = logging.ERROR
+level = logging.INFO if settings.is_debug else logging.WARNING
 logging.basicConfig(level=level)
 
 logger = logging.getLogger(zoltraak.__name__)
@@ -48,6 +45,18 @@ def log_inout_debug(func):
     return wrapper
 
 
-def log(content: str):
+def log(msg: str, *args, **kwargs):
     if settings.is_debug:
-        logger.info(content)
+        logger.info(msg, *args, **kwargs)
+
+
+def log_w(msg: str, *args, **kwargs):
+    logger.warning(msg, *args, **kwargs)
+
+
+def log_i(msg: str, *args, **kwargs):
+    logger.info(msg, *args, **kwargs)
+
+
+def log_d(msg: str, *args, **kwargs):
+    logger.debug(msg, *args, **kwargs)

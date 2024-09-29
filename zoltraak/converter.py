@@ -1,12 +1,12 @@
 import hashlib
 import os
-import subprocess
 
 import zoltraak.llms.litellm_api as litellm
 from zoltraak import settings
 from zoltraak.gencode import TargetCodeGenerator
 from zoltraak.md_generator import generate_md_from_prompt
-from zoltraak.utils.rich_console import MagicInfo
+from zoltraak.utils.rich_console import MagicInfo, display_magic_info_full
+from zoltraak.utils.subprocess_util import SubprocessUtil
 
 
 class MarkdownToPythonConverter:
@@ -27,13 +27,14 @@ class MarkdownToPythonConverter:
             file_info.past_source_folder = "past_prompt_files"  # - 過去のソースフォルダを "past_prompt_files" に設定
 
             if os.path.exists(file_info.md_file_path):  # -- マークダウンファイルが存在する場合
+                display_magic_info_full(self.magic_info)
                 print(
                     f"{file_info.md_file_path}は既存のファイルです。promptに従って変更を提案します。"
                 )  # --- ファイルが既存であることを示すメッセージを表示
                 self.propose_target_diff(
                     file_info.target_file_path, self.magic_info.prompt
                 )  # --- プロンプトに従ってターゲットファイルの差分を提案
-                return  # --- 関数を終了
+                return ""  # --- 関数を終了
 
         if os.path.exists(file_info.source_file_path):  # ソースファイルが存在する場合
             file_info.source_hash = self.calculate_file_hash(
@@ -46,13 +47,15 @@ class MarkdownToPythonConverter:
 
         if os.path.exists(file_info.target_file_path):  # ターゲットファイルが存在する場合
             self.handle_existing_target_file()  # - 既存のターゲットファイルを処理
-        else:  # ターゲットファイルが存在しない場合
-            self.handle_new_target_file()  # - 新しいターゲットファイルを処理
+            return None
+        # ターゲットファイルが存在しない場合
+        self.handle_new_target_file()  # - 新しいターゲットファイルを処理
+        return None
 
     def calculate_file_hash(self, file_path):
         with open(file_path, "rb") as file:
             content = file.read()
-            return hashlib.md5(content).hexdigest()
+            return hashlib.sha256(content).hexdigest()
 
     def handle_existing_target_file(self) -> str:
         file_info = self.magic_info.file_info
@@ -62,7 +65,7 @@ class MarkdownToPythonConverter:
                 embedded_hash = lines[-1].split("# HASH: ")[1].strip()
                 if file_info.source_hash == embedded_hash:
                     if self.magic_info.prompt is None:
-                        subprocess.run(["python", file_info.target_file_path], check=False)
+                        SubprocessUtil.run(["python", file_info.target_file_path], check=False)
                     else:
                         with open(file_info.target_file_path, encoding="utf-8") as md_file:
                             return md_file.read()
@@ -90,7 +93,7 @@ class MarkdownToPythonConverter:
         print(f"ターゲットファイル: {file_info.target_file_path}")
         # input("修正が完了したらEnterキーを押してください。")
 
-    def handle_new_target_file(self):
+    def handle_new_target_file(self) -> str:
         file_info = self.magic_info.file_info
         if self.magic_info.prompt is None:
             print(
@@ -100,14 +103,15 @@ class MarkdownToPythonConverter:
                   """
             )
             target = TargetCodeGenerator(self.magic_info)
-            target.generate_target_code()
-        else:
-            print(
-                f"""
-{"検索結果生成中" if self.magic_info.current_grimoire_name is None else "要件定義書執筆中"}: {file_info.target_file_path}は新しいファイルです。少々お時間をいただきます。
-                  """
-            )
-            generate_md_from_prompt(self.magic_info)
+            return target.generate_target_code()
+        print(
+            f"""
+    {"検索結果生成中" if self.magic_info.current_grimoire_name is None else "要件定義書執筆中"}:
+    {file_info.target_file_path}は新しいファイルです。少々お時間をいただきます。
+    {file_info.source_file_path} -> {file_info.target_file_path}
+            """
+        )
+        return generate_md_from_prompt(self.magic_info)
 
     def propose_target_diff(self, target_file_path, prompt=None):
         """

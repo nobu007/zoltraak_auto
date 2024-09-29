@@ -20,6 +20,36 @@ class MagicLayer(Enum):
     LAYER_3_CODE_GEN = "layer_3_code_gen"  # レイヤ３： 要件定義書 => コード
 
 
+class ZoltraakParams(BaseModel):
+    input: str = Field(default="", description="対変換対象のMarkdownファイルのパスまたはテキスト")
+    output_dir: str = Field(default="generated", description="生成されたPythonファイルの出力ディレクトリ")
+    prompt: str = Field(default="", description="追加のプロンプト情報")
+    compiler: str = Field(default="", description="コンパイラー（要件定義書のテンプレート）")
+    formatter: str = Field(default="", description="対変換対象のMarkdownファイルのパスまたはテキスト")
+    language: str = Field(default="", description="対出力言語を指定")
+    model_name: str = Field(default="", description="使用するモデルの名前")
+    canonical_name: str = Field(
+        default="zoltraak.md", description="作成対象の識別子(通常はinputのMarkdownファイル名: xx.md）"
+    )
+
+    def get_zoltraak_command(self):
+        cmd = f"zoltraak {self.input}"
+        if self.output_dir:
+            cmd += f" --output-dir {self.output_dir}"
+        if self.prompt:
+            cmd += f" --prompt {self.prompt}"
+        if self.compiler:
+            cmd += f" --compiler {self.compiler}"
+        if self.formatter:
+            cmd += f" --formatter {self.formatter}"
+        if self.language:
+            cmd += f" --language {self.language}"
+        if self.model_name:
+            cmd += f" --model_name {self.model_name}"
+        print("get_zoltraak_command cmd=", cmd)
+        return cmd
+
+
 DEFAULT_COMPILER = "general_prompt.md"
 DEFAULT_PROMPT_FILE = "PROMPT.md"
 DEFAULT_PRE_MD_FILE = "REQUEST.md"
@@ -111,6 +141,16 @@ class FileInfo(BaseModel):
         if not self.target_hash:
             return False
         return self.source_hash == self.target_hash
+
+    def __str__(self) -> str:
+        str_list = []
+        for key, value in self.model_dump().items():
+            sv = str(value)
+            str_list.append(f"  {key}={sv}")
+        return "\n\n".join(str_list)
+
+    def __repr__(self) -> str:
+        return self.__str__()
 
     @staticmethod
     def calculate_file_hash(file_path) -> str:

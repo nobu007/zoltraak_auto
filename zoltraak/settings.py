@@ -22,6 +22,7 @@ model_name_smart = os.getenv("MODEL_NAME_SMART", model_name)  # 通常よりも�
 
 # folder
 zoltraak_dir = os.path.dirname(zoltraak.__file__)
+zoltraak_dir = os.path.abspath(zoltraak_dir)
 grimoires_dir = os.path.join(zoltraak_dir, "grimoires")
 architects_dir = os.path.join(grimoires_dir, "architects")
 compiler_dir = os.path.join(grimoires_dir, "compiler")

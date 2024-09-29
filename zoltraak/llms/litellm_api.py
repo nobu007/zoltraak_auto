@@ -2,20 +2,26 @@ import os
 from collections import defaultdict
 
 import litellm
-from litellm import Router
+from litellm import ModelResponse, Router
 from litellm.integrations.custom_logger import CustomLogger
+
+from zoltraak.utils.log_util import log_w
 
 
 class ModelStatsLogger(CustomLogger):
     def __init__(self):
-        self.stats = defaultdict(lambda: {"count": 0, "total_tokens": 0})
+        self.stats = defaultdict(lambda: {"count": 0, "total_tokens": 0, "start_time": None, "end_time": None})
 
     def log_success_event(self, kwargs, response_obj, start_time, end_time):
+        log_w("log_success_event start_time=%s, end_time=%s", start_time, end_time)
         model = kwargs["model"]
         if response_obj:
             tokens = response_obj["usage"]["total_tokens"]
             self.stats[model]["count"] += 1
             self.stats[model]["total_tokens"] += tokens
+            if self.stats[model]["start_time"] is None:
+                self.stats[model]["start_time"] = start_time
+            self.stats[model]["end_time"] = end_time
 
     def get_stats(self):
         return dict(self.stats)
@@ -25,6 +31,10 @@ class ModelStatsLogger(CustomLogger):
 logger = ModelStatsLogger()
 completion = litellm.completion
 litellm.callbacks = [logger]
+
+
+DEFAULT_MODEL_GEMINI = "gemini/gemini-1.5-flash-latest"
+DEFAULT_MODEL_CLAUDE = "claude-3-5-sonnet-20240620"
 
 
 def generate_response(model, prompt, max_tokens, temperature):
@@ -45,8 +55,6 @@ def generate_response(model, prompt, max_tokens, temperature):
         {"gemini_bkup1": ["claude_bkup"]},
         {"gemini_bkup2": ["claude_bkup"]},
     ]
-    DEFAULT_MODEL_GEMINI = "gemini/gemini-1.5-flash-latest"
-    DEFAULT_MODEL_CLAUDE = "claude-3-5-sonnet-20240620"
     default_model_list = [
         {
             "model_name": "gemini_bkup1",
@@ -90,6 +98,8 @@ def generate_response(model, prompt, max_tokens, temperature):
         *default_model_list,  # 配列を展開して追加
     ]
 
+    if not show_input_prompt_warning(prompt):
+        return "promptが空なので応答を生成できませんでした"
     router = Router(model_list=model_list, fallbacks=fallbacks_dict)
     response = router.completion(
         model=model,
@@ -97,7 +107,32 @@ def generate_response(model, prompt, max_tokens, temperature):
         max_tokens=max_tokens,
         temperature=temperature,
     )
+    if not show_response_warning(response, prompt):
+        # 差分を生成する処理で差分なしの時は空白なので、空白を返す
+        return ""
     return response.choices[0].message.content.strip()
+
+
+def show_input_prompt_warning(prompt: str) -> bool:
+    # 異常なpromptが来たらログで警告する
+    if prompt.strip() == "":
+        log_w("Empty prompt received")
+        return False
+    return True
+
+
+def show_response_warning(response: ModelResponse, prompt: str) -> bool:
+    # 異常なresponseが来たらログで警告する
+    if len(response.choices) == 0:
+        log_w("Empty response.choices received. prompt=%s", prompt)
+        return False
+    if not response.choices[0].message:
+        log_w("Empty message received. message=%s. prompt=%s", str(response.choices[0].message), prompt)
+        return False
+    if not response.choices[0].message.content:
+        log_w("Invalid content=%s. prompt=%s", str(response.choices[0].message.content), prompt)
+        return False
+    return True
 
 
 def show_used_total_tokens():
@@ -116,6 +151,6 @@ if __name__ == "__main__":
     max_tokens = 100
     temperature = 0.8
 
-    response = generate_response(model, prompt, max_tokens, temperature)
+    response_ = generate_response(model, prompt, max_tokens, temperature)
 
-    print(response)
+    print(response_)

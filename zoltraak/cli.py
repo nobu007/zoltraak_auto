@@ -1,18 +1,17 @@
 import argparse
 import os
 import os.path
-
-import zoltraak
-
-current_directory = os.path.dirname(os.path.abspath(__file__))
-# print(package_dir)
-# from zoltraak.md_generator import generate_md_from_prompt
 import sys
 
+import zoltraak
 import zoltraak.llms.litellm_api as litellm
 from zoltraak import settings
 from zoltraak.converter import MarkdownToPythonConverter
-from zoltraak.schema.schema import MagicInfo
+from zoltraak.schema.schema import MagicInfo, ZoltraakParams
+from zoltraak.utils.file_util import FileUtil
+from zoltraak.utils.log_util import log
+from zoltraak.utils.rich_console import display_info_full, display_magic_info_full
+from zoltraak.utils.subprocess_util import SubprocessUtil
 
 
 def main():
@@ -38,27 +37,100 @@ def main():
     if args.model_name:  # -- 使用するモデルの名前が指定された場合
         settings.model_name = args.model_name  # -- zoltraak全体設定に保存してどこからでも使えるようにする
 
-    if (
-        args.input.endswith(".md") or os.path.isfile(args.input) or os.path.isdir(args.input)
-    ):  # 入力がMarkdownファイル、ファイル、またはディレクトリの場合
-        # print(args.input)
-        # print("mo")
-        if args.compiler is None and args.custom_compiler is None:  # -- コンパイラーが指定されていない場合
-            args.compiler = "dev_obj"  # --- デフォルトのコンパイラー（general_def）を使用
-        elif (
-            args.compiler and args.custom_compiler
-        ):  # -- デフォルトのコンパイラーとカスタムコンパイラーの両方が指定されている場合
-            show_compiler_conflict_error_and_exit()  # --- コンパイラー競合エラーを表示して終了
+    # compiler_path確定
+    compiler_path = prepare_compiler(args.input, args.compiler, args.custom_compiler)
 
-        process_markdown_file(args)  # - Markdownファイルを処理する関数を呼び出す
-    else:  # 入力がテキストの場合
-        if (
-            args.compiler and args.custom_compiler
-        ):  # -- デフォルトのコンパイラーとカスタムコンパイラーの両方が指定されている場合
-            show_compiler_conflict_error_and_exit()  # --- コンパイラー競合エラーを表示して終了
+    params = ZoltraakParams()
+    params.input = args.input
+    params.prompt = args.prompt
+    params.compiler = compiler_path  # compilerとcustom_compilerを集約(絶対パス)
+    params.formatter = args.formatter
+    params.input = args.input
+    params.language = args.language
+    params.model_name = args.model_name
+    log("params.input=" + params.input)
+    if params.input.endswith(".md"):
+        params.canonical_name = os.path.basename(params.input)
+        # 初回になければ作成対象のファイルを生成する
+        first_md_file_path = os.path.abspath(params.input)
+        if not os.path.isfile(first_md_file_path):
+            FileUtil.write_file(first_md_file_path, "")
+    display_info_full(params, title="ZoltraakParams")
 
-        process_text_input(args)  # - テキスト入力を処理する関数を呼び出す
+    if params.input.endswith(".md"):
+        # (暫定) inputで要件定義書.mdを指定されたらメイン処理実行
+        process_markdown_file(params)
+    else:
+        process_text_input(params)  # - テキスト入力を処理する関数を呼び出す
     litellm.show_used_total_tokens()
+
+
+def prepare_compiler(input_: str, compiler: str, custom_compiler: str) -> str:
+    if compiler and custom_compiler:  # -- デフォルトのコンパイラーとカスタムコンパイラーの両方が指定されている場合
+        show_compiler_conflict_error_and_exit()  # --- コンパイラー競合エラーを表示して終了
+
+    # compilerが有効かチェック
+    valid_compiler = get_valid_compiler(compiler)
+    if valid_compiler:
+        return valid_compiler
+
+    # custom_compilerが有効かチェック
+    valid_compiler = get_valid_compiler(custom_compiler)
+    if valid_compiler:
+        return valid_compiler
+
+    # inputで指定されたcompilerが有効かチェック
+    valid_compiler = get_valid_compiler(input_)
+    if valid_compiler:
+        return valid_compiler
+
+    # inputでcompilerが指定されているかチェック
+    valid_compiler = get_valid_compiler(compiler)
+    if valid_compiler:
+        return valid_compiler
+
+    # どれも無効な場合はデフォルトコンパイラを返す
+    return get_valid_compiler("dev_obj")
+
+
+def get_valid_compiler(compiler_candidate: str) -> str:
+    """有効なcompilerだったらその絶対パスを返す
+    無効なら空文字を返す"""
+    return get_valid_markdown(compiler_candidate, settings.compiler_dir)
+
+
+def get_valid_formatter(compiler_candidate: str) -> str:
+    """有効なformatterだったらその絶対パスを返す
+    無効なら空文字を返す"""
+    return get_valid_markdown(compiler_candidate, settings.formatter_dir)
+
+
+def get_valid_markdown(markdown_candidate: str, additional_dir: str = "") -> str:
+    """有効だったらその絶対パスを返す
+    無効なら空文字を返す"""
+    if not markdown_candidate:
+        log("空文字")
+        return ""
+
+    # 拡張子".md"を準備して、以降はファイル存在チェックする
+    if not markdown_candidate.endswith(".md"):
+        markdown_candidate += ".md"
+
+    # カレントディレクトリをチェック(絶対パスで来た場合もここで返す)
+    candidate_abs = os.path.abspath(markdown_candidate)
+    if os.path.isfile(candidate_abs):
+        log("検出 " + candidate_abs)
+        return candidate_abs
+
+    # additional_dir配下をチェック
+    if additional_dir:
+        candidate_abs = os.path.join(additional_dir, markdown_candidate)
+        if os.path.isfile(candidate_abs):
+            log("検出(additional_dir配下) " + candidate_abs)
+            return candidate_abs
+
+    log("無効 " + markdown_candidate)
+    return ""
 
 
 def show_version_and_exit():
@@ -88,23 +160,28 @@ def show_compiler_error_and_exit():
     print("\033[92mデフォルトのコンパイラー:\033[0m")
     print("\033[33m- dev_obj: オブジェクト指向設計を用いた開発タスクに関する要件定義書を生成するコンパイラ\033[0m")
     print(
-        "  説明: オブジェクト指向の原則に基づいて、開発タスクの要件定義書を生成します。クラス図、シーケンス図、ユースケースなどを含みます。"
+        """  説明: オブジェクト指向の原則に基づいて、開発タスクの要件定義書を生成します。
+        クラス図、シーケンス図、ユースケースなどを含みます。"""
     )
     print("\033[33m- dev_func: 関数型プログラミングを用いた開発タスクに関する要件定義書を生成するコンパイラ\033[0m")
     print(
-        "  説明: 関数型プログラミングの原則に基づいて、開発タスクの要件定義書を生成します。純粋関数、不変性、高階関数などの概念を取り入れます。"
+        """  説明: 関数型プログラミングの原則に基づいて、開発タスクの要件定義書を生成します。
+        純粋関数、不変性、高階関数などの概念を取り入れます。"""
     )
     print("\033[33m- biz_consult: ビジネスコンサルティングに関するドキュメントを生成するコンパイラ\033[0m")
     print(
-        "  説明: 企業の課題解決や戦略立案のためのコンサルティングドキュメントを生成します。市場分析、SWOT分析、アクションプランなどを含みます。"
+        """  説明: 企業の課題解決や戦略立案のためのコンサルティングドキュメントを生成します。
+        市場分析、SWOT分析、アクションプランなどを含みます。"""
     )
     print("\033[33m- general_def: 一般的な開発タスクに関する要件定義書を生成するコンパイラ\033[0m")
     print(
-        "  説明: 様々な開発タスクに対応した汎用的な要件定義書を生成します。システムの目的、機能要件、非機能要件などを網羅します。"
+        """  説明: 様々な開発タスクに対応した汎用的な要件定義書を生成します。
+        システムの目的、機能要件、非機能要件などを網羅します。"""
     )
     print("\033[33m- general_reqdef: 一般的な要求事項に関する要件定義書を生成するコンパイラ\033[0m")
     print(
-        "  説明: システム開発以外の一般的な要求事項について、要件定義書を生成します。プロジェクトの目標、スコープ、制約条件などを明確にします。"
+        """  説明: システム開発以外の一般的な要求事項について、要件定義書を生成します。
+        プロジェクトの目標、スコープ、制約条件などを明確にします。"""
     )
     sys.exit(1)
 
@@ -114,75 +191,39 @@ def show_compiler_conflict_error_and_exit():
     sys.exit(1)
 
 
-def process_markdown_file(args):
+def process_markdown_file(params: ZoltraakParams):
     """
     Markdownファイルを処理する
     """
+    compiler_path_abs = os.path.abspath(params.compiler)
+    output_dir_abs = os.path.abspath(params.output_dir)
 
-    md_file_path = args.input  # 入力されたMarkdownファイルのパスを取得
-    output_dir = os.path.abspath(args.output_dir)  # 出力ディレクトリの絶対パスを取得
-    prompt = args.prompt  # プロンプトを取得
+    formatter_path = get_valid_formatter(params.formatter)
 
-    zoltraak_dir = os.path.dirname(zoltraak.__file__)  # zoltraakパッケージのディレクトリパスを取得
-
-    if args.custom_compiler:  # カスタムコンパイラーが指定されている場合
-        compiler_path = get_custom_compiler_path(args.custom_compiler)  # - カスタムコンパイラーのパスを取得
-    else:  # カスタムコンパイラーが指定されていない場合
-        compiler_path = (  # - デフォルトコンパイラーのパスを設定
-            None  # -- コンパイラーが"None"の場合はNoneに設定
-            if args.compiler == "None"
-            else os.path.join(  # -- それ以外の場合はzoltraakディレクトリ内のパスを設定
-                zoltraak_dir,
-                "grimoires/compiler",
-                args.compiler + ("" if args.compiler.endswith(".md") else ".md"),
-            )
-        )
-        # print(f"デフォルトコンパイラーのパス: {compiler_path}")                     # - デフォルトコンパイラーのパスを表示
-
-    if compiler_path is not None and not os.path.exists(compiler_path):
-        print(f"\033[31mファイル「{compiler_path}」が存在しないため検索モードに切り替わります。\033[0m")
-        compiler_path = None
-
-    formatter_path = os.path.join(  # フォーマッタのパスを設定
-        zoltraak_dir,  # - zoltraakディレクトリ内のパスを設定
-        "grimoires/formatter",
-        args.formatter + ("" if args.formatter.endswith(".md") else ".md"),
-    )
-    # print("compiler_path:", compiler_path)                                   # コンパイラーのパスを表示
-    # print("formatter_path:", formatter_path)                                 # フォーマッタのパスを表示
-
-    language = None if args.language is None else args.language  # 汎用言語指定
-    print("language:", args.language)
-
-    md_file_rel_path = os.path.relpath(md_file_path, os.getcwd())  # 現在のワーキングディレクトリからの相対パスを取得
-    py_file_rel_path = os.path.splitext(md_file_rel_path)[0] + ".py"  # Markdownファイルの拡張子を.pyに変更
-    py_file_path = os.path.join(output_dir, py_file_rel_path)  # 出力ディレクトリとPythonファイルの相対パスを結合
+    canonical_name = params.canonical_name
+    md_file_path = get_valid_markdown(params.input)
+    py_file_path = os.path.splitext(md_file_path)[0] + ".py"  # Markdownファイルの拡張子を.pyに変更
 
     magic_info = MagicInfo()
-    magic_info.current_grimoire_name = compiler_path
-    magic_info.grimoire_compiler = compiler_path
+    magic_info.current_grimoire_name = canonical_name
+    magic_info.grimoire_compiler = compiler_path_abs
     magic_info.grimoire_architect = ""  # 後で設定する
     magic_info.grimoire_formatter = formatter_path
     magic_info.model_name = settings.model_name
-    magic_info.prompt = prompt
-    magic_info.language = language
+    magic_info.prompt = params.prompt
+    magic_info.language = params.language
     magic_info.file_info.md_file_path = md_file_path
     magic_info.file_info.py_file_path = py_file_path
+    magic_info.file_info.update()
+    magic_info.file_info.canonical_name = canonical_name
+    magic_info.file_info.target_dir = output_dir_abs
+    display_magic_info_full(magic_info)
 
     mtp = MarkdownToPythonConverter(magic_info)
     os.makedirs(
         os.path.dirname(py_file_path), exist_ok=True
     )  # Pythonファイルの出力ディレクトリを作成（既に存在する場合は何もしない）
     mtp.convert()
-
-    # convert_md_to_py(                                                        # MarkdownファイルをPythonファイルに変換
-    #     md_file_path,                                                        # - 入力Markdownファイルのパス
-    #     py_file_path,                                                        # - 出力Pythonファイルのパス
-    #     prompt,                                                              # - プロンプト
-    #     compiler_path,                                                       # - コンパイラーのパス
-    #     formatter_path,                                                      # - フォーマッタのパス
-    #     language                                                             # - 汎用言語指定
-    # )
 
 
 def get_custom_compiler_path(custom_compiler):
@@ -198,17 +239,15 @@ def get_custom_compiler_path(custom_compiler):
     return compiler_path
 
 
-def process_text_input(args):
-    text = args.input
-    md_file_path = generate_md_file_name(text)
-    prompt = f"{text}"
+def process_text_input(params: ZoltraakParams):
+    # 要件定義書の名前をinputから新規に作成する
+    next_prompt = params.input
+    md_file_path = generate_md_file_name(params.input)
 
-    if args.custom_compiler:
-        os.system(
-            f'zoltraak {md_file_path} -p "{prompt}" -cc {args.custom_compiler} -f {args.formatter} -l {args.language}'
-        )
-    else:
-        os.system(f'zoltraak {md_file_path} -p "{prompt}" -c {args.compiler} -f {args.formatter} -l {args.language}')
+    # コマンドを再発行する
+    params.input = md_file_path
+    params.prompt = next_prompt
+    SubprocessUtil.run_shell_command(params.get_zoltraak_command())
 
 
 def generate_md_file_name(prompt):
@@ -231,4 +270,9 @@ def generate_md_file_name(prompt):
     # print("file_name_prompt:", file_name_prompt)
     response = litellm.generate_response(settings.model_name_smart, file_name_prompt, 100, 0.7)
     file_name = response.strip()
+
+    # 複数ファイル名が取れるケースがあるのでsplitして１つ目だけ取る
+    file_names = file_name.split("\n")
+    if len(file_names) > 1:
+        file_name = file_names[0]
     return f"{file_name}"

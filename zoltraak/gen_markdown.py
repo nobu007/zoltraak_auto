@@ -78,7 +78,7 @@ def modify_prompt(final_prompt: str, formatter_path: str, language: str):
     return modified_prompt
 
 
-def get_formatter_prompt(formatter_path: str, language: str = None):
+def get_formatter_prompt(formatter_path: str, language: str | None = None):
     """
     フォーマッタを取得する関数
 
@@ -93,7 +93,11 @@ def get_formatter_prompt(formatter_path: str, language: str = None):
     elif os.path.exists(formatter_path):  # -- フォーマッタファイルが存在する場合
         formatter_prompt = FileUtil.read_grimoire(formatter_path, language=language)
         if language and formatter_path.endswith("_lang.md"):
-            formatter_prompt += f"\n- You must output everything including code block and diagrams, according to the previous instructions, but make sure you write your response in {language}.\n\n## Output Language\n- You must generate your response using {language}, which is the language of the formatter just above this sentence."
+            formatter_prompt += f"""\n- You must output everything including code block and diagrams,
+            according to the previous instructions, but make sure you write your response in {language}.
+
+            \n## Output Language\n- You must generate your response using {language},
+            which is the language of the formatter just above this sentence."""
     else:  # -- フォーマッタファイルが存在しない場合
         print(f"フォーマッタファイル {formatter_path} が見つかりません。")  # --- エラーメッセージを表示
         formatter_prompt = ""  # --- フォーマッタを空文字列に設定
@@ -101,7 +105,7 @@ def get_formatter_prompt(formatter_path: str, language: str = None):
     return formatter_prompt
 
 
-def save_md_content(md_content, target_file_path)->str:
+def save_md_content(md_content, target_file_path) -> str:
     """
     生成された要件定義書の内容をファイルに保存する関数
 

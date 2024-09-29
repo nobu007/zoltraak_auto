@@ -1,6 +1,7 @@
 from collections.abc import Callable
 from typing import Any
 
+from pydantic import BaseModel
 from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
@@ -13,7 +14,7 @@ console = Console()
 
 
 def run_command_with_spinner(
-    magic_info: MagicInfo, command: list[str], check: bool = False
+    magic_info: MagicInfo, command: list[str], *, check: bool = False
 ) -> SubprocessUtil.CompletedProcess:
     """
     指定されたコマンドを実行し、その間スピナーを表示します。
@@ -97,6 +98,20 @@ def display_magic_info_full(magic_info: MagicInfo):
         table.add_row(key, str(value))
 
     console.print(Panel(table, title="魔法術式情報(詳細)", border_style="white"))
+
+
+def display_info_full(any_info: BaseModel, title: str = "詳細", table_title: str = ""):
+    """
+    実行した魔法術式の情報を整形して表示します。
+    """
+    table = Table(title=table_title, title_style="bold")
+    table.add_column("項目", style="cyan", no_wrap=True)
+    table.add_column("内容", style="magenta")
+
+    for key, value in any_info.model_dump().items():
+        table.add_row(key, str(value))
+
+    console.print(Panel(table, title=title, border_style="white"))
 
 
 def generate_response_with_spinner(
