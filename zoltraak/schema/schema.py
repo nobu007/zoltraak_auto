@@ -129,14 +129,24 @@ class FileInfo(BaseModel):
         default=os.path.abspath(DEFAULT_PY_FILE), description="処理対象のpyファイル(絶対パス)"
     )
 
-    # 処理対象ファイル(convert source => target)
+    # ルートディレクトリ
+    work_dir: str = Field(default=os.getcwd(), description="作業ディレクトリ")
+    target_dir: str = Field(default="./generated", description="出力先のルートディレクトリ")
+    past_dir: str = Field(default="./past", description="過去の出力先のルートディレクトリ")
+    past_source_dir: str = Field(default="./past/source", description="過去のソースフォルダ")
+    past_target_dir: str = Field(default="./past/target", description="過去の出力先ファイルフォルダ")
+
+    # 処理対象ファイル(convert source => targetに利用)
     source_file_path: str = Field(default=DEFAULT_PRE_MD_FILE, description="ソースファイルパス(絶対パス)")
     target_file_path: str = Field(default=DEFAULT_MD_FILE, description="処理対象のファイルパス(絶対パス)")
-    past_source_file_path: str = Field(default="", description="過去のソースファイル")
-    past_target_file_path: str = Field(default="", description="過去の出力先ファイル(絶対パス)")
-    past_source_folder: str = Field(default="past_md_files", description="過去のソースフォルダ")
-    past_target_folder: str = Field(default="past_py_files", description="過去の出力先ファイルフォルダ")
-    target_dir: str = Field(default="./generated", description="出力先のディレクトリ")
+    source_file_name: str = Field(default=DEFAULT_PRE_MD_FILE, description="ソースファイル名")
+    target_file_name: str = Field(default=DEFAULT_MD_FILE, description="処理対象のファイル名")
+    past_source_file_path: str = Field(
+        default="./past/source/" + DEFAULT_PRE_MD_FILE, description="過去のソースファイル(絶対パス)"
+    )
+    past_target_file_path: str = Field(
+        default="./past/target/" + DEFAULT_MD_FILE, description="過去の出力先ファイル(絶対パス)"
+    )
 
     # その他
     source_hash: str = Field(default="1", description="ソースファイルのハッシュ値")
@@ -146,7 +156,7 @@ class FileInfo(BaseModel):
 
     def update(self):
         self.update_path_abs()
-        self.update_past_folder()
+        self.update_source_target_past()
         self.update_hash()
 
     def update_path_abs(self):
@@ -155,22 +165,29 @@ class FileInfo(BaseModel):
         self.py_file_path_abs = os.path.abspath(self.py_file_path)
 
     def update_source_target(self, source_file_path, target_file_path):
+        # source_file_path, source_file_path を更新する処理(path系のトリガー)
+
+        # full path
         self.source_file_path = source_file_path
         self.target_file_path = target_file_path
 
-    def update_source_target_past(self, past_source_folder, past_target_folder):
-        self.past_source_folder = past_source_folder
-        self.past_target_folder = past_target_folder
-        os.makedirs(past_source_folder, exist_ok=True)
-        os.makedirs(past_target_folder, exist_ok=True)
+        # file name
+        self.source_file_name = os.path.basename(source_file_path)
+        self.target_file_name = os.path.basename(target_file_path)
 
-    def update_past_folder(self):
-        source_file_name = os.path.dirname(self.source_file_path)
-        target_file_name = os.path.basename(self.target_file_path)
-        self.past_source_folder = "past_" + source_file_name
-        self.past_target_folder = "past_" + target_file_name
-        os.makedirs(self.past_source_folder, exist_ok=True)
-        os.makedirs(self.past_target_folder, exist_ok=True)
+        # past source and target
+        source_file_path_rel = os.path.relpath(source_file_path, self.work_dir)
+        target_file_path_rel = os.path.relpath(target_file_path, self.work_dir)
+        self.past_source_file_path = os.path.join(self.past_source_dir, source_file_path_rel)
+        self.past_target_file_path = os.path.join(self.past_target_dir, target_file_path_rel)
+        self.update_source_target_past()
+
+    def update_source_target_past(self):
+        # past_source_file_path, past_target_file_path が更新されたら呼ぶこと！
+        self.past_source_dir = os.path.dirname(self.past_source_file_path)
+        self.past_target_dir = os.path.dirname(self.past_target_file_path)
+        os.makedirs(self.past_source_dir, exist_ok=True)
+        os.makedirs(self.past_target_dir, exist_ok=True)
 
     def update_hash(self):
         self.source_hash = self.calculate_file_hash(self.source_file_path)

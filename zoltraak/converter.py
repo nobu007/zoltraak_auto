@@ -45,15 +45,9 @@ class MarkdownToPythonConverter:
     def convert(self):
         file_info = self.magic_info.file_info
         if self.magic_info.prompt is None:  # プロンプトが指定されていない場合
-            file_info.source_file_path = file_info.md_file_path  # - ソースファイルパスをマークダウンファイルパスに設定
-            file_info.target_file_path = file_info.py_file_path  # - ターゲットファイルパスをPythonファイルパスに設定
-            file_info.past_source_folder = "past_md_files"  # - 過去のソースフォルダを "past_md_files" に設定
+            file_info.update_source_target(file_info.md_file_path, file_info.py_file_path)
         else:  # プロンプトが指定されている場合
-            file_info.source_file_path = file_info.md_file_path  # - ソースファイルパスをマークダウンファイルパスに設定
-            file_info.target_file_path = (
-                file_info.md_file_path
-            )  # - ターゲットファイルパスをマークダウンファイルパスに設定
-            file_info.past_source_folder = "past_prompt_files"  # - 過去のソースフォルダを "past_prompt_files" に設定
+            file_info.update_source_target(file_info.md_file_path, file_info.md_file_path)
 
             if FileUtil.has_content(file_info.md_file_path):  # -- マークダウンファイルのコンテンツが有効な場合
                 file_info.update()
@@ -67,10 +61,6 @@ class MarkdownToPythonConverter:
                 return ""  # --- 関数を終了
 
         file_info.update()
-        os.makedirs(file_info.past_source_folder, exist_ok=True)  # - 過去のソースフォルダを作成（既存の場合はスキップ）
-        file_info.past_source_file_path = os.path.join(
-            file_info.past_source_folder, os.path.basename(file_info.source_file_path)
-        )  # - 過去のソースファイルパスを設定
 
         if FileUtil.has_content(file_info.target_file_path):  # ターゲットファイルのコンテンツが有効な場合
             self.handle_existing_target_file()  # - 既存のターゲットファイルを処理
