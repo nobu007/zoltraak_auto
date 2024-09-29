@@ -7,7 +7,7 @@ import zoltraak
 import zoltraak.llms.litellm_api as litellm
 from zoltraak import settings
 from zoltraak.converter import MarkdownToPythonConverter
-from zoltraak.schema.schema import MagicInfo, ZoltraakParams
+from zoltraak.schema.schema import MagicInfo, MagicLayer, MagicMode, ZoltraakParams
 from zoltraak.utils.file_util import FileUtil
 from zoltraak.utils.log_util import log
 from zoltraak.utils.rich_console import display_info_full, display_magic_info_full
@@ -15,7 +15,9 @@ from zoltraak.utils.subprocess_util import SubprocessUtil
 
 
 def main():
-    parser = argparse.ArgumentParser(description="MarkdownファイルをPythonファイルに変換します")
+    parser = argparse.ArgumentParser(
+        description="MarkdownファイルをPythonファイルに変換します", formatter_class=argparse.RawTextHelpFormatter
+    )
     parser.add_argument("input", help="変換対象のMarkdownファイルのパスまたはテキスト", nargs="?")
     parser.add_argument("--output-dir", help="生成されたPythonファイルの出力ディレクトリ", default="generated")
     parser.add_argument("-p", "--prompt", help="追加のプロンプト情報", default=None)
@@ -27,6 +29,22 @@ def main():
     )  # 追加: バージョン情報表示オプション
     parser.add_argument("-l", "--language", help="出力言語を指定", default=None)  # 追加: 汎用言語指定オプション
     parser.add_argument("-m", "--model_name", help="使用するモデルの名前", default="")
+    parser.add_argument(
+        "-mm",
+        "--magic_mode",
+        type=MagicMode,
+        choices=list(MagicMode),
+        help=MagicMode.get_description(),
+        default=MagicMode.GRIMOIRE_AND_PROMPT,
+    )
+    parser.add_argument(
+        "-ml",
+        "--magic_layer",
+        type=MagicLayer,
+        choices=list(MagicLayer),
+        help=MagicLayer.get_description(),
+        default=MagicLayer.LAYER_2_REQUIREMENT_GEN,
+    )
     args = parser.parse_args()
     if args.version:  # バージョン情報表示オプションが指定された場合
         show_version_and_exit()  # - バージョン情報を表示して終了
@@ -48,6 +66,8 @@ def main():
     params.input = args.input
     params.language = args.language
     params.model_name = args.model_name
+    params.magic_mode = args.magic_mode
+    params.magic_layer = args.magic_layer
     log("params.input=" + params.input)
     if params.input.endswith(".md"):
         params.canonical_name = os.path.basename(params.input)
@@ -212,6 +232,8 @@ def process_markdown_file(params: ZoltraakParams):
     magic_info.model_name = settings.model_name
     magic_info.prompt = params.prompt
     magic_info.language = params.language
+    magic_info.magic_mode = params.magic_mode
+    magic_info.magic_layer = params.magic_layer
     magic_info.file_info.md_file_path = md_file_path
     magic_info.file_info.py_file_path = py_file_path
     magic_info.file_info.update()

@@ -13,11 +13,37 @@ class MagicMode(Enum):
     PROMPT_ONLY = "prompt_only"  # プロンプト（グリモアなし）
     SEARCH_GRIMOIRE = "search_grimoire"  # 最適なグリモアを検索
 
+    def __str__(self):
+        return self.value
+
+    def __repr__(self) -> str:
+        return self.value
+
+    @staticmethod
+    def get_description():
+        description_list = ["グリモアの利用方法を指定します。"]
+        for i, mode in enumerate(MagicMode):
+            description_list.append(f"  {i}: " + str(mode))
+        return "\n".join(description_list)
+
 
 class MagicLayer(Enum):
     LAYER_1_REQUEST_GEN = "layer_1_request_gen"  # レイヤ１： 生のprompt => ユーザ要求記述書
     LAYER_2_REQUIREMENT_GEN = "layer_2_requirement_gen"  # レイヤ２： ユーザ要求記述書 => 要件定義書
     LAYER_3_CODE_GEN = "layer_3_code_gen"  # レイヤ３： 要件定義書 => コード
+
+    def __str__(self):
+        return self.value
+
+    def __repr__(self) -> str:
+        return self.value.split("_", 1)[1]  # => layer_1
+
+    @staticmethod
+    def get_description():
+        description_list = ["グリモアの起動レイヤを指定します。例えばコード生成から再実行できます。"]
+        for i, layer in enumerate(MagicLayer):
+            description_list.append(f"  {i}: " + layer.__repr__())
+        return "\n".join(description_list)
 
 
 class ZoltraakParams(BaseModel):
@@ -28,6 +54,10 @@ class ZoltraakParams(BaseModel):
     formatter: str = Field(default="", description="対変換対象のMarkdownファイルのパスまたはテキスト")
     language: str = Field(default="", description="対出力言語を指定")
     model_name: str = Field(default="", description="使用するモデルの名前")
+    magic_mode: str = Field(default="", description="グリモアの利用方法")
+    magic_layer: str = Field(default="", description="グリモアの起動レイヤ")
+
+    # 以降は自動設定される項目(引数由来ではない)
     canonical_name: str = Field(
         default="zoltraak.md", description="作成対象の識別子(通常はinputのMarkdownファイル名: xx.md）"
     )
@@ -46,6 +76,10 @@ class ZoltraakParams(BaseModel):
             cmd += f" --language {self.language}"
         if self.model_name:
             cmd += f" --model_name {self.model_name}"
+        if self.model_name:
+            cmd += f" --magic_mode {self.magic_mode}"
+        if self.model_name:
+            cmd += f" --magic_layer {self.magic_layer}"
         print("get_zoltraak_command cmd=", cmd)
         return cmd
 
