@@ -264,7 +264,7 @@ def get_custom_compiler_path(custom_compiler):
 def process_text_input(params: ZoltraakParams):
     # 要件定義書の名前をinputから新規に作成する
     next_prompt = params.input
-    md_file_path = generate_md_file_name(params.input)
+    md_file_path = generate_md_file_name(next_prompt)
 
     # コマンドを再発行する
     params.input = md_file_path
@@ -288,7 +288,8 @@ def generate_md_file_name(prompt):
     # 既存のファイル名と被らないようにファイル名を生成するプロンプトを作成
     file_name_prompt = f"{prompt}に基づいて、要件定義書のファイル名をdef_hogehoge.mdの形式で提案してください。\n"
     file_name_prompt += f"ただし、以下の既存のファイル名と被らないようにしてください。\n{', '.join(existing_files)}\n"
-    file_name_prompt += "ファイル名のみをアウトプットしてください。\n"
+    file_name_prompt += "ファイル名のみを1つだけアウトプットしてください。\n"
+    file_name_prompt += "単一のファイル名以外は絶対に出力しないでください\n"
     # print("file_name_prompt:", file_name_prompt)
     response = litellm.generate_response(settings.model_name_smart, file_name_prompt, 100, 0.7)
     file_name = response.strip()
