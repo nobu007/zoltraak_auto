@@ -298,4 +298,9 @@ def generate_md_file_name(prompt):
     file_names = file_name.split("\n")
     if len(file_names) > 1:
         file_name = file_names[0]
+
+    # 禁止文字を削除
+    ng_word = ["\\", "/", ":", "*", "?", '"', "<", ">", "|", " "]
+    for word in ng_word:
+        file_name = file_name.replace(word, "")
     return f"{file_name}"

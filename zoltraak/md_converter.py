@@ -16,6 +16,7 @@ class MarkdownToMarkdownConverter:
         MagicMode
         MagicLayer
       MagicInfo.FileInfoに入出力ファイルが展開済み
+        prompt_file_path
         pre_md_file_path
         md_file_path
         py_file_path
@@ -25,7 +26,7 @@ class MarkdownToMarkdownConverter:
     この処理はsourceの要求をtargetのマークダウンに反映することである。
 
     <LAYER_1>
-      source => None
+      source => prompt_file_path
       target => pre_md_file_path
     <LAYER_2>
       source => pre_md_file_path

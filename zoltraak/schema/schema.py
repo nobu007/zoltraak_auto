@@ -136,7 +136,7 @@ class FileInfo(BaseModel):
     past_target_file_path: str = Field(default="", description="過去の出力先ファイル(絶対パス)")
     past_source_folder: str = Field(default="past_md_files", description="過去のソースフォルダ")
     past_target_folder: str = Field(default="past_py_files", description="過去の出力先ファイルフォルダ")
-    target_dir: str = Field(default="./output", description="出力先のディレクトリ")
+    target_dir: str = Field(default="./generated", description="出力先のディレクトリ")
 
     # その他
     source_hash: str = Field(default="1", description="ソースファイルのハッシュ値")
@@ -146,6 +146,7 @@ class FileInfo(BaseModel):
 
     def update(self):
         self.update_path_abs()
+        self.update_past_folder()
         self.update_hash()
 
     def update_path_abs(self):
@@ -162,6 +163,14 @@ class FileInfo(BaseModel):
         self.past_target_folder = past_target_folder
         os.makedirs(past_source_folder, exist_ok=True)
         os.makedirs(past_target_folder, exist_ok=True)
+
+    def update_past_folder(self):
+        source_file_name = os.path.dirname(self.source_file_path)
+        target_file_name = os.path.basename(self.target_file_path)
+        self.past_source_folder = "past_" + source_file_name
+        self.past_target_folder = "past_" + target_file_name
+        os.makedirs(self.past_source_folder, exist_ok=True)
+        os.makedirs(self.past_target_folder, exist_ok=True)
 
     def update_hash(self):
         self.source_hash = self.calculate_file_hash(self.source_file_path)

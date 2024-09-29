@@ -5,14 +5,43 @@ import zoltraak.llms.litellm_api as litellm
 from zoltraak import settings
 from zoltraak.gencode import TargetCodeGenerator
 from zoltraak.md_generator import generate_md_from_prompt
+from zoltraak.utils.file_util import FileUtil
+from zoltraak.utils.log_util import log_inout
 from zoltraak.utils.rich_console import MagicInfo, display_magic_info_full
 from zoltraak.utils.subprocess_util import SubprocessUtil
 
 
 class MarkdownToPythonConverter:
+    """マークダウン(要件定義書)からpythonコードを更新するコンバーター
+    前提:
+      MagicInfoにモードとレイヤーが展開済み
+        MagicMode
+        MagicLayer
+      MagicInfo.FileInfoに入出力ファイルが展開済み
+        prompt_file_path
+        pre_md_file_path
+        md_file_path
+        py_file_path
+
+    MagicLayer によってsourceとtargetファイルが変化する
+    どのレイヤーでもsourceのマークダウンにはtargetへの要求が書かれている。
+    この処理はsourceの要求をtargetのマークダウンに反映することである。
+
+    <LAYER_1(not active)>
+      source => prompt_file_path
+      target => pre_md_file_path
+    <LAYER_2>
+      source => pre_md_file_path
+      target => md_file_path
+    <LAYER_3>
+      source => md_file_path
+      target => py_file_path
+    """
+
     def __init__(self, magic_info: MagicInfo):
         self.magic_info = magic_info
 
+    @log_inout
     def convert(self):
         file_info = self.magic_info.file_info
         if self.magic_info.prompt is None:  # プロンプトが指定されていない場合
@@ -26,7 +55,8 @@ class MarkdownToPythonConverter:
             )  # - ターゲットファイルパスをマークダウンファイルパスに設定
             file_info.past_source_folder = "past_prompt_files"  # - 過去のソースフォルダを "past_prompt_files" に設定
 
-            if os.path.exists(file_info.md_file_path):  # -- マークダウンファイルが存在する場合
+            if FileUtil.has_content(file_info.md_file_path):  # -- マークダウンファイルのコンテンツが有効な場合
+                file_info.update()
                 display_magic_info_full(self.magic_info)
                 print(
                     f"{file_info.md_file_path}は既存のファイルです。promptに従って変更を提案します。"
@@ -36,19 +66,16 @@ class MarkdownToPythonConverter:
                 )  # --- プロンプトに従ってターゲットファイルの差分を提案
                 return ""  # --- 関数を終了
 
-        if os.path.exists(file_info.source_file_path):  # ソースファイルが存在する場合
-            file_info.source_hash = self.calculate_file_hash(
-                file_info.source_file_path
-            )  # - ソースファイルのハッシュ値を計算
+        file_info.update()
         os.makedirs(file_info.past_source_folder, exist_ok=True)  # - 過去のソースフォルダを作成（既存の場合はスキップ）
         file_info.past_source_file_path = os.path.join(
             file_info.past_source_folder, os.path.basename(file_info.source_file_path)
         )  # - 過去のソースファイルパスを設定
 
-        if os.path.exists(file_info.target_file_path):  # ターゲットファイルが存在する場合
+        if FileUtil.has_content(file_info.target_file_path):  # ターゲットファイルのコンテンツが有効な場合
             self.handle_existing_target_file()  # - 既存のターゲットファイルを処理
             return None
-        # ターゲットファイルが存在しない場合
+        # ターゲットファイルが無い or コンテンツが無効の場合
         self.handle_new_target_file()  # - 新しいターゲットファイルを処理
         return None
 
@@ -57,6 +84,7 @@ class MarkdownToPythonConverter:
             content = file.read()
             return hashlib.sha256(content).hexdigest()
 
+    @log_inout
     def handle_existing_target_file(self) -> str:
         file_info = self.magic_info.file_info
         with open(file_info.target_file_path, encoding="utf-8") as target_file:
@@ -76,6 +104,7 @@ class MarkdownToPythonConverter:
                         self.display_source_diff()
         return ""
 
+    @log_inout
     def display_source_diff(self):
         file_info = self.magic_info.file_info
         import difflib
@@ -93,6 +122,7 @@ class MarkdownToPythonConverter:
         print(f"ターゲットファイル: {file_info.target_file_path}")
         # input("修正が完了したらEnterキーを押してください。")
 
+    @log_inout
     def handle_new_target_file(self) -> str:
         file_info = self.magic_info.file_info
         if self.magic_info.prompt is None:
@@ -188,6 +218,7 @@ promptの内容:
             # choice = input("選択してください (1, 2, 3): ")
             choice = "1"
 
+    @log_inout
     def apply_diff_to_target_file(self, target_file_path, target_diff):
         """
         提案された差分をターゲットファイルに適用する関数

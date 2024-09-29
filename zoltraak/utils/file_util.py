@@ -1,15 +1,16 @@
 import os
 import shutil
 
-from zoltraak.utils.log_util import log
+from zoltraak.utils.log_util import log, log_i
 
 
 class FileUtil:
     @staticmethod
     def read_file(file_path: str) -> str:
         # ターゲットファイルの現在の内容を読み込む
-        with open(file_path, encoding="utf-8") as file:
-            return file.read()
+        if os.path.isfile(file_path):
+            with open(file_path, encoding="utf-8") as file:
+                return file.read()
         return f"{file_path} を開けませんでした。"
 
     @staticmethod
@@ -38,3 +39,11 @@ class FileUtil:
     @staticmethod
     def copy_file(src_file_path: str, dis_file_path: str) -> str:
         return shutil.copy(src_file_path, dis_file_path)
+
+    THRESHOLD_BYTES_MIN_CONTENT = 500  # ファイル内にコンテンツありと見なす閾値
+
+    @staticmethod
+    def has_content(file_path: str) -> bool:
+        content = FileUtil.read_file(file_path)
+        log_i("has_content file_path=%s, content=%s", file_path, content)
+        return len(content) > FileUtil.THRESHOLD_BYTES_MIN_CONTENT
