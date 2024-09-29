@@ -7,7 +7,7 @@ from pydantic import BaseModel, Field
 from zoltraak import settings
 
 
-class MagicMode(Enum):
+class MagicMode(str, Enum):
     GRIMOIRE_ONLY = "grimoire_only"  # プロンプト指定なしでグリモアのみ指定
     GRIMOIRE_AND_PROMPT = "grimoire_and_prompt"  # グリモア＋プロンプト
     PROMPT_ONLY = "prompt_only"  # プロンプト（グリモアなし）
@@ -27,7 +27,7 @@ class MagicMode(Enum):
         return "\n".join(description_list)
 
 
-class MagicLayer(Enum):
+class MagicLayer(str, Enum):
     LAYER_1_REQUEST_GEN = "layer_1_request_gen"  # レイヤ１： 生のprompt => ユーザ要求記述書
     LAYER_2_REQUIREMENT_GEN = "layer_2_requirement_gen"  # レイヤ２： ユーザ要求記述書 => 要件定義書
     LAYER_3_CODE_GEN = "layer_3_code_gen"  # レイヤ３： 要件定義書 => コード

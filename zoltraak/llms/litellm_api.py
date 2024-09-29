@@ -29,7 +29,6 @@ class ModelStatsLogger(CustomLogger):
 
 # ロガーを設定
 logger = ModelStatsLogger()
-completion = litellm.completion
 litellm.callbacks = [logger]
 
 

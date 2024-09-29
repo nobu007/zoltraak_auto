@@ -1,13 +1,26 @@
 import functools
 import logging
+import sys
 
 import zoltraak
 from zoltraak import settings
 
-level = logging.INFO if settings.is_debug else logging.WARNING
-logging.basicConfig(level=level)
+default_level = logging.INFO if settings.is_debug else logging.WARNING
+logging.basicConfig(level=default_level)
 
-logger = logging.getLogger(zoltraak.__name__)
+
+def get_logger(name: str, level: int = default_level) -> logging.Logger:
+    logger = logging.getLogger(name)
+    handler = logging.StreamHandler(stream=sys.stdout)
+    handler.setLevel(level)
+    formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+    handler.setFormatter(formatter)
+    logger.addHandler(handler)
+    logger.propagate = False
+    return logger
+
+
+logger = get_logger(zoltraak.__name__)
 
 
 def log_inout(func):

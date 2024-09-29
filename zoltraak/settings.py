@@ -32,4 +32,4 @@ formatter_dir = os.path.join(grimoires_dir, "formatter")
 interpretspec_dir = os.path.join(grimoires_dir, "interpretspec")
 
 # mode
-is_debug = True  # デバッグモード
+is_debug = False  # デバッグモード
