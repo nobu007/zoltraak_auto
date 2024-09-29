@@ -265,10 +265,7 @@ class MagicInfo(BaseModel):
     def update(self, **kwargs):
         for key, value in kwargs.items():
             setattr(self, key, value)
-
-        self.md_file_path_abs = os.path.abspath(self.md_file_path)
-        self.py_file_path_abs = os.path.abspath(self.py_file_path)
-        return self
+        self.file_info.update()
 
     def get_compiler_path(self):
         return os.path.join(settings.compiler_dir, self.grimoire_compiler)

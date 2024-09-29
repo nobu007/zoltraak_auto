@@ -15,11 +15,20 @@ class FileUtil:
 
     @staticmethod
     def write_file(file_path: str, content: str) -> str:
-        os.makedirs(os.path.dirname(file_path), exist_ok=True)
-        with open(file_path, "w", encoding="utf-8") as file:
-            file.write(content)
-            return file_path
-        return ""
+        file_dir = os.path.dirname(file_path)
+        if file_dir != "" and not os.path.exists(file_dir):
+            try:
+                os.makedirs(file_dir, exist_ok=True)
+            except OSError as e:
+                log(f"ディレクトリの作成に失敗しました: {e}")
+                return f"ディレクトリの作成に失敗しました: {e}"
+        try:
+            with open(file_path, "w", encoding="utf-8") as file:
+                file.write(content)
+                return file_path
+        except OSError as e:
+            log(f"ファイルの書き込みに失敗しました: {e}")
+            return f"ファイルの書き込みに失敗しました: {e}"
 
     @staticmethod
     def read_grimoire(file_path: str, prompt: str = "", language: str = "") -> str:
