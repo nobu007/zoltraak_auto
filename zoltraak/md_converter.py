@@ -195,8 +195,8 @@ promptの内容:
         )
         target_diff = response.strip()
         # ターゲットファイルの差分を表示
-        print("ターゲットファイルの差分:")
-        print(target_diff)
+        log("ターゲットファイルの差分:")
+        log(target_diff)
 
         # ユーザーに適用方法を尋ねる
         print("差分をどのように適用しますか?")
