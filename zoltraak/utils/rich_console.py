@@ -95,9 +95,22 @@ def display_magic_info_full(magic_info: MagicInfo):
     table.add_column("内容", style="magenta")
 
     for key, value in magic_info.model_dump().items():
+        if key == "file_info":
+            table.add_row(key, "<<==== FileInfo start ====>>")
+            add_file_info_full(value, table)
+            table.add_row(key, "<<==== FileInfo  end  ====>>")
+            continue
         table.add_row(key, str(value))
 
     console.print(Panel(table, title="魔法術式情報(詳細)", border_style="white"))
+
+
+def add_file_info_full(file_info: dict, table: Table) -> None:
+    """
+    実行した魔法術式の情報(FileInfo)を整形して追加します。
+    """
+    for key, value in file_info.items():
+        table.add_row("  " + key, str(value))
 
 
 def display_info_full(any_info: BaseModel, title: str = "詳細", table_title: str = ""):
