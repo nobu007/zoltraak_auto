@@ -1,9 +1,10 @@
 import os
 import unittest
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 from zoltraak.md_converter import MarkdownToMarkdownConverter
 from zoltraak.schema.schema import FileInfo, MagicInfo, MagicLayer, MagicMode
+from zoltraak.tests.unit_tests.helper import MockManager
 from zoltraak.utils.file_util import FileUtil
 
 PROMPT_KEYWORD = "zoltraakシステムは曖昧なユーザー入力を"
@@ -11,9 +12,9 @@ PROMPT_KEYWORD = "zoltraakシステムは曖昧なユーザー入力を"
 
 class MarkdownToPythonConverter(unittest.TestCase):
     def setUp(self):
-        self.magic_mock_generate_response = MagicMock()
+        self.mock_manager = MockManager()
         self.magic_mock_generate_response.return_value = "dummy"
-        patch("zoltraak.llms.litellm_api.generate_response", self.magic_mock_generate_response).start()
+        # patch("zoltraak.llms.litellm_api.generate_response", self.magic_mock_generate_response).start()
 
         self.magic_info = MagicInfo(
             magic_layer=MagicLayer.LAYER_1_REQUEST_GEN,

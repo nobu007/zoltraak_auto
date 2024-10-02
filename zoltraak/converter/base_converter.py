@@ -100,10 +100,8 @@ class BaseConverter:
         file_info = self.magic_info.file_info
         import difflib
 
-        with open(file_info.past_source_file_path, encoding="utf-8") as old_source_file:
-            old_source_lines = old_source_file.readlines()
-        with open(file_info.source_file_path, encoding="utf-8") as new_source_file:
-            new_source_lines = new_source_file.readlines()
+        old_source_lines = FileUtil.read_file(file_info.past_source_file_path)
+        new_source_lines = FileUtil.read_file(file_info.source_file_path)
 
         source_diff = difflib.unified_diff(old_source_lines, new_source_lines, lineterm="", n=0)
         source_diff_text = "".join(source_diff)
