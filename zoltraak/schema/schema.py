@@ -168,8 +168,8 @@ class FileInfo(BaseModel):
         # source_file_path, source_file_path を更新する処理(path系のトリガー)
 
         # full path
-        self.source_file_path = source_file_path
-        self.target_file_path = target_file_path
+        self.source_file_path = os.path.abspath(source_file_path)
+        self.target_file_path = os.path.abspath(target_file_path)
 
         # file name
         self.source_file_name = os.path.basename(source_file_path)

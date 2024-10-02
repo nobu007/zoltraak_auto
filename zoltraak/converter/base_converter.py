@@ -36,7 +36,7 @@ class BaseConverter:
         self.update_grimoire_and_prompt()
 
         # ソースファイルの有無による分岐
-        if os.path.exists(file_info.source_file_path):  # -- マークダウンファイルが存在する場合
+        if FileUtil.has_content(file_info.source_file_path):  # -- マークダウンファイルが存在する場合
             log(f"既存のソースファイル {file_info.source_file_path} が存在しました。")
             self.magic_info.prompt += "\n\n<<追加指示>>\n"
             self.magic_info.prompt += FileUtil.read_file(file_info.source_file_path)
@@ -48,7 +48,7 @@ class BaseConverter:
         display_magic_info_full(self.magic_info)
 
         # ターゲットファイルの有無による分岐
-        if os.path.exists(file_info.target_file_path):  # ターゲットファイルが存在する場合
+        if FileUtil.has_content(file_info.target_file_path):  # ターゲットファイルが存在する場合
             return self.handle_existing_target_file()  # - 既存のターゲットファイルを処理
         # ターゲットファイルが存在しない場合
         return self.handle_new_target_file()  # - 新しいターゲットファイルを処理

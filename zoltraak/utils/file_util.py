@@ -10,7 +10,7 @@ class FileUtil:
         # ターゲットファイルの現在の内容を読み込む
         if os.path.isfile(file_path):
             with open(file_path, encoding="utf-8") as file:
-                return file.read()
+                return "\n".join(file.readlines())
         return f"{file_path} を開けませんでした。"
 
     @staticmethod
@@ -54,5 +54,6 @@ class FileUtil:
     @staticmethod
     def has_content(file_path: str) -> bool:
         content = FileUtil.read_file(file_path)
-        log_i("has_content file_path=%s, content=%s", file_path, content)
+        log_i("has_content file_path=%s, content(len)=%d", file_path, len(content))
+        log_i("has_content file_path=%s, content(len)=%s", file_path, content)
         return len(content) > FileUtil.THRESHOLD_BYTES_MIN_CONTENT

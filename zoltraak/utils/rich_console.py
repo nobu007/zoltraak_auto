@@ -11,6 +11,7 @@ from zoltraak.schema.schema import MagicInfo
 from zoltraak.utils.subprocess_util import SubprocessUtil
 
 console = Console()
+console = Console(width=120)  # ターミナルの幅
 
 
 def run_command_with_spinner(
