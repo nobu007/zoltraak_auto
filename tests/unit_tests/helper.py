@@ -39,7 +39,7 @@ class MockManager:
         return instance
 
 
-class TestCaseBase(unittest.TestCase):
+class BaseTestCase(unittest.TestCase):
     def setUp(self):
         # llm呼び出しを無効化するmockをセットアップ
         self.mock_manager = MockManager()

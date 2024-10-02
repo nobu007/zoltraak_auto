@@ -1,11 +1,11 @@
 import os
 
-from tests.unit_tests.helper import TestCaseBase
+from tests.unit_tests.helper import BaseTestCase
 from zoltraak.converter.base_converter import BaseConverter
 from zoltraak.schema.schema import MagicInfo
 
 
-class TestBaseConverter(TestCaseBase):
+class TestBaseConverter(BaseTestCase):
     def setUp(self):
         super().setUp()
 
