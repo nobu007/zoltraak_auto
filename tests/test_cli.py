@@ -1,15 +1,17 @@
 import os
+import sys
 import unittest
 
 import litellm
 import pytest
 
-# sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
-# sys.path.append(os.path.join(os.path.dirname(__file__), "../zoltraak"))
-# print("===============================")
 from zoltraak.md_generator import generate_md_from_prompt_recursive, generate_response
 from zoltraak.utils.rich_console import MagicInfo
 from zoltraak.utils.subprocess_util import SubprocessUtil
+
+sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
+sys.path.append(os.path.join(os.path.dirname(__file__), "../zoltraak"))
+print("===============================")
 
 
 class TestzoltraakCommand(unittest.TestCase):  # TestzoltraakCommandクラスを定義し、unittest.TestCaseを継承します。
@@ -46,13 +48,13 @@ class TestzoltraakCommand(unittest.TestCase):  # TestzoltraakCommandクラスを
         self.assertIn("サンプルプロンプト", result.stdout)
 
         # -cオプションでコンパイラを指定したテスト
-        result = SubprocessUtil.run(["zoltraak", "sample.md", "-c", "compiler.md"], capture_output=True, text=True)
+        result = SubprocessUtil.run(["zoltraak", "sample.md", "-c", "dev_obj.md"], capture_output=True, text=True)
         self.assertEqual(result.returncode, 0)
         self.assertIn("sample.md", result.stdout)
-        self.assertIn("compiler.md", result.stdout)
+        self.assertIn("dev_obj.md", result.stdout)
 
         # -fオプションでフォーマッタを指定したテスト
-        result = SubprocessUtil.run(["zoltraak", "sample.md", "-f", "formatter.md"], capture_output=True, text=True)
+        result = SubprocessUtil.run(["zoltraak", "sample.md", "-f", "md_comment.md"], capture_output=True, text=True)
         self.assertEqual(result.returncode, 0)
         self.assertIn("sample.md", result.stdout)
         self.assertIn("formatter.md", result.stdout)
@@ -107,10 +109,11 @@ class TestzoltraakCommand(unittest.TestCase):  # TestzoltraakCommandクラスを
     def test_text_input(self):
         """
         zoltraakコマンドにテキスト入力を与えた場合のテストメソッドを定義します。
-        実行例: `zoltraak "お腹減った"` コマンドを実行した場合、エラーが発生せずに正常に終了するはずです。
+        実行例: `zoltraak "お腹減ったから短いプログラムで解決して"` コマンドを実行した場合、
+        エラーが発生せずに正常に終了するはずです。
         """
         result = SubprocessUtil.run(
-            ["zoltraak", "お腹減った"], capture_output=True, text=True, check=False
+            ["zoltraak", "お腹減ったから短いプログラムで解決して"], capture_output=True, text=True, check=False
         )  # zoltraakコマンドにテキスト入力を与えて実行し、その結果をresultに格納します。
         print("STDOUT:", result.stdout)  # 標準出力の内容を出力
         print("STDERR:", result.stderr)  # 標準エラーの内容を出力
