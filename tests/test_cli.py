@@ -14,7 +14,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), "../zoltraak"))
 print("===============================")
 
 
-class TestzoltraakCommand(unittest.TestCase):  # TestzoltraakCommandクラスを定義し、unittest.TestCaseを継承します。
+class TestZoltraakCommand(unittest.TestCase):  # TestZoltraakCommand クラスを定義し、unittest.TestCaseを継承します。
     def test_zoltraak_command(self):
         """
         zoltraakコマンドの機能をテストします。

@@ -26,17 +26,17 @@ python tests/test_cli.py
 ### テストクラスを指定してテストを実行
 
 ```bash
-pytest tests/test_cli.py::TestzoltraakCommand
+pytest tests/test_cli.py::TestZoltraakCommand
 ```
 
-この方法では、`TestzoltraakCommand`クラス内のすべてのテストメソッドが実行されます。
+この方法では、`TestZoltraakCommand`クラス内のすべてのテストメソッドが実行されます。
 
 ### テストメソッドを指定してテストを実行
 
 ```bash
-pytest tests/test_cli.py::TestzoltraakCommand::test_missing_md_file_argument
-pytest tests/test_cli.py::TestzoltraakCommand::test_prompt_argument
-pytest tests/test_cli.py::TestzoltraakCommand::test_text_input
+pytest tests/test_cli.py::TestZoltraakCommand::test_missing_md_file_argument
+pytest tests/test_cli.py::TestZoltraakCommand::test_prompt_argument
+pytest tests/test_cli.py::TestZoltraakCommand::test_text_input
 ```
 
 この方法では、指定したテストメソッドだけが実行されます。複数のテストメソッドを指定することもできます。
