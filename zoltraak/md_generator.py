@@ -10,7 +10,7 @@ from zoltraak.utils.gui_util import GuiUtil
 from zoltraak.utils.rich_console import MagicInfo, generate_response_with_spinner
 
 
-def generate_md_from_prompt(magic_info: MagicInfo):
+def generate_md_from_prompt_recursive(magic_info: MagicInfo):
     file_info = magic_info.file_info
     """
     promptから要件定義書（マークダウンファイル）を生成する関数
@@ -52,7 +52,7 @@ def get_prompt_formatter(language: str, formatter_path: str):
             formatter_path = lang_formatter_path
 
     # フォーマッターについて、デフォフォルダの時見栄えをシンプルにする
-    if "grimoires" in formatter_path:  # grimoires/ディレクトリにフォーマッタパスが含まれている場合
+    if "grimoires" in formatter_path:  # grimoires/ディレクトリにフォーマッタパスが含まれている場合  # noqa: SIM108
         prompt_formatter = os.path.basename(
             formatter_path
         )  # - フォーマッタパスからファイル名のみを取得してprompt_formatterに代入
@@ -84,7 +84,7 @@ def show_spinner(done, goal):
             time.sleep(0.1)  # -- 0.1秒のディレイを追加
 
 
-def generate_response(developer, model_name, prompt):
+def generate_response(developer, model_name, prompt):  # noqa: ARG001
     """
     対応デベロッパーごとに分岐してレスポンスを生成する関数
 
@@ -143,7 +143,7 @@ def create_prompt(goal_prompt, compiler_path=None, formatter_path=None, language
         prompt += f"## goal_prompt\n\n```{goal_prompt}```\n\n"
         prompt += f"""まず、goal_promptを踏まえて、最初に取るべきステップを明示してください。
         そのステップやgoal_prompt自身と比較して、最も適切なファイルを上位5つ選び、それぞれの理由とともに説明してください。
-        また、それぞれの実行プロンプトを、zoltraak \"{goal_prompt}\" -c [ファイル名（拡張子なし）]で、code blockに入れて添付してください。"""
+        また、それぞれの実行プロンプトを、zoltraak \"{goal_prompt}\" -c [ファイル名（拡張子なし）]で、code blockに入れて添付してください。"""  # noqa: E501
         prompt += prompt + formatter
     elif os.path.exists(compiler_path):  # プロンプトファイルが存在する場合
         with open(compiler_path, encoding="utf-8") as file:  # - プロンプトファイルを読み込みモードで開く
@@ -153,7 +153,7 @@ def create_prompt(goal_prompt, compiler_path=None, formatter_path=None, language
         prompt = prompt + formatter  # - プロンプトにフォーマッタを追加
     else:  # プロンプトファイルが存在しない場合
         print(f"プロンプトファイル {compiler_path} が見つかりません。")  # - エラーメッセージを表示
-        os.system("pwd")
+        os.system("pwd")  # noqa: S605, S607
         prompt = ""
 
     if prompt != "" and language is not None:
@@ -200,7 +200,7 @@ def get_formatter(formatter_path, language=None):
                 if formatter_path.endswith("_lang.md"):
                     formatter = formatter.replace("{language}", language)
                 else:
-                    formatter += f"\n- You must output everything including code block and diagrams, according to the previous instructions, but make sure you write your response in {language}.\n\n## Output Language\n- You must generate your response using {language}, which is the language of the formatter just above this sentence."
+                    formatter += f"\n- You must output everything including code block and diagrams, according to the previous instructions, but make sure you write your response in {language}.\n\n## Output Language\n- You must generate your response using {language}, which is the language of the formatter just above this sentence."  # noqa: E501
     else:  # -- フォーマッタファイルが存在しない場合
         print(f"フォーマッタファイル {formatter_path} が見つかりません。")  # --- エラーメッセージを表示
         formatter = ""  # --- フォーマッタを空文字列に設定
@@ -226,14 +226,13 @@ def save_md_content(md_content, target_file_path):
         target_file.write(md_content)  # - 生成された要件定義書の内容をファイルに書き込む
 
 
-def print_generation_result(target_file_path, compiler_path, open_file=True):
+def print_generation_result(target_file_path, compiler_path):
     """
     要件定義書の生成結果を表示する関数
 
     Args:
         target_file_path (str): 生成された要件定義書のファイルパス
         compiler_path (str): コンパイラのパス
-        open_file (bool): ファイルを開くかどうかのフラグ（デフォルトはTrue）
     """
     print()
     print(f"\033[32m魔法術式を構築しました: {target_file_path}\033[0m")  # 要件定義書の生成完了メッセージを緑色で表示
@@ -249,7 +248,7 @@ def print_generation_result(target_file_path, compiler_path, open_file=True):
 
         import subprocess
 
-        subprocess.run(["zoltraak", target_file_path], check=False)
+        subprocess.run(["zoltraak", target_file_path], check=False)  # noqa: S603, S607
 
         done = True  # zoltraakコマンド実行後にスピナーの終了フラグをTrueに設定
         spinner_thread.join()  # スピナーの表示を終了

@@ -1,6 +1,8 @@
 import functools
+import inspect
 import logging
 import sys
+from typing import Any
 
 import zoltraak
 from zoltraak import settings
@@ -73,3 +75,19 @@ def log_i(msg: str, *args, **kwargs):
 
 def log_d(msg: str, *args, **kwargs):
     logger.debug(msg, *args, **kwargs)
+
+
+def show_fully_qualified_name(obj: Any) -> str:
+    module = inspect.getmodule(obj)
+    # obj_name
+    if hasattr(obj, "__qualname__"):  # noqa: SIM108
+        obj_name = obj.__qualname__
+    else:
+        obj_name = str(obj)
+
+    # fully_qualified_name
+    if module is None or module.__name__ == "__main__":
+        fully_qualified_name = obj_name
+    else:
+        fully_qualified_name = f"{module.__name__}.{obj_name}"
+    print("fully_qualified_name=%s", fully_qualified_name)

@@ -6,7 +6,7 @@ import sys
 import zoltraak
 import zoltraak.llms.litellm_api as litellm
 from zoltraak import settings
-from zoltraak.converter import MarkdownToPythonConverter
+from zoltraak.converter.converter import MarkdownToPythonConverter
 from zoltraak.schema.schema import MagicInfo, MagicLayer, MagicMode, ZoltraakParams
 from zoltraak.utils.file_util import FileUtil
 from zoltraak.utils.log_util import log

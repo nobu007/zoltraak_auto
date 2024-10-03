@@ -2,8 +2,9 @@ import os
 
 import zoltraak.llms.litellm_api as litellm
 from zoltraak import settings
+from zoltraak.converter.base_converter import BaseConverter
 from zoltraak.gencode import TargetCodeGenerator
-from zoltraak.md_generator import generate_md_from_prompt
+from zoltraak.md_generator import generate_md_from_prompt_recursive
 from zoltraak.schema.schema import MagicInfo, MagicLayer
 from zoltraak.utils.file_util import FileUtil
 from zoltraak.utils.log_util import log, log_inout, log_w
@@ -11,7 +12,7 @@ from zoltraak.utils.rich_console import display_magic_info_full
 from zoltraak.utils.subprocess_util import SubprocessUtil
 
 
-class MarkdownToPythonConverter:
+class MarkdownToPythonConverter(BaseConverter):
     """マークダウン(要件定義書)からpythonコードを更新するコンバーター
     前提:
       MagicInfoにモードとレイヤーが展開済み
@@ -114,15 +115,6 @@ class MarkdownToPythonConverter:
         return ""
 
     @log_inout
-    def convert_one(self) -> str:
-        """生成処理を１回実行する"""
-        file_info = self.magic_info.file_info
-        if FileUtil.has_content(file_info.target_file_path):  # ターゲットファイルのコンテンツが有効な場合
-            return self.handle_existing_target_file()  # - 既存のターゲットファイルを処理
-        # ターゲットファイルが無い or コンテンツが無効の場合
-        return self.handle_new_target_file()  # - 新しいターゲットファイルを処理
-
-    @log_inout
     def handle_existing_target_file(self) -> str:
         # TODO: rename -> handle_existing_target_file_py
         file_info = self.magic_info.file_info
@@ -171,7 +163,7 @@ class MarkdownToPythonConverter:
 
         self.propose_target_diff(file_info.target_file_path, self.magic_info.prompt)
         print(f"ターゲットファイル: {file_info.target_file_path}")
-        # input("修正が完了したらEnterキーを押してください。")
+        return file_info.target_file_path
 
     @log_inout
     def handle_new_target_file(self) -> str:
@@ -192,7 +184,7 @@ class MarkdownToPythonConverter:
     {file_info.source_file_path} -> {file_info.target_file_path}
             """
         )
-        return generate_md_from_prompt(self.magic_info)
+        return generate_md_from_prompt_recursive(self.magic_info)
 
     def propose_target_diff(self, target_file_path, prompt=None):
         """
@@ -268,42 +260,3 @@ promptの内容:
             # print("3. 何もせず閉じる")
             # choice = input("選択してください (1, 2, 3): ")
             choice = "1"
-
-    @log_inout
-    def apply_diff_to_target_file(self, target_file_path, target_diff):
-        """
-        提案された差分をターゲットファイルに適用する関数
-
-        Args:
-            target_file_path (str): ターゲットファイルのパス
-            target_diff (str): 適用する差分
-        """
-        # ターゲットファイルの現在の内容を読み込む
-        with open(target_file_path, encoding="utf-8") as file:
-            current_content = file.read()
-
-        # プロンプトを作成してAPIに送信し、修正された内容を取得
-        prompt = f"""
-現在のターゲットファイルの内容:
-{current_content}
-上記のターゲットファイルの内容に対して、以下のUnified diff 適用後のターゲットファイルの内容を生成してください。
-
-提案された差分:
-{target_diff}
-
-例）
-変更前
-- graph.node(week_node_name, shape='box', style='filled', fillcolor='#FFCCCC')
-
-変更後
-+ graph.node(week_node_name, shape='box', style='filled', fillcolor='#CCCCFF')
-
-番号など変わった場合は振り直しもお願いします。
-        """
-        modified_content = litellm.generate_response(settings.model_name, prompt, 2000, 0.3)
-
-        # 修正後の内容をターゲットファイルに書き込む
-        with open(target_file_path, "w", encoding="utf-8") as file:
-            file.write(modified_content)
-
-        print(f"{target_file_path}に修正を適用しました。")

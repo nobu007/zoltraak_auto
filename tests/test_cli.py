@@ -1,76 +1,77 @@
 import os
-import sys
-
-import litellm
-
-sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
-sys.path.append(os.path.join(os.path.dirname(__file__), "../zoltraak"))
-print("===============================")
-
 import unittest
 
+import litellm
 import pytest
 
-from zoltraak.md_generator import generate_md_from_prompt, generate_response
+# sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
+# sys.path.append(os.path.join(os.path.dirname(__file__), "../zoltraak"))
+# print("===============================")
+from zoltraak.md_generator import generate_md_from_prompt_recursive, generate_response
 from zoltraak.utils.rich_console import MagicInfo
 from zoltraak.utils.subprocess_util import SubprocessUtil
 
 
 class TestzoltraakCommand(unittest.TestCase):  # TestzoltraakCommandクラスを定義し、unittest.TestCaseを継承します。
-    # def test_zoltraak_command(self):
-    #     """
-    #     zoltraakコマンドの機能をテストします。
+    def test_zoltraak_command(self):
+        """
+        zoltraakコマンドの機能をテストします。
 
-    #     このテストでは、以下の項目を確認します:
-    #     1. mdファイルの引数を指定した場合、正常に実行されること。
-    #     2. -pオプションでプロンプトを指定した場合、正常に実行されること。
-    #     3. -cオプションでコンパイラを指定した場合、正常に実行されること。
-    #     4. -fオプションでフォーマッタを指定した場合、正常に実行されること。
-    #     5. --helpオプションを指定した場合、ヘルプメッセージが表示されること。
-    #     6. --versionオプションを指定した場合、バージョン情報が表示されること。
+        このテストでは、以下の項目を確認します:
+        1. mdファイルの引数を指定した場合、正常に実行されること。
+        2. -pオプションでプロンプトを指定した場合、正常に実行されること。
+        3. -cオプションでコンパイラを指定した場合、正常に実行されること。
+        4. -fオプションでフォーマッタを指定した場合、正常に実行されること。
+        5. --helpオプションを指定した場合、ヘルプメッセージが表示されること。
+        6. --versionオプションを指定した場合、バージョン情報が表示されること。
 
-    #     実行例:
-    #     - `zoltraak sample.md` : sample.mdファイルを入力として実行
-    #     - `zoltraak "サンプルテキスト" -p "サンプルプロンプト" -c compiler.md -f formatter.md` : サンプルテキストを入力として、指定したプロンプト、コンパイラ、フォーマッタを使用して実行
-    #     - `zoltraak --help` : ヘルプメッセージを表示
-    #     - `zoltraak --version` : バージョン情報を表示
-    #     """
-    #     # mdファイルの引数を指定したテスト
-    #     result = SubprocessUtil.run(['zoltraak', 'sample.md'], capture_output=True, text=True)
-    #     self.assertEqual(result.returncode, 0)
-    #     self.assertIn("sample.md", result.stdout)
+        実行例:
+        - `zoltraak sample.md` : sample.mdファイルを入力として実行
+        - `zoltraak "サンプルテキスト" -p "サンプルプロンプト" -c compiler.md -f formatter.md`
+           サンプルテキストを入力として、指定したプロンプト、コンパイラ、フォーマッタを使用して実行
+        - `zoltraak --help` : ヘルプメッセージを表示
+        - `zoltraak --version` : バージョン情報を表示
+        """
+        # mdファイルの引数を指定したテスト
+        result = SubprocessUtil.run(["zoltraak", "sample.md"], capture_output=True, text=True)
+        self.assertEqual(result.returncode, 0)
+        self.assertIn("sample.md", result.stdout)
 
-    #     # -pオプションでプロンプトを指定したテスト
-    #     result = SubprocessUtil.run(['zoltraak', 'sample.md', '-p', 'サンプルプロンプト'], capture_output=True, text=True)
-    #     self.assertEqual(result.returncode, 0)
-    #     self.assertIn("sample.md", result.stdout)
-    #     self.assertIn("サンプルプロンプト", result.stdout)
+        # -pオプションでプロンプトを指定したテスト
+        result = SubprocessUtil.run(
+            ["zoltraak", "sample.md", "-p", "サンプルプロンプト"], capture_output=True, text=True
+        )
+        self.assertEqual(result.returncode, 0)
+        self.assertIn("sample.md", result.stdout)
+        self.assertIn("サンプルプロンプト", result.stdout)
 
-    #     # -cオプションでコンパイラを指定したテスト
-    #     result = SubprocessUtil.run(['zoltraak', 'sample.md', '-c', 'compiler.md'], capture_output=True, text=True)
-    #     self.assertEqual(result.returncode, 0)
-    #     self.assertIn("sample.md", result.stdout)
-    #     self.assertIn("compiler.md", result.stdout)
+        # -cオプションでコンパイラを指定したテスト
+        result = SubprocessUtil.run(["zoltraak", "sample.md", "-c", "compiler.md"], capture_output=True, text=True)
+        self.assertEqual(result.returncode, 0)
+        self.assertIn("sample.md", result.stdout)
+        self.assertIn("compiler.md", result.stdout)
 
-    #     # -fオプションでフォーマッタを指定したテスト
-    #     result = SubprocessUtil.run(['zoltraak', 'sample.md', '-f', 'formatter.md'], capture_output=True, text=True)
-    #     self.assertEqual(result.returncode, 0)
-    #     self.assertIn("sample.md", result.stdout)
-    #     self.assertIn("formatter.md", result.stdout)
+        # -fオプションでフォーマッタを指定したテスト
+        result = SubprocessUtil.run(["zoltraak", "sample.md", "-f", "formatter.md"], capture_output=True, text=True)
+        self.assertEqual(result.returncode, 0)
+        self.assertIn("sample.md", result.stdout)
+        self.assertIn("formatter.md", result.stdout)
 
-    #     # --helpオプションを指定したテスト
-    #     result = SubprocessUtil.run(['zoltraak', '--help'], capture_output=True, text=True)
-    #     self.assertEqual(result.returncode, 0)
-    #     self.assertIn("使用方法:", result.stdout)
+        # --helpオプションを指定したテスト
+        result = SubprocessUtil.run(["zoltraak", "--help"], capture_output=True, text=True)
+        self.assertEqual(result.returncode, 0)
+        self.assertIn("使用方法:", result.stdout)
 
-    #     # --versionオプションを指定したテスト
-    #     result = SubprocessUtil.run(['zoltraak', '--version'], capture_output=True, text=True)
-    #     self.assertEqual(result.returncode, 0)
-    #     self.assertIn("zoltraak version", result.stdout)
+        # --versionオプションを指定したテスト
+        result = SubprocessUtil.run(["zoltraak", "--version"], capture_output=True, text=True)
+        self.assertEqual(result.returncode, 0)
+        self.assertIn("zoltraak version", result.stdout)
+
     def test_missing_md_file_argument(self):  # mdファイルの引数がない場合のテストメソッドを定義します.
         """
         zoltraakコマンドをmdファイルの引数なしで実行した場合、正しいエラーメッセージが表示されることを確認します。
-        実行例: `zoltraak` コマンドを引数なしで実行した場合、"エラー: 入力ファイルまたはテキストが指定されていません。"というエラーメッセージが表示されるべきです。
+        実行例: `zoltraak` コマンドを引数なしで実行した場合、"エラー: 入力ファイルまたはテキストが指定されていません。"
+        というエラーメッセージが表示されるべきです。
         """
         result = SubprocessUtil.run(
             ["zoltraak"], capture_output=True, text=True, check=False
@@ -84,7 +85,8 @@ class TestzoltraakCommand(unittest.TestCase):  # TestzoltraakCommandクラスを
     def test_prompt_argument(self):  # プロンプト引数のテストメソッドを定義します。
         """
         zoltraakコマンドに-pオプションでプロンプトを指定した場合、正常に実行されることを確認します。
-        実行例: `zoltraak calc.md -p "足し算のプログラムを書きたい"` コマンドを実行した場合、エラーが発生せずに正常に終了するはずです。
+        実行例: `zoltraak calc.md -p "足し算のプログラムを書きたい"` コマンドを実行した場合、
+        エラーが発生せずに正常に終了するはずです。
         """
         with open("test_file.md", "w") as f:
             f.write("# Test File\n\nThis is a test file.")
@@ -250,16 +252,15 @@ class TestCompilerFunctionality(unittest.TestCase):  # クラス名をTestCompil
         magic_info = MagicInfo()
         magic_info.grimoire_compiler = f"{setting_dir}/compiler/{compiler_path}"
         magic_info.grimoire_formatter = f"{setting_dir}/formatter/None.md"
+        magic_info.prompt = goal_prompt
         magic_info.file_info.target_file_path = expected_md_path
-        generate_md_from_prompt(magic_info)
+        generate_md_from_prompt_recursive(magic_info)
 
         expected_md_path = (
             "requirements/" + expected_md_path
         )  # 期待されるMDファイルのパスをrequirementsディレクトリ内に設定
         self.check_generated_md_content(expected_md_path, compiler_path)  # 生成されたMDファイルの内容をチェックする
-        self.move_generated_md_to_gomi(
-            expected_md_path, open_file=False
-        )  # 生成されたMDファイルをgomiディレクトリに移動する
+        self.move_generated_md_to_gomi(expected_md_path)  # 生成されたMDファイルをgomiディレクトリに移動する
 
     def check_generated_md_content(self, expected_md_path, compiler_path):
         """
@@ -269,7 +270,7 @@ class TestCompilerFunctionality(unittest.TestCase):  # クラス名をTestCompil
             generated_content = f.read()
         self.assertGreater(len(generated_content), 0, f"生成されたMDファイルが空です。 コンパイラパス: {compiler_path}")
 
-    def move_generated_md_to_gomi(self, expected_md_path, open_file=False):
+    def move_generated_md_to_gomi(self, expected_md_path):
         """
         テスト後に生成されたMDファイルをgomiディレクトリに移動する
 
@@ -279,15 +280,12 @@ class TestCompilerFunctionality(unittest.TestCase):  # クラス名をTestCompil
         """
         import datetime
 
-        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        timestamp = datetime.datetime.now(datetime.UTC).strftime("%Y%m%d_%H%M%S")
         gomi_dir = "gomi"
         if not os.path.exists(gomi_dir):
             os.makedirs(gomi_dir)
         new_file_path = os.path.join(gomi_dir, f"{timestamp}_{os.path.basename(expected_md_path)}")
         os.rename(expected_md_path, new_file_path)
-
-        if open_file:  # open_fileフラグがTrueの場合
-            os.system(f"code {new_file_path}")  # ファイルを開く（VSCodeにおける`code syllabus_graph.png`に相当）
 
 
 class TestGenerateResponse(unittest.TestCase):

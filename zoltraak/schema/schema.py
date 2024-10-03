@@ -183,9 +183,10 @@ class FileInfo(BaseModel):
         self.update_source_target_past()
 
     def update_source_target_past(self):
-        # past_source_file_path, past_target_file_path が更新されたら呼ぶこと！
-        self.past_source_dir = os.path.dirname(self.past_source_file_path)
-        self.past_target_dir = os.path.dirname(self.past_target_file_path)
+        # past_source_file_path, past_target_file_path が更新されたら呼ぶ想定だったが、
+        # pastは固定の方が良い気がするので現状では無効化（past_xx_dirは固定）
+        # self.past_source_dir = os.path.dirname(self.past_source_file_path)
+        # self.past_target_dir = os.path.dirname(self.past_target_file_path)
         os.makedirs(self.past_source_dir, exist_ok=True)
         os.makedirs(self.past_target_dir, exist_ok=True)
 
