@@ -160,9 +160,12 @@ class FileInfo(BaseModel):
         self.update_hash()
 
     def update_path_abs(self):
-        self.pre_md_file_path_abs = os.path.abspath(self.pre_md_file_path)
-        self.md_file_path_abs = os.path.abspath(self.md_file_path)
-        self.py_file_path_abs = os.path.abspath(self.py_file_path)
+        if self.pre_md_file_path:
+            self.pre_md_file_path_abs = os.path.abspath(self.pre_md_file_path)
+        if self.md_file_path:
+            self.md_file_path_abs = os.path.abspath(self.md_file_path)
+        if self.py_file_path:
+            self.py_file_path_abs = os.path.abspath(self.py_file_path)
 
     def update_source_target(self, source_file_path, target_file_path):
         # source_file_path, source_file_path を更新する処理(path系のトリガー)

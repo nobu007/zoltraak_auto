@@ -63,7 +63,6 @@ def main():
     params.prompt = args.prompt
     params.compiler = compiler_path  # compilerとcustom_compilerを集約(絶対パス)
     params.formatter = args.formatter
-    params.input = args.input
     params.language = args.language
     params.model_name = args.model_name
     params.magic_mode = args.magic_mode
@@ -214,6 +213,7 @@ def show_compiler_conflict_error_and_exit():
 def process_markdown_file(params: ZoltraakParams):
     """
     Markdownファイルを処理する
+    前提： params.input で処理対象のmarkdownファイルが指定される
     """
     compiler_path_abs = os.path.abspath(params.compiler)
     output_dir_abs = os.path.abspath(params.output_dir)
@@ -221,8 +221,13 @@ def process_markdown_file(params: ZoltraakParams):
     formatter_path = get_valid_formatter(params.formatter)
 
     canonical_name = params.canonical_name
-    md_file_path = get_valid_markdown(params.input)
+    md_file_path = params.input  # この時点では新規ファイルの可能性があるので、get_valid_markdown()はNG
+    py_file_path = ""
     py_file_path = os.path.splitext(md_file_path)[0] + ".py"  # Markdownファイルの拡張子を.pyに変更
+
+    # 絶対パスに変換
+    md_file_path = os.path.abspath(md_file_path)
+    py_file_path = os.path.abspath(py_file_path)
 
     magic_info = MagicInfo()
     magic_info.current_grimoire_name = canonical_name
