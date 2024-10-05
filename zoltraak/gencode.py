@@ -1,12 +1,13 @@
 import os
 import shutil
-import subprocess
 
 import zoltraak
 import zoltraak.llms.litellm_api as litellm
 from zoltraak import settings
+from zoltraak.utils.log_util import log_inout
 from zoltraak.utils.prompt_import import load_prompt
-from zoltraak.utils.rich_console import MagicInfo
+from zoltraak.utils.rich_console import MagicInfo, display_magic_info_intermediate
+from zoltraak.utils.subprocess_util import SubprocessUtil
 
 
 class TargetCodeGenerator:
@@ -14,6 +15,7 @@ class TargetCodeGenerator:
         self.magic_info = magic_info
         self.file_info = magic_info.file_info
 
+    @log_inout
     def generate_target_code(self):
         """
         ソースファイルからターゲットファイルを生成するメソッド
@@ -25,7 +27,7 @@ class TargetCodeGenerator:
         source_content, source_file_name, variables = self.load_source_and_create_variables()
 
         # 3. プロンプトの読み込みとコード生成
-        prompt, code = self.load_prompt_and_generate_code(create_domain_grimoire, variables)
+        self.magic_info.prompt, code = self.load_prompt_and_generate_code(create_domain_grimoire, variables)
 
         # 4. 生成されたコードの処理
         self.process_generated_code(code)
@@ -33,27 +35,22 @@ class TargetCodeGenerator:
         # 5. 結果の出力
         self.output_results()
 
-    def prepare_generation(self, step_n=2):
+    @log_inout
+    def prepare_generation(self):
         """
         ターゲットコード生成の準備を行うメソッド
-
-        Args:
-            step_n (int): ステップ番号。デフォルトは2。
         """
-        create_domain_grimoire = "grimoires/architect/architect_claude.md"  # 領域術式（要件定義書）のパスを指定
-        target_dir = (  # target_file_pathからdevと.mdを省いて、generated/ の下につなげたものをtarget_dirに設定
+        # target_file_pathからdevと.mdを省いて、generated/ の下につなげたものをtarget_dirに設定
+        self.file_info.py_target_dir = (
             f"generated/{os.path.splitext(os.path.basename(self.file_info.target_file_path))[0]}"
         )
 
-        if step_n == 2:
-            self.print_step2_info(create_domain_grimoire, target_dir)  # ステップ2の情報を出力
-        elif step_n == 3:
-            self.print_step3_info(target_dir)  # ステップ3の情報を出力
+        self.print_step2_info(self.magic_info.grimoire_architect, self.file_info.py_target_dir)  # ステップ2の情報を出力
 
         if self.file_info.past_source_file_path is not None:  # 過去のソースファイルパスが指定されている場合
             self.save_current_source_as_past()  # - 現在のソースファイルを過去のソースファイルとして保存
 
-        return create_domain_grimoire, target_dir
+        return self.magic_info.grimoire_architect, self.file_info.py_target_dir
 
     def print_step2_info(self, create_domain_grimoire, target_dir):
         """
@@ -67,20 +64,6 @@ class TargetCodeGenerator:
 \033[32m領域術式\033[0m                      : {create_domain_grimoire}
 \033[32m実行術式\033[0m                      : {self.file_info.target_file_path}
 \033[32m領域対象\033[0m (ディレクトリパス)    : {target_dir}
-==============================================================
-        """
-        )
-
-    def print_step3_info(self, target_dir):
-        """
-        ステップ3の情報を出力するメソッド
-        """
-        print(
-            f"""
-
-==============================================================
-ステップ3. 展開術式を実行する
-\033[32m展開対象\033[0m (ディレクトリパス)    : {target_dir}
 ==============================================================
         """
         )
@@ -104,7 +87,6 @@ class TargetCodeGenerator:
         )  # 領域術式（要件定義書）からプロンプトを読み込み、変数を埋め込む
         print(prompt)
         code = self.generate_code(prompt)  # Claudeを使用してコードを生成
-        # print(code)
 
         return prompt, code
 
@@ -128,10 +110,10 @@ class TargetCodeGenerator:
         結果の出力を行うメソッド
         """
         self.print_target_file_path()  # ターゲットファイルのパスを出力
-        # self.open_target_file_in_vscode()                                         # ターゲットファイルをVS Codeで開く
-
-        # if self.target_file_path.endswith(".py"):                                 # ターゲットファイルがPythonファイルの場合
-        #     self.run_python_file()                                                # - Pythonファイルを実行
+        self.file_info.add_output_file_path(self.file_info.target_file_path)
+        display_magic_info_intermediate(self.magic_info)
+        if self.target_file_path.endswith(".py"):  # ターゲットファイルがPythonファイルの場合
+            self.run_python_file()  # - Pythonファイルを実行
 
     def save_current_source_as_past(self):
         """
@@ -207,15 +189,15 @@ class TargetCodeGenerator:
             target_file.write(f"\n# HASH: {self.file_info.source_hash}\n")
         print(f"ターゲットファイルにハッシュ値を埋め込みました: {self.file_info.source_hash}")
 
+    @log_inout
     def try_execute_generated_code(self, code):
         """
         生成されたコードを実行するメソッド
         """
         while True:
             try:
-                exec(code)
-                break
-            except Exception as e:
+                exec(code)  # noqa: S102
+            except Exception as e:  # noqa: BLE001
                 print("Pythonファイルの実行中にエラーが発生しました。")
                 print(f"\033[91mエラーメッセージ: {e!s}\033[0m")
                 print(f"エラーが発生したPythonファイルのパス: \033[33m{self.file_info.target_file_path}\033[0m")
@@ -234,10 +216,10 @@ class TargetCodeGenerator:
 
                     print("修正したコードを再実行します。")
                     try:
-                        exec(code)
+                        exec(code)  # noqa: S102
                         print("コードの実行が成功しました。")
                         break
-                    except Exception as e2:
+                    except Exception as e2:  # noqa: BLE001
                         print("修正後のコードでもエラーが発生しました。再度修正を試みます。")
                         print(f"\033[91m修正後のエラーメッセージ: {e2!s}\033[0m")
                         print(code)
@@ -289,21 +271,15 @@ class TargetCodeGenerator:
             #     pyperclip.copy(f"python {self.target_file_path}")
             #     print("コードをクリップボードにコピーしました。")
 
-    def print_target_file_path(self):
-        """
-        ターゲットファイルのパスを出力するメソッド
-        """
-        print(f"ターゲットファイルのパス: {self.file_info.target_file_path}")
-
     def open_target_file_in_vscode(self):
         """
         ターゲットファイルをVS Codeで開くメソッド
         """
-        os.system(f"code {self.file_info.target_file_path}")
+        SubprocessUtil.run(f"code {self.file_info.target_file_path}")
 
     def run_python_file(self):
         """
         Pythonファイルを実行するメソッド
         """
         print(f"Pythonファイルを実行します: {self.file_info.target_file_path}")
-        subprocess.run(["python", self.file_info.target_file_path], check=False)
+        SubprocessUtil.run(["python", self.file_info.target_file_path], check=False)

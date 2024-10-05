@@ -5,7 +5,7 @@ from zoltraak.converter.converter import MarkdownToPythonConverter
 from zoltraak.schema.schema import MagicInfo, MagicLayer
 from zoltraak.utils.file_util import FileUtil
 from zoltraak.utils.log_util import log, log_inout
-from zoltraak.utils.rich_console import display_magic_info_final
+from zoltraak.utils.rich_console import display_magic_info_intermediate
 
 
 class MarkdownToMarkdownConverter(BaseConverter):
@@ -44,14 +44,16 @@ class MarkdownToMarkdownConverter(BaseConverter):
         """convert処理をレイヤを進めながら繰り返す"""
         acceptable_layers = [MagicLayer.LAYER_1_REQUEST_GEN, MagicLayer.LAYER_2_REQUIREMENT_GEN]
         call_py_converter_layer = MagicLayer.LAYER_3_CODE_GEN
-        for layer in MagicLayer:
+        layer = self.magic_info.magic_layer
+        while layer:
             log("check layer = " + str(layer))
             if layer in acceptable_layers:
                 log("start layer = " + str(layer))
                 self.magic_info.file_info.final_output_file_path = self.convert()
-                display_magic_info_final(self.magic_info)
+                display_magic_info_intermediate(self.magic_info)
                 self.magic_info.magic_layer = layer.next()
                 log("end next = " + str(self.magic_info.magic_layer))
+                continue
             if layer == call_py_converter_layer:
                 log("call MarkdownToPythonConverter")
                 # MarkdownToPythonConverterは再度レイヤ2から実行する

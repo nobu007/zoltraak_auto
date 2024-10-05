@@ -8,7 +8,7 @@ from zoltraak.md_generator import generate_md_from_prompt_recursive
 from zoltraak.schema.schema import MagicInfo, MagicLayer
 from zoltraak.utils.file_util import FileUtil
 from zoltraak.utils.log_util import log, log_e, log_inout, log_w
-from zoltraak.utils.rich_console import display_magic_info_final, display_magic_info_full
+from zoltraak.utils.rich_console import display_magic_info_full, display_magic_info_intermediate
 from zoltraak.utils.subprocess_util import SubprocessUtil
 
 
@@ -55,7 +55,7 @@ class MarkdownToPythonConverter(BaseConverter):
             if layer in acceptable_layers:
                 log("start layer = " + str(layer))
                 self.magic_info.file_info.final_output_file_path = self.convert()
-                display_magic_info_final(self.magic_info)
+                display_magic_info_intermediate(self.magic_info)
                 self.magic_info.magic_layer = layer.next()
                 log("end next = " + str(self.magic_info.magic_layer))
         return self.magic_info.file_info.final_output_file_path
