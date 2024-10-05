@@ -27,7 +27,9 @@ class BaseConverter:
 
     def convert(self) -> str:
         """生成処理"""
-        return self.convert_one()
+        final_output_file_path = self.convert_one()
+        self.magic_info.file_info.final_output_file_path = final_output_file_path
+        return final_output_file_path
 
     @log_inout
     def convert_one(self) -> str:
