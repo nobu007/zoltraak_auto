@@ -158,8 +158,8 @@ promptの内容:
         )
         target_diff = response.strip()
         # ターゲットファイルの差分を表示
-        log("ターゲットファイルの差分:")
-        log(target_diff)
+        log("ターゲットファイルの差分(冒頭100字):")
+        log(target_diff[:100])
 
         # ユーザーに適用方法を尋ねる
         log("差分をどのように適用しますか?")

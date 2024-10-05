@@ -41,7 +41,7 @@ class MagicLayer(str, Enum):
         return self.value.replace("layer_", "")  # => 1_request_gen
 
     def level(self):
-        layer_level_str = self.value[7]  # レイヤ1～9のみ対応
+        layer_level_str = self.value.split("_")[1][0]  # layer_N_XXのNを取得
         return int(layer_level_str)
 
     def next(self) -> MagicLayer | None:

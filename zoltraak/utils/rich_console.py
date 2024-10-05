@@ -102,6 +102,10 @@ def display_magic_info_full(magic_info: MagicInfo):
             add_file_info_full(value, table)
             table.add_row(key, "<<==== FileInfo  end  ====>>")
             continue
+        if key == "prompt":
+            # プロンプトは長くなることがあるので、100文字までに制限
+            table.add_row(key, str(value[:100]))
+            continue
         table.add_row(key, str(value))
 
     console.print(Panel(table, title="魔法術式情報(詳細)", border_style="white"))

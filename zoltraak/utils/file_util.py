@@ -41,7 +41,7 @@ class FileUtil:
         content = FileUtil.read_file(file_path)
         content = content.replace("{prompt}", prompt)
         content = content.replace("{language}", language)
-        log(f"read_grimoire content:\n {content}")
+        log(f"read_grimoire content[:100]:\n {content[:100]}")
         return content
 
     @staticmethod

@@ -3,7 +3,7 @@ import os
 from zoltraak.converter.base_converter import BaseConverter
 from zoltraak.schema.schema import MagicInfo, MagicLayer
 from zoltraak.utils.file_util import FileUtil
-from zoltraak.utils.log_util import log_inout
+from zoltraak.utils.log_util import log, log_inout
 
 
 class MarkdownToMarkdownConverter(BaseConverter):
@@ -37,6 +37,19 @@ class MarkdownToMarkdownConverter(BaseConverter):
         self.magic_info = magic_info
 
     @log_inout
+    def convert_loop(self) -> str:
+        """convert処理をレイヤを進めながら繰り返す"""
+        acceptable_layers = [MagicLayer.LAYER_1_REQUEST_GEN, MagicLayer.LAYER_2_REQUIREMENT_GEN]
+        for layer in MagicLayer:
+            log("check layer = " + str(layer))
+            if layer in acceptable_layers:
+                log("start layer = " + str(layer))
+                target_file_path_abs = self.convert()
+                self.magic_info.magic_layer = layer.next()
+                self.magic_info.file_info.final_output_file_path = target_file_path_abs
+                log("end next = " + str(self.magic_info.magic_layer))
+
+    @log_inout
     def convert(self) -> str:
         """prompt + ユーザ要求記述書(pre_md_file) => 要件定義書(md_file)"""
 
@@ -44,12 +57,12 @@ class MarkdownToMarkdownConverter(BaseConverter):
         file_info = self.magic_info.file_info
         file_info.update_path_abs()
 
-        # step2: ユーザ要求記述書を作成(TODO: ここで実際に変換すると一気に要件定義書まで作れる)
+        # step2: ユーザ要求記述書を作成
         if self.magic_info.magic_layer is MagicLayer.LAYER_1_REQUEST_GEN:
             file_info.update_source_target(file_info.prompt_file_path_abs, file_info.pre_md_file_path_abs)
             file_info.update_hash()
 
-        # step3: 要件定義書を作成(TODO: ここで実際に変換すると一気に要件定義書まで作れる)
+        # step3: 要件定義書を作成
         if self.magic_info.magic_layer is MagicLayer.LAYER_2_REQUIREMENT_GEN:
             file_info.update_source_target(file_info.pre_md_file_path_abs, file_info.md_file_path_abs)
             file_info.update_hash()

@@ -18,8 +18,9 @@ from zoltraak.utils.subprocess_util import SubprocessUtil
 def main():
     """メイン処理"""
     log("")
-    log("<<< ===================================== >>>")
-    log("new zoltraak cli start")
+    log("========================================")
+    log("||         zoltraak cli start         ||")
+    log("========================================")
     parser = argparse.ArgumentParser(
         description="MarkdownファイルをPythonファイルに変換します", formatter_class=argparse.RawTextHelpFormatter
     )
@@ -268,7 +269,7 @@ def process_markdown_file(params: ZoltraakParams) -> MagicInfo:
     os.makedirs(
         os.path.dirname(py_file_path), exist_ok=True
     )  # Pythonファイルの出力ディレクトリを作成（既に存在する場合は何もしない）
-    new_file_path = mtp.convert()
+    new_file_path = mtp.convert_loop()
     magic_info.file_info.final_output_file_path = new_file_path
     return magic_info
 

@@ -74,7 +74,7 @@ def modify_prompt(final_prompt: str, formatter_path: str, language: str):
             modified_prompt = (
                 final_prompt + formatter_prompt
             )  # 特に英語指示が「デフォルト言語指示」と混同されやすく、効きがやたら悪いので英語の場合は挟み撃ちにする
-    log("modify_prompt modified_prompt=" + modified_prompt)
+    log("modified_prompt[:100]=" + modified_prompt[:100])
     return modified_prompt
 
 
