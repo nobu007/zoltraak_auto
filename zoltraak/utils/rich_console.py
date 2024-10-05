@@ -11,8 +11,19 @@ import zoltraak.llms.litellm_api as litellm
 from zoltraak.schema.schema import MagicInfo
 from zoltraak.utils.subprocess_util import SubprocessUtil
 
-console = Console()
-console = Console(width=120)  # ターミナルの幅
+# 通常のConsoleオブジェクト
+console = Console(width=120)
+# ファイル出力用のConsoleオブジェクト
+with open("rich.log", "a", encoding="utf-8") as log_file:
+    file_console = Console(width=300, file=open("rich.log", "a", encoding="utf-8"))  # noqa: SIM115
+
+
+# loggingのハンドラが使えなそうなので独自のハンドラもどきを作成（RichHandler＋loggerはダメそう）
+# 暇ができたらトライしたい
+# 参考： https://qiita.com/bounoki/items/a34da7ac3be867b037fe
+def console_print_all(*args, **kwargs):
+    console.print(*args, **kwargs)
+    file_console.print(*args, **kwargs)
 
 
 def run_command_with_spinner(
@@ -25,12 +36,12 @@ def run_command_with_spinner(
         try:
             result = SubprocessUtil.run(command, shell=False, check=check, capture_output=True, text=True)
             if result.returncode == 0:
-                console.print(Panel(magic_info.success_message, style="green"))
+                console_print_all(Panel(magic_info.success_message, style="green"))
             else:
-                console.print(Panel(f"{magic_info.error_message}\n{result.stderr}", style="red"))
+                console_print_all(Panel(f"{magic_info.error_message}\n{result.stderr}", style="red"))
             return result  # noqa: TRY300
         except SubprocessUtil.CalledProcessError as e:
-            console.print(Panel(f"{magic_info.error_message}\n{e}", style="red"))
+            console_print_all(Panel(f"{magic_info.error_message}\n{e}", style="red"))
             raise
     return None
 
@@ -48,10 +59,10 @@ def run_function_with_spinner(magic_info: MagicInfo, func: Callable[..., Any], *
     with console.status(f"[bold green]{magic_info.description}"):
         try:
             result = func(*args, **kwargs)
-            console.print(Panel(magic_info.success_message, style="green"))
+            console_print_all(Panel(magic_info.success_message, style="green"))
             return result  # noqa: TRY300
         except Exception as e:
-            console.print(Panel(f"{magic_info.error_message}\n{e}", style="red"))
+            console_print_all(Panel(f"{magic_info.error_message}\n{e}", style="red"))
             raise
     return None
 
@@ -70,7 +81,7 @@ def display_magic_info_pre(magic_info: MagicInfo):
     table.add_row("領域術式 (領域作成+コード展開)", magic_info.grimoire_architect)
     table.add_row("言霊   (LLMモデル名) ", magic_info.model_name)
 
-    console.print(Panel(table, title="魔法術式情報(構築中)", border_style="green"))
+    console_print_all(Panel(table, title="魔法術式情報(構築中)", border_style="green"))
 
 
 def display_magic_info_post(magic_info: MagicInfo):
@@ -85,7 +96,15 @@ def display_magic_info_post(magic_info: MagicInfo):
     table.add_row("魔法術式 (要件定義書)", magic_info.file_info.target_file_path)
     table.add_row("領域", magic_info.file_info.target_dir)
 
-    console.print(Panel(table, title="魔法術式情報(完了)", border_style="green"))
+    console_print_all(Panel(table, title="魔法術式情報(完了)", border_style="green"))
+
+
+def add_file_info_full(file_info: dict, table: Table) -> None:
+    """
+    実行した魔法術式の情報(FileInfo)を整形して追加します。
+    """
+    for key, value in file_info.items():
+        table.add_row("  " + key, str(value))
 
 
 def display_magic_info_full(magic_info: MagicInfo):
@@ -108,15 +127,7 @@ def display_magic_info_full(magic_info: MagicInfo):
             continue
         table.add_row(key, str(value))
 
-    console.print(Panel(table, title="魔法術式情報(詳細)", border_style="white"))
-
-
-def add_file_info_full(file_info: dict, table: Table) -> None:
-    """
-    実行した魔法術式の情報(FileInfo)を整形して追加します。
-    """
-    for key, value in file_info.items():
-        table.add_row("  " + key, str(value))
+    console_print_all(Panel(table, title="魔法術式情報(詳細)", border_style="white"))
 
 
 def display_info_full(any_info: BaseModel, title: str = "詳細", table_title: str = ""):
@@ -130,7 +141,7 @@ def display_info_full(any_info: BaseModel, title: str = "詳細", table_title: s
     for key, value in any_info.model_dump().items():
         table.add_row(key, str(value))
 
-    console.print(Panel(table, title=title, border_style="white"))
+    console_print_all(Panel(table, title=title, border_style="white"))
 
 
 def display_magic_info_final(magic_info: MagicInfo):
@@ -151,7 +162,7 @@ def display_magic_info_final(magic_info: MagicInfo):
     _add_row_relpath(table, "魔法術式 (錬成前)", magic_info.file_info.source_file_path, magic_info.file_info.work_dir)
     _add_row_relpath(table, "魔法術式 (錬成後)", magic_info.file_info.target_file_path, magic_info.file_info.work_dir)
 
-    console.print(Panel(table, title="魔法術式情報(完了)", border_style="green"))
+    console_print_all(Panel(table, title="魔法術式情報(完了)", border_style="green"))
 
 
 def _add_row_relpath(table: Table, key: str, path: str, base_path: str) -> None:
