@@ -254,6 +254,7 @@ def process_markdown_file(params: ZoltraakParams) -> MagicInfo:
     # file関連
     magic_info.file_info.md_file_path = md_file_path
     magic_info.file_info.py_file_path = py_file_path
+    magic_info.file_info.update_work_dir()
     magic_info.file_info.update()
     magic_info.file_info.canonical_name = canonical_name
     magic_info.file_info.target_dir = output_dir_abs

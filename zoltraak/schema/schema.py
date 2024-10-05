@@ -184,6 +184,13 @@ class FileInfo(BaseModel):
     past_source_hash: str = Field(default="3", description="過去のソースファイルのハッシュ値")
     past_target_hash: str = Field(default="4", description="過去の出力先ファイルのハッシュ値")
 
+    def update_work_dir(self, new_work_dir: str = ""):
+        if not new_work_dir:
+            new_work_dir = os.getcwd()
+        self.work_dir = os.path.abspath(new_work_dir)
+        self.past_dir = os.path.abspath(os.path.join(self.work_dir, "past"))
+        self.update_path_abs()
+
     def update(self):
         self.update_path_abs()
         self.update_source_target_past()
@@ -209,17 +216,22 @@ class FileInfo(BaseModel):
         self.target_file_name = os.path.basename(target_file_path)
 
         # past source and target
-        source_file_path_rel = os.path.relpath(source_file_path, self.work_dir)
-        target_file_path_rel = os.path.relpath(target_file_path, self.work_dir)
-        self.past_source_file_path = os.path.join(self.past_source_dir, source_file_path_rel)
-        self.past_target_file_path = os.path.join(self.past_target_dir, target_file_path_rel)
         self.update_source_target_past()
 
     def update_source_target_past(self):
-        # past_source_file_path, past_target_file_path が更新されたら呼ぶ想定だったが、
-        # pastは固定の方が良い気がするので現状では無効化（past_xx_dirは固定）
-        # self.past_source_dir = os.path.dirname(self.past_source_file_path)
-        # self.past_target_dir = os.path.dirname(self.past_target_file_path)
+        # work_dirからの相対パス取得
+        source_file_path_rel = os.path.relpath(self.source_file_path, self.work_dir)
+        target_file_path_rel = os.path.relpath(self.target_file_path, self.work_dir)
+
+        # past_path更新(絶対パス)
+        self.past_source_file_path = os.path.abspath(os.path.join(self.past_dir, source_file_path_rel))
+        self.past_target_file_path = os.path.abspath(os.path.join(self.past_dir, target_file_path_rel))
+
+        # past_dir更新
+        self.past_source_dir = os.path.dirname(self.past_source_file_path)
+        self.past_target_dir = os.path.dirname(self.past_target_file_path)
+
+        # past_dir作成
         os.makedirs(self.past_source_dir, exist_ok=True)
         os.makedirs(self.past_target_dir, exist_ok=True)
 
