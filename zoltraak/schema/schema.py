@@ -159,6 +159,7 @@ class FileInfo(BaseModel):
     # ルートディレクトリ
     work_dir: str = Field(default=os.getcwd(), description="作業ディレクトリ")
     target_dir: str = Field(default="./generated", description="出力先のルートディレクトリ")
+    py_target_dir: str = Field(default="./generated/xxxx", description="python出力先のディレクトリ")
     past_dir: str = Field(default="./past", description="過去の出力先のルートディレクトリ")
     past_source_dir: str = Field(default="./past/source", description="過去のソースフォルダ")
     past_target_dir: str = Field(default="./past/target", description="過去の出力先ファイルフォルダ")
@@ -175,7 +176,9 @@ class FileInfo(BaseModel):
         default="./past/target/" + DEFAULT_MD_FILE, description="過去の出力先ファイル(絶対パス)"
     )
 
-    # 最終結果ファイルパス
+    # 結果ファイルパス
+    output_file_path: str = Field(default="", description="直近の１変換の結果ファイルパス(絶対パス)")
+    output_file_path_history: str = Field(default="", description="連続変換の結果ファイルパス履歴(絶対パス)")
     final_output_file_path: str = Field(default="", description="最終結果のファイルパス(絶対パス)")
 
     # その他
@@ -218,6 +221,10 @@ class FileInfo(BaseModel):
         # past source and target
         self.update_source_target_past()
 
+        # output_file_path
+        if not self.output_file_path_history:
+            self.output_file_path_history = "(src)" + self.source_file_name
+
     def update_source_target_past(self):
         # work_dirからの相対パス取得
         source_file_path_rel = os.path.relpath(self.source_file_path, self.work_dir)
@@ -240,6 +247,10 @@ class FileInfo(BaseModel):
         self.target_hash = self.calculate_file_hash(self.target_file_path)
         self.past_source_hash = self.calculate_file_hash(self.past_source_file_path)
         self.past_target_hash = self.calculate_file_hash(self.past_target_file_path)
+
+    def add_output_file_path(self, output_file_path: str):
+        self.output_file_path = os.path.abspath(output_file_path)
+        self.output_file_path_history += f"\n{self.output_file_path}"
 
     def is_same_hash_source_target(self) -> bool:
         if not self.source_hash:

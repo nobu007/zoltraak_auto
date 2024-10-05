@@ -128,6 +128,12 @@ def get_valid_compiler(compiler_candidate: str) -> str:
     return get_valid_markdown(compiler_candidate, settings.compiler_dir)
 
 
+def get_valid_architect(compiler_candidate: str) -> str:
+    """有効なarchitectだったらその絶対パスを返す
+    無効なら空文字を返す"""
+    return get_valid_markdown(compiler_candidate, settings.architects_dir)
+
+
 def get_valid_formatter(compiler_candidate: str) -> str:
     """有効なformatterだったらその絶対パスを返す
     無効なら空文字を返す"""
@@ -225,9 +231,10 @@ def process_markdown_file(params: ZoltraakParams) -> MagicInfo:
     Markdownファイルを処理する
     前提： params.input で処理対象のmarkdownファイルが指定される
     """
-    compiler_path_abs = os.path.abspath(params.compiler)
     output_dir_abs = os.path.abspath(params.output_dir)
 
+    compiler_path = os.path.abspath(params.compiler)
+    architect_path = get_valid_architect("architect_claude.md")
     formatter_path = get_valid_formatter(params.formatter)
 
     canonical_name = params.canonical_name
@@ -247,8 +254,8 @@ def process_markdown_file(params: ZoltraakParams) -> MagicInfo:
     magic_info.prompt = params.prompt
     magic_info.current_grimoire_name = canonical_name
     magic_info.description = ""  # デフォルト値を使う
-    magic_info.grimoire_compiler = compiler_path_abs
-    magic_info.grimoire_architect = ""  # 後で設定する
+    magic_info.grimoire_compiler = compiler_path
+    magic_info.grimoire_architect = architect_path
     magic_info.grimoire_formatter = formatter_path
 
     # file関連

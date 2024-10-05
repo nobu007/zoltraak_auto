@@ -86,7 +86,7 @@ def display_magic_info_pre(magic_info: MagicInfo):
 
 def display_magic_info_post(magic_info: MagicInfo):
     """
-    実行した魔法術式の情報を整形して表示します。
+    実行した魔法術式の結果を表示します。
     """
     table = Table(title="MagicInfo", title_style="bold")
     table.add_column("項目", style="cyan", no_wrap=True)
@@ -101,7 +101,7 @@ def display_magic_info_post(magic_info: MagicInfo):
 
 def add_file_info_full(file_info: dict, table: Table) -> None:
     """
-    実行した魔法術式の情報(FileInfo)を整形して追加します。
+    魔法術式の情報(FileInfo)を整形して追加します。
     """
     for key, value in file_info.items():
         table.add_row("  " + key, str(value))
@@ -109,7 +109,7 @@ def add_file_info_full(file_info: dict, table: Table) -> None:
 
 def display_magic_info_full(magic_info: MagicInfo):
     """
-    実行した魔法術式の情報を整形して表示します。
+    魔法術式の情報を整形して表示します。
     """
     table = Table(title="MagicInfoFull", title_style="bold")
     table.add_column("項目", style="cyan", no_wrap=True)
@@ -132,7 +132,7 @@ def display_magic_info_full(magic_info: MagicInfo):
 
 def display_info_full(any_info: BaseModel, title: str = "詳細", table_title: str = ""):
     """
-    実行した魔法術式の情報を整形して表示します。
+    魔法術式の情報を整形して表示します。
     """
     table = Table(title=table_title, title_style="bold")
     table.add_column("項目", style="cyan", no_wrap=True)
@@ -144,9 +144,30 @@ def display_info_full(any_info: BaseModel, title: str = "詳細", table_title: s
     console_print_all(Panel(table, title=title, border_style="white"))
 
 
+def display_magic_info_intermediate(magic_info: MagicInfo):
+    """
+    実行した領域術式の中間結果を整形して表示します。
+    """
+    table = Table(title="領域術式(途中経過)", title_style="bold")
+    table.add_column("項目", style="cyan", no_wrap=True)
+    table.add_column("内容", style="magenta")
+
+    table.add_row("絶対空間", magic_info.file_info.work_dir)
+    table.add_row("領域名", magic_info.file_info.canonical_name)
+    _add_row_relpath(table, "領域情報", magic_info.file_info.target_dir, magic_info.file_info.work_dir)
+    table.add_row("魔導書名", magic_info.current_grimoire_name)
+    _add_row_relpath(table, "錬成器", magic_info.grimoire_compiler, magic_info.file_info.work_dir)
+    _add_row_relpath(table, "起動式", magic_info.grimoire_architect, magic_info.file_info.work_dir)
+    _add_row_relpath(table, "調律石", magic_info.grimoire_formatter, magic_info.file_info.work_dir)
+    _add_row_relpath(table, "魔法術式 (錬成前)", magic_info.file_info.source_file_path, magic_info.file_info.work_dir)
+    _add_row_relpath(table, "魔法術式 (錬成後)", magic_info.file_info.target_file_path, magic_info.file_info.work_dir)
+
+    console_print_all(Panel(table, title="魔法術式情報", border_style="green"))
+
+
 def display_magic_info_final(magic_info: MagicInfo):
     """
-    実行した領域術式の情報を整形して表示します。
+    実行した領域術式の最終結果を整形して表示します。
     """
     table = Table(title="領域術式", title_style="bold")
     table.add_column("項目", style="cyan", no_wrap=True)
