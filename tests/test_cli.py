@@ -40,6 +40,7 @@ class TestZoltraakCommand(unittest.TestCase):  # TestZoltraakCommand クラス�
         self.assertIn("sample.md", result.stdout)
 
         # -pオプションでプロンプトを指定したテスト
+        # TODO: test_prompt_argument()と重複しているので統一する
         result = SubprocessUtil.run(
             ["zoltraak", "sample.md", "-p", "サンプルプロンプト"], capture_output=True, text=True
         )
@@ -120,7 +121,7 @@ class TestZoltraakCommand(unittest.TestCase):  # TestZoltraakCommand クラス�
 
         self.assertEqual(result.returncode, 0)  # resultのリターンコードが0（正常終了）であることを確認します。
         self.assertEqual(result.stderr, "")  # result.stderrが空文字列（エラーメッセージなし）であることを確認します。
-        self.assertIn("検索結果生成中: def_", result.stdout)  # 標準出力に指定の文字列が含まれていることを確認します。
+        self.assertIn("│ dev_obj.md", result.stdout)  # 標準出力に指定の文字列が含まれていることを確認します。
 
 
 class TestCompilerFunctionality(unittest.TestCase):  # クラス名をTestCompilerFunctionalityに変更

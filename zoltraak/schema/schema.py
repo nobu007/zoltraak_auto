@@ -148,6 +148,9 @@ class FileInfo(BaseModel):
         default="./past/target/" + DEFAULT_MD_FILE, description="過去の出力先ファイル(絶対パス)"
     )
 
+    # 最終結果ファイルパス
+    final_output_file_path: str = Field(default="", description="最終結果のファイルパス(絶対パス)")
+
     # その他
     source_hash: str = Field(default="1", description="ソースファイルのハッシュ値")
     target_hash: str = Field(default="2", description="出力先ファイルのハッシュ値")

@@ -10,11 +10,12 @@ from zoltraak.converter.converter import MarkdownToPythonConverter
 from zoltraak.schema.schema import MagicInfo, MagicLayer, MagicMode, ZoltraakParams
 from zoltraak.utils.file_util import FileUtil
 from zoltraak.utils.log_util import log
-from zoltraak.utils.rich_console import display_info_full, display_magic_info_full
+from zoltraak.utils.rich_console import display_info_full, display_magic_info_final, display_magic_info_full
 from zoltraak.utils.subprocess_util import SubprocessUtil
 
 
 def main():
+    """メイン処理"""
     parser = argparse.ArgumentParser(
         description="MarkdownファイルをPythonファイルに変換します", formatter_class=argparse.RawTextHelpFormatter
     )
@@ -78,9 +79,14 @@ def main():
 
     if params.input.endswith(".md"):
         # (暫定) inputで要件定義書.mdを指定されたらメイン処理実行
-        process_markdown_file(params)
+        magic_info = process_markdown_file(params)
+        display_magic_info_final(magic_info)
     else:
-        process_text_input(params)  # - テキスト入力を処理する関数を呼び出す
+        # inputでテキストを指定されたらテキスト入力処理
+        zoltraak_command = process_text_input(params)  # - テキスト入力を処理する関数を呼び出す
+        log("zoltraak_command=" + zoltraak_command)  # - 実行したzoltraakコマンドを表示 (デバッグ用)
+
+    # llm使用量を表示
     litellm.show_used_total_tokens()
 
 
@@ -210,7 +216,7 @@ def show_compiler_conflict_error_and_exit():
     sys.exit(1)
 
 
-def process_markdown_file(params: ZoltraakParams):
+def process_markdown_file(params: ZoltraakParams) -> MagicInfo:
     """
     Markdownファイルを処理する
     前提： params.input で処理対象のmarkdownファイルが指定される
@@ -250,7 +256,9 @@ def process_markdown_file(params: ZoltraakParams):
     os.makedirs(
         os.path.dirname(py_file_path), exist_ok=True
     )  # Pythonファイルの出力ディレクトリを作成（既に存在する場合は何もしない）
-    mtp.convert()
+    new_file_path = mtp.convert()
+    magic_info.file_info.final_output_file_path = new_file_path
+    return magic_info
 
 
 def get_custom_compiler_path(custom_compiler):
@@ -266,7 +274,7 @@ def get_custom_compiler_path(custom_compiler):
     return compiler_path
 
 
-def process_text_input(params: ZoltraakParams):
+def process_text_input(params: ZoltraakParams) -> str:
     # 要件定義書の名前をinputから新規に作成する
     next_prompt = params.input
     md_file_path = generate_md_file_name(next_prompt)
@@ -274,11 +282,15 @@ def process_text_input(params: ZoltraakParams):
     # コマンドを再発行する
     params.input = md_file_path
     params.prompt = next_prompt
-    SubprocessUtil.run_shell_command(params.get_zoltraak_command())
+    zoltraak_command = params.get_zoltraak_command()
+    SubprocessUtil.run_shell_command(zoltraak_command)
+    return zoltraak_command
 
 
 def generate_md_file_name(prompt):
     # promptからファイル名を生成するためにgenerate_response関数を利用
+
+    print("検索結果生成中...")
 
     # requirementsディレクトリが存在しない場合は作成する
     requirements_dir = "requirements"

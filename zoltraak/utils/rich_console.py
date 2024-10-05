@@ -1,3 +1,4 @@
+import os
 from collections.abc import Callable
 from typing import Any
 
@@ -126,6 +127,34 @@ def display_info_full(any_info: BaseModel, title: str = "詳細", table_title: s
         table.add_row(key, str(value))
 
     console.print(Panel(table, title=title, border_style="white"))
+
+
+def display_magic_info_final(magic_info: MagicInfo):
+    """
+    実行した領域術式の情報を整形して表示します。
+    """
+    table = Table(title="領域術式", title_style="bold")
+    table.add_column("項目", style="cyan", no_wrap=True)
+    table.add_column("内容", style="magenta")
+
+    table.add_row(table, "絶対空間", magic_info.file_info.work_dir)
+    table.add_row(table, "領域名", magic_info.file_info.canonical_name)
+    _add_row_relpath(table, "領域情報", magic_info.file_info.target_dir, magic_info.file_info.work_dir)
+    table.add_row(table, "魔導書名", magic_info.current_grimoire_name)
+    _add_row_relpath(table, "錬成器", magic_info.grimoire_compiler, magic_info.file_info.work_dir)
+    _add_row_relpath(table, "起動式", magic_info.grimoire_architect, magic_info.file_info.work_dir)
+    _add_row_relpath(table, "調律石", magic_info.grimoire_formatter, magic_info.file_info.work_dir)
+    _add_row_relpath(table, "魔法術式 (錬成前)", magic_info.file_info.source_file_path, magic_info.file_info.work_dir)
+    _add_row_relpath(table, "魔法術式 (錬成後)", magic_info.file_info.target_file_path, magic_info.file_info.work_dir)
+
+    console.print(Panel(table, title="魔法術式情報(完了)", border_style="green"))
+
+
+def _add_row_relpath(table: Table, key: str, path: str, base_path: str) -> None:
+    abs_path = os.path.abspath(path)
+    abs_base_path = os.path.abspath(base_path)
+    rel_path = os.path.relpath(abs_path, abs_base_path)
+    table.add_row(key, rel_path)
 
 
 def generate_response_with_spinner(
