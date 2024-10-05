@@ -265,11 +265,11 @@ def process_markdown_file(params: ZoltraakParams) -> MagicInfo:
     magic_info.is_debug = False
     display_magic_info_full(magic_info)
 
-    mtp = create_converter(magic_info)
+    converter = create_converter(magic_info)
     os.makedirs(
         os.path.dirname(py_file_path), exist_ok=True
     )  # Pythonファイルの出力ディレクトリを作成（既に存在する場合は何もしない）
-    new_file_path = mtp.convert_loop()
+    new_file_path = converter.convert_loop()
     magic_info.file_info.final_output_file_path = new_file_path
     return magic_info
 

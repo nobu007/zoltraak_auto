@@ -8,7 +8,7 @@ from zoltraak.md_generator import generate_md_from_prompt_recursive
 from zoltraak.schema.schema import MagicInfo, MagicLayer
 from zoltraak.utils.file_util import FileUtil
 from zoltraak.utils.log_util import log, log_e, log_inout, log_w
-from zoltraak.utils.rich_console import display_magic_info_full
+from zoltraak.utils.rich_console import display_magic_info_final, display_magic_info_full
 from zoltraak.utils.subprocess_util import SubprocessUtil
 
 
@@ -43,35 +43,22 @@ class MarkdownToPythonConverter(BaseConverter):
     """
 
     def __init__(self, magic_info: MagicInfo):
+        super().__init__(magic_info)
         self.magic_info = magic_info
 
-    # @log_inout
-    # def convert(self):
-    #     file_info = self.magic_info.file_info
-    #     if self.magic_info.prompt is None:  # プロンプトが指定されていない場合
-    #         file_info.update_source_target(file_info.md_file_path, file_info.py_file_path)
-    #     else:  # プロンプトが指定されている場合
-    #         file_info.update_source_target(file_info.md_file_path, file_info.md_file_path)
-
-    #         if FileUtil.has_content(file_info.md_file_path):  # -- マークダウンファイルのコンテンツが有効な場合
-    #             file_info.update()
-    #             display_magic_info_full(self.magic_info)
-    #             print(
-    #                 f"{file_info.md_file_path}は既存のファイルです。promptに従って変更を提案します。"
-    #             )  # --- ファイルが既存であることを示すメッセージを表示
-    #             self.propose_target_diff(
-    #                 file_info.target_file_path, self.magic_info.prompt
-    #             )  # --- プロンプトに従ってターゲットファイルの差分を提案
-    #             return ""  # --- 関数を終了
-
-    #     file_info.update()
-
-    #     if FileUtil.has_content(file_info.target_file_path):  # ターゲットファイルのコンテンツが有効な場合
-    #         self.handle_existing_target_file()  # - 既存のターゲットファイルを処理
-    #         return None
-    #     # ターゲットファイルが無い or コンテンツが無効の場合
-    #     self.handle_new_target_file()  # - 新しいターゲットファイルを処理
-    #     return None
+    @log_inout
+    def convert_loop(self) -> str:
+        """convert処理をレイヤを進めながら繰り返す"""
+        acceptable_layers = [MagicLayer.LAYER_3_CODE_GEN]
+        for layer in MagicLayer:
+            log("check layer = " + str(layer))
+            if layer in acceptable_layers:
+                log("start layer = " + str(layer))
+                self.magic_info.file_info.final_output_file_path = self.convert()
+                display_magic_info_final(self.magic_info)
+                self.magic_info.magic_layer = layer.next()
+                log("end next = " + str(self.magic_info.magic_layer))
+        return self.magic_info.file_info.final_output_file_path
 
     @log_inout
     def convert(self) -> str:

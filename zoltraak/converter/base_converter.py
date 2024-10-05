@@ -25,6 +25,10 @@ class BaseConverter:
     def __init__(self, magic_info: MagicInfo):
         self.magic_info = magic_info
 
+    def convert_loop(self) -> str:
+        """ダミー"""
+        return self.convert()
+
     def convert(self) -> str:
         """生成処理"""
         final_output_file_path = self.convert_one()
