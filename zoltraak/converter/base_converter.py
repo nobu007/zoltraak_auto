@@ -5,7 +5,7 @@ from zoltraak import settings
 from zoltraak.gen_markdown import generate_md_from_prompt
 from zoltraak.schema.schema import MagicInfo, MagicMode
 from zoltraak.utils.file_util import FileUtil
-from zoltraak.utils.log_util import log, log_inout
+from zoltraak.utils.log_util import log, log_e, log_inout
 from zoltraak.utils.rich_console import display_magic_info_full
 
 
@@ -90,7 +90,7 @@ class BaseConverter:
         file_info = self.magic_info.file_info
         is_source_changed = True  # TODO: hash check
         if is_source_changed:
-            print(f"{file_info.source_file_path}の変更を検知しました。")
+            log(f"{file_info.source_file_path}の変更を検知しました。")
             if os.path.exists(file_info.past_source_file_path):
                 return self.update_target_file_from_source_diff()
             return self.update_target_file_propose_and_apply(file_info.target_file_path, self.magic_info.prompt)
@@ -162,30 +162,17 @@ promptの内容:
         log(target_diff)
 
         # ユーザーに適用方法を尋ねる
-        print("差分をどのように適用しますか?")
-        print("1. AIで適用する")
-        # print("2. 自分で行う")
-        # print("3. 何もせず閉じる")
-        # choice = input("選択してください (1, 2, 3): ")
+        log("差分をどのように適用しますか?")
+        log("1. AIで適用する")
         choice = "1"
 
         while True:
             if choice == "1":
                 # 差分をターゲットファイルに自動で適用
                 self.apply_diff_to_target_file(target_file_path, target_diff)
-                print(f"{target_file_path}に差分を自動で適用しました。")
+                log(f"{target_file_path}に差分を自動で適用しました。")
                 break
-            if choice == "2":
-                print("手動で差分を適用してください。")
-                break
-            if choice == "3":
-                print("操作をキャンセルしました。")
-                break
-            print("無効な選択です。もう一度選択してください。")
-            print("1. 自動で適用する")
-            # print("2. エディタで行う")
-            # print("3. 何もせず閉じる")
-            # choice = input("選択してください (1, 2, 3): ")
+            log_e("論理異常： choice=%d", choice)
             choice = "1"
 
         return target_file_path
@@ -225,13 +212,13 @@ promptの内容:
         # 修正後の内容をターゲットファイルに書き込む
         new_target_file_path = FileUtil.write_file(target_file_path, modified_content)
 
-        print(f"{new_target_file_path}に修正を適用しました。")
+        log(f"{new_target_file_path}に修正を適用しました。")
         return new_target_file_path
 
     @log_inout
     def handle_new_target_file(self):
         file_info = self.magic_info.file_info
-        print(f"""
+        log(f"""
 {file_info.target_file_path}は新しいファイルです。少々お時間をいただきます。
 {file_info.source_file_path} -> {file_info.target_file_path}
                   """)

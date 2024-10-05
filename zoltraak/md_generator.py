@@ -7,6 +7,7 @@ import time
 import zoltraak.llms.litellm_api as litellm
 from zoltraak import settings
 from zoltraak.utils.gui_util import GuiUtil
+from zoltraak.utils.log_util import log, log_e
 from zoltraak.utils.rich_console import MagicInfo, generate_response_with_spinner
 
 
@@ -152,7 +153,7 @@ def create_prompt(goal_prompt, compiler_path=None, formatter_path=None, language
             )  # -- プロンプトファイルの内容を読み込み、goal_promptを埋め込む
         prompt = prompt + formatter  # - プロンプトにフォーマッタを追加
     else:  # プロンプトファイルが存在しない場合
-        print(f"プロンプトファイル {compiler_path} が見つかりません。")  # - エラーメッセージを表示
+        log_e(f"プロンプトファイル {compiler_path} が見つかりません。")  # - エラーメッセージを表示
         os.system("pwd")  # noqa: S605, S607
         prompt = ""
 
@@ -196,13 +197,12 @@ def get_formatter(formatter_path, language=None):
         with open(formatter_path, encoding="utf-8") as file:  # --- フォーマッタファイルを読み込みモードで開く
             formatter = file.read()  # ---- フォーマッタの内容を読み込む
             if language is not None:
-                print(formatter_path)
                 if formatter_path.endswith("_lang.md"):
                     formatter = formatter.replace("{language}", language)
                 else:
                     formatter += f"\n- You must output everything including code block and diagrams, according to the previous instructions, but make sure you write your response in {language}.\n\n## Output Language\n- You must generate your response using {language}, which is the language of the formatter just above this sentence."  # noqa: E501
     else:  # -- フォーマッタファイルが存在しない場合
-        print(f"フォーマッタファイル {formatter_path} が見つかりません。")  # --- エラーメッセージを表示
+        log_e(f"フォーマッタファイル {formatter_path} が見つかりません。")  # --- エラーメッセージを表示
         formatter = ""  # --- フォーマッタを空文字列に設定
 
     return formatter
@@ -235,7 +235,7 @@ def print_generation_result(target_file_path, compiler_path):
         compiler_path (str): コンパイラのパス
     """
     print()
-    print(f"\033[32m魔法術式を構築しました: {target_file_path}\033[0m")  # 要件定義書の生成完了メッセージを緑色で表示
+    log(f"\033[32m魔法術式を構築しました: {target_file_path}\033[0m")  # 要件定義書の生成完了メッセージを緑色で表示
 
     # 検索結果生成以外ではユーザーに要件定義書からディレクトリを構築するかどうかを尋ねる
     if compiler_path is not None:
@@ -254,11 +254,11 @@ def print_generation_result(target_file_path, compiler_path):
         spinner_thread.join()  # スピナーの表示を終了
     else:
         # ユーザーがnと答えた場合、既存の手順を表示
-        print(
+        log(
             "\033[33m以下のコマンドをコピーして、ターミナルに貼り付けて実行してください。\033[0m"
         )  # 実行方法の説明を黄色で表示
-        print(f"\033[36mzoltraak {target_file_path}\033[0m")  # 実行コマンドを水色で表示
+        log(f"\033[36mzoltraak {target_file_path}\033[0m")  # 実行コマンドを水色で表示
         GuiUtil.copy_to_clipboard(f"zoltraak {target_file_path}")  # 実行コマンドをクリップボードにコピー
-        print(
+        log(
             "\033[35mコマンドをクリップボードにコピーしました。ターミナルに貼り付けて実行できます。\033[0m"
         )  # コピー完了メッセージを紫色で表示

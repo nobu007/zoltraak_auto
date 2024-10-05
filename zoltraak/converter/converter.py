@@ -7,7 +7,7 @@ from zoltraak.gencode import TargetCodeGenerator
 from zoltraak.md_generator import generate_md_from_prompt_recursive
 from zoltraak.schema.schema import MagicInfo, MagicLayer
 from zoltraak.utils.file_util import FileUtil
-from zoltraak.utils.log_util import log, log_inout, log_w
+from zoltraak.utils.log_util import log, log_e, log_inout, log_w
 from zoltraak.utils.rich_console import display_magic_info_full
 from zoltraak.utils.subprocess_util import SubprocessUtil
 
@@ -89,13 +89,13 @@ class MarkdownToPythonConverter(BaseConverter):
             if FileUtil.has_content(file_info.md_file_path_abs):  # -- マークダウンファイルのコンテンツが有効な場合
                 file_info.update()
                 display_magic_info_full(self.magic_info)
-                print(
+                log(
                     f"{file_info.md_file_path_abs}は既存のファイルです。promptに従って変更を提案します。"
                 )  # --- ファイルが既存であることを示すメッセージを表示
                 self.propose_target_diff(
                     file_info.target_file_path, self.magic_info.prompt
                 )  # --- プロンプトに従ってターゲットファイルの差分を提案
-                return ""  # --- 関数を終了
+                return file_info.target_file_path  # --- 関数を終了
             # TODO: ここで要件定義書を新規作成する必要がある？
 
         # step3: Pythonコードを作成
@@ -139,8 +139,8 @@ class MarkdownToPythonConverter(BaseConverter):
                 # source が変わってたらtarget を作り直す
                 # TODO: 前回のtarget を加味したほうが良い？
                 # =>source の前回差分が小さい & 前回target が存在でプロンプトに含める。
-                print(f"{file_info.source_file_path}の変更を検知しました。")
-                print("ソースファイルの差分:")
+                log(f"{file_info.source_file_path}の変更を検知しました。")
+                log("ソースファイルの差分:")
                 if os.path.exists(file_info.past_source_file_path):
                     return self.display_source_diff()
                 # TODO: source のハッシュはあるのにsource 自体が無い場合は処理が止まるけどいいの？
@@ -159,17 +159,17 @@ class MarkdownToPythonConverter(BaseConverter):
 
         source_diff = difflib.unified_diff(old_source_lines, new_source_lines, lineterm="", n=0)
         source_diff_text = "".join(source_diff)
-        print(source_diff_text)
+        log("source_diff_text[:100]=", source_diff_text[:100])
 
         self.propose_target_diff(file_info.target_file_path, self.magic_info.prompt)
-        print(f"ターゲットファイル: {file_info.target_file_path}")
+        log(f"ターゲットファイル: {file_info.target_file_path}")
         return file_info.target_file_path
 
     @log_inout
     def handle_new_target_file(self) -> str:
         file_info = self.magic_info.file_info
         if self.magic_info.prompt is None:
-            print(
+            log(
                 f"""
 高級言語コンパイル中: {file_info.target_file_path}は新しいファイルです。少々お時間をいただきます。
 {file_info.source_file_path} -> {file_info.target_file_path}
@@ -177,7 +177,7 @@ class MarkdownToPythonConverter(BaseConverter):
             )
             target = TargetCodeGenerator(self.magic_info)
             return target.generate_target_code()
-        print(
+        log(
             f"""
     {"検索結果生成中" if self.magic_info.current_grimoire_name is None else "要件定義書執筆中"}:
     {file_info.target_file_path}は新しいファイルです。少々お時間をいただきます。
@@ -186,7 +186,7 @@ class MarkdownToPythonConverter(BaseConverter):
         )
         return generate_md_from_prompt_recursive(self.magic_info)
 
-    def propose_target_diff(self, target_file_path, prompt=None):
+    def propose_target_diff(self, target_file_path, prompt=None) -> None:
         """
         ターゲットファイルの変更差分を提案する関数
 
@@ -231,32 +231,18 @@ promptの内容:
         )
         target_diff = response.strip()
         # ターゲットファイルの差分を表示
-        log("ターゲットファイルの差分:")
-        log(target_diff)
+        log("ターゲットファイルの差分(冒頭100字):")
+        log(target_diff[:100])
 
         # ユーザーに適用方法を尋ねる
-        print("差分をどのように適用しますか？")
-        print("1. AIで適用する")
-        # print("2. 自分で行う")
-        # print("3. 何もせず閉じる")
-        # choice = input("選択してください (1, 2, 3): ")
+        log("差分をどのように適用しますか？")
+        log("1. AIで適用する")
         choice = "1"
 
         while True:
             if choice == "1":
                 # 差分をターゲットファイルに自動で適用
                 self.apply_diff_to_target_file(target_file_path, target_diff)
-                print(f"{target_file_path}に差分を自動で適用しました。")
+                log(f"{target_file_path}に差分を自動で適用しました。")
                 break
-            if choice == "2":
-                print("手動で差分を適用してください。")
-                break
-            if choice == "3":
-                print("操作をキャンセルしました。")
-                break
-            print("無効な選択です。もう一度選択してください。")
-            print("1. 自動で適用する")
-            # print("2. エディタで行う")
-            # print("3. 何もせず閉じる")
-            # choice = input("選択してください (1, 2, 3): ")
-            choice = "1"
+            log_e("論理異常： choice=%d", choice)

@@ -5,7 +5,7 @@ import litellm
 from litellm import ModelResponse, Router
 from litellm.integrations.custom_logger import CustomLogger
 
-from zoltraak.utils.log_util import log_w
+from zoltraak.utils.log_util import log, log_w
 
 
 class ModelStatsLogger(CustomLogger):
@@ -138,18 +138,18 @@ def show_used_total_tokens():
     # 統計を取得して表示
     stats = logger.get_stats()
     for model, data in stats.items():
-        print(f"Model: {model}")
-        print(f"  Total requests: {data['count']}")
-        print(f"  Total tokens: {data['total_tokens']}")
-        print(f"  Average tokens per request: {data['total_tokens'] / data['count']:.2f}")
+        log(f"Model: {model}")
+        log(f"  Total requests: {data['count']}")
+        log(f"  Total tokens: {data['total_tokens']}")
+        log(f"  Average tokens per request: {data['total_tokens'] / data['count']:.2f}")
 
 
 if __name__ == "__main__":
-    model = "claude-3-haiku-20240307"
+    model_ = "claude-3-haiku-20240307"
     prompt = "今日の晩御飯を提案して"
     max_tokens = 100
     temperature = 0.8
 
-    response_ = generate_response(model, prompt, max_tokens, temperature)
+    response_ = generate_response(model_, prompt, max_tokens, temperature)
 
     print(response_)

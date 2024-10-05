@@ -2,7 +2,7 @@ import os
 import re
 
 from zoltraak.utils.file_util import FileUtil
-from zoltraak.utils.log_util import log
+from zoltraak.utils.log_util import log, log_e
 from zoltraak.utils.rich_console import MagicInfo, generate_response_with_spinner
 
 
@@ -99,7 +99,7 @@ def get_formatter_prompt(formatter_path: str, language: str | None = None):
             \n## Output Language\n- You must generate your response using {language},
             which is the language of the formatter just above this sentence."""
     else:  # -- フォーマッタファイルが存在しない場合
-        print(f"フォーマッタファイル {formatter_path} が見つかりません。")  # --- エラーメッセージを表示
+        log_e(f"フォーマッタファイル {formatter_path} が見つかりません。")  # --- エラーメッセージを表示
         formatter_prompt = ""  # --- フォーマッタを空文字列に設定
 
     return formatter_prompt

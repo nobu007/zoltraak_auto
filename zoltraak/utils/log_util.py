@@ -137,6 +137,10 @@ def log(msg: str, *args, **kwargs):
         logger.info(msg, *args, **kwargs)
 
 
+def log_e(msg: str, *args, **kwargs):
+    logger.error(msg, *args, **kwargs)
+
+
 def log_w(msg: str, *args, **kwargs):
     logger.warning(msg, *args, **kwargs)
 

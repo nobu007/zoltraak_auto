@@ -2,6 +2,8 @@ import shlex
 import subprocess
 from typing import Any
 
+from zoltraak.utils.log_util import log
+
 
 class SubprocessUtil:
     CompletedProcess = subprocess.CompletedProcess
@@ -9,13 +11,13 @@ class SubprocessUtil:
     @staticmethod
     def quote(s: str | list[str]) -> str | list[str]:
         """
-        Safely quote a string or list of strings for use in shell commands.
+        文字列または文字列のリストをシェルコマンド用に安全にクオートします。
 
-        Args:
-            s (str | list[str]): The string or list of strings to quote.
+        引数:
+            s (str | list[str]): クオートする文字列または文字列のリスト。
 
-        Returns:
-            str | list[str]: The quoted string or list of strings.
+        戻り値:
+            str | list[str]: クオートされた文字列または文字列のリスト。
         """
         if isinstance(s, list):
             return [shlex.quote(arg) for arg in s]
@@ -24,13 +26,13 @@ class SubprocessUtil:
     @staticmethod
     def split(command: str) -> list[str]:
         """
-        Split a command string into a list of arguments.
+        コマンド文字列を引数のリストに分割します。
 
-        Args:
-            command (str): The command string to split.
+        引数:
+            command (str): 分割するコマンド文字列。
 
-        Returns:
-            list[str]: The list of command arguments.
+        戻り値:
+            list[str]: コマンド引数のリスト。
         """
         return shlex.split(command)
 
@@ -49,27 +51,26 @@ class SubprocessUtil:
         shell: bool = False,
     ) -> subprocess.CompletedProcess:
         """
-        Run a command in a subprocess.
+        サブプロセスでコマンドを実行します。
 
-        Args:
-            args (Union[str, list[str]]): The command to run. If a string, it will be split.
-            cwd (Optional[str]): The working directory for the command.
-            env (Optional[Dict[str, str]]): Environment variables for the new process.
-            shell (bool): If True, the command will be executed through the shell.
-            timeout (Optional[float]): If the process does not terminate after timeout seconds,
-                raise a TimeoutExpired exception.
-            check (bool): If True, raise a CalledProcessError if the exit code is non-zero.
-            capture_output (bool): If True, stdout and stderr will be captured.
-            text (bool): If True, decode stdout and stderr using the specified encoding.
-            encoding (Optional[str]): The encoding to use for text mode operations.
-            errors (Optional[str]): The error handling scheme to use for decoding.
+        引数:
+            args (str または list[str]): 実行するコマンド。文字列の場合は分割されます。
+            cwd (Optional[str]): コマンドの作業ディレクトリ。
+            env (Optional[Dict[str, str]]): 新しいプロセスの環境変数。
+            shell (bool): Trueの場合、シェルを通してコマンドを実行します。
+            timeout (Optional[float]): プロセスがtimeout秒後に終了しない場合、TimeoutExpired例外を発生させます。
+            check (bool): Trueの場合、終了コードが0以外ならCalledProcessErrorを発生させます。
+            capture_output (bool): Trueの場合、stdoutとstderrをキャプチャします。
+            text (bool): Trueの場合、指定されたエンコーディングを使用してstdoutとstderrをデコードします。
+            encoding (Optional[str]): テキストモード操作に使用するエンコーディング。
+            errors (Optional[str]): デコード時のエラーハンドリング方式。
 
-        Returns:
-            subprocess.CompletedProcess: A CompletedProcess instance.
+        戻り値:
+            subprocess.CompletedProcess: CompletedProcessインスタンス。
 
-        Raises:
-            subprocess.CalledProcessError: If check is True and the process returns a non-zero exit status.
-            subprocess.TimeoutExpired: If the timeout expires.
+        例外:
+            subprocess.CalledProcessError: checkがTrueで、プロセスが非ゼロの終了ステータスを返した場合。
+            subprocess.TimeoutExpired: タイムアウトが発生した場合。
         """
         kwargs: dict[str, Any] = {
             "args": args,
@@ -113,29 +114,29 @@ class SubprocessUtil:
         show_command: bool = False,
     ) -> subprocess.CompletedProcess:
         """
-        Run a shell command safely.
+        シェルコマンドを安全に実行します。
 
-        This method is a wrapper around the run method, specifically for shell commands.
-        It automatically sets shell=True and uses shlex.quote for safety.
+        このメソッドはrunメソッドのラッパーで、特にシェルコマンド用です。
+        自動的にshell=Trueを設定し、安全のためにshlex.quoteを使用します。
 
         Args:
-            command (str): The shell command to run.
-            cwd (Optional[str]): The working directory for the command.
-            env (Optional[Dict[str, str]]): Environment variables for the new process.
-            timeout (Optional[float]): If the process does not terminate after timeout seconds, raise a TimeoutExpired exception.
-            check (bool): If True, raise a CalledProcessError if the exit code is non-zero.
-            capture_output (bool): If True, stdout and stderr will be captured.
+            command (str): 実行するシェルコマンド。
+            cwd (Optional[str]): コマンドの作業ディレクトリ。
+            env (Optional[Dict[str, str]]): 新しいプロセスの環境変数。
+            timeout (Optional[float]): タイムアウト秒数。タイムアウトした場合、TimeoutExpired例外を発生させます。
+            check (bool): Trueの場合、終了コードが0以外ならCalledProcessErrorを発生させます。
+            capture_output (bool): Trueの場合、stdoutとstderrをキャプチャします。
 
         Returns:
-            subprocess.CompletedProcess: A CompletedProcess instance.
+            subprocess.CompletedProcess: CompletedProcessインスタンス。
 
         Raises:
-            subprocess.CalledProcessError: If check is True and the process returns a non-zero exit status.
-            subprocess.TimeoutExpired: If the timeout expires.
+            subprocess.CalledProcessError: checkがTrueで、プロセスが非ゼロの終了ステータスを返した場合。
+            subprocess.TimeoutExpired: タイムアウトが発生した場合。
         """
         sanitized_command = SubprocessUtil.sanitize_command(command)
         if show_command:
-            print("sanitized_command=", sanitized_command)
+            log("sanitized_command=", sanitized_command)
         return SubprocessUtil.run(
             args=["/bin/sh", "-c", sanitized_command],
             cwd=cwd,
