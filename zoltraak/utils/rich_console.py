@@ -137,10 +137,10 @@ def display_magic_info_final(magic_info: MagicInfo):
     table.add_column("項目", style="cyan", no_wrap=True)
     table.add_column("内容", style="magenta")
 
-    table.add_row(table, "絶対空間", magic_info.file_info.work_dir)
-    table.add_row(table, "領域名", magic_info.file_info.canonical_name)
+    table.add_row("絶対空間", magic_info.file_info.work_dir)
+    table.add_row("領域名", magic_info.file_info.canonical_name)
     _add_row_relpath(table, "領域情報", magic_info.file_info.target_dir, magic_info.file_info.work_dir)
-    table.add_row(table, "魔導書名", magic_info.current_grimoire_name)
+    table.add_row("魔導書名", magic_info.current_grimoire_name)
     _add_row_relpath(table, "錬成器", magic_info.grimoire_compiler, magic_info.file_info.work_dir)
     _add_row_relpath(table, "起動式", magic_info.grimoire_architect, magic_info.file_info.work_dir)
     _add_row_relpath(table, "調律石", magic_info.grimoire_formatter, magic_info.file_info.work_dir)
