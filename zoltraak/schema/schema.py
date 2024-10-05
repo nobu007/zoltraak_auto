@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import hashlib
 import os
 from enum import Enum
@@ -33,17 +35,42 @@ class MagicLayer(str, Enum):
     LAYER_3_CODE_GEN = "layer_3_code_gen"  # レイヤ３： 要件定義書 => コード
 
     def __str__(self):
-        return self.value
+        return self.__repr__()
 
-    def __repr__(self) -> str:
-        return self.value.split("_", 1)[1]  # => layer_1
+    def __repr__(self):
+        return self.value.replace("layer_", "")  # => 1_request_gen
+
+    def level(self):
+        layer_level_str = self.value[7]  # レイヤ1～9のみ対応
+        return int(layer_level_str)
+
+    def next(self) -> MagicLayer | None:
+        # 次のレベルのレイヤを返す
+        current_layer_level: int = self.level()
+        for layer in MagicLayer:
+            layer_level: int = layer.level()
+            if layer_level > current_layer_level:
+                # 次のレベルのレイヤが見つかったケース
+                return layer
+        return None
 
     @staticmethod
     def get_description():
-        description_list = ["グリモアの起動レイヤを指定します。例えばコード生成から再実行できます。"]
+        description_list = ["グリモアの起動レイヤを指定します。\n例えば「」でコード生成から実行します。"]
         for i, layer in enumerate(MagicLayer):
-            description_list.append(f"  {i}: " + layer.__repr__())
+            level = i + 1
+            description_list.append(f"  {level}: " + layer.__repr__())
         return "\n".join(description_list)
+
+    @staticmethod
+    def new(magic_layer_str: str):
+        # 文字列からMagicLayerを取得する
+        for layer in MagicLayer:
+            if magic_layer_str in layer.value:
+                # レイヤが見つかったケース
+                return layer
+        # レイヤが見つからなかったケースのデフォルト値
+        return MagicLayer.LAYER_2_REQUIREMENT_GEN
 
 
 class ZoltraakParams(BaseModel):
@@ -76,9 +103,9 @@ class ZoltraakParams(BaseModel):
             cmd += f" --language {self.language}"
         if self.model_name:
             cmd += f" --model_name {self.model_name}"
-        if self.model_name:
+        if self.magic_mode:
             cmd += f" --magic_mode {self.magic_mode}"
-        if self.model_name:
+        if self.magic_layer:
             cmd += f" --magic_layer {self.magic_layer}"
         print("get_zoltraak_command cmd=", cmd)
         return cmd

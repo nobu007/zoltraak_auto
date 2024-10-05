@@ -7,6 +7,7 @@ import zoltraak
 import zoltraak.llms.litellm_api as litellm
 from zoltraak import settings
 from zoltraak.converter.converter import MarkdownToPythonConverter
+from zoltraak.converter.md_converter import MarkdownToMarkdownConverter
 from zoltraak.schema.schema import MagicInfo, MagicLayer, MagicMode, ZoltraakParams
 from zoltraak.utils.file_util import FileUtil
 from zoltraak.utils.log_util import log
@@ -16,19 +17,22 @@ from zoltraak.utils.subprocess_util import SubprocessUtil
 
 def main():
     """メイン処理"""
+    log("")
+    log("<<< ===================================== >>>")
+    log("new zoltraak cli start")
     parser = argparse.ArgumentParser(
         description="MarkdownファイルをPythonファイルに変換します", formatter_class=argparse.RawTextHelpFormatter
     )
     parser.add_argument("input", help="変換対象のMarkdownファイルのパスまたはテキスト", nargs="?")
     parser.add_argument("--output-dir", help="生成されたPythonファイルの出力ディレクトリ", default="generated")
-    parser.add_argument("-p", "--prompt", help="追加のプロンプト情報", default=None)
-    parser.add_argument("-c", "--compiler", help="コンパイラー（要件定義書のテンプレート）")
+    parser.add_argument("-p", "--prompt", help="追加のプロンプト情報", default="")
+    parser.add_argument("-c", "--compiler", help="コンパイラー（要件定義書のテンプレート）", default="")
     parser.add_argument("-f", "--formatter", help="コードフォーマッター", default="md_comment")
-    parser.add_argument("-cc", "--custom-compiler", help="自作コンパイラー（自作定義書生成文書）")
+    parser.add_argument("-cc", "--custom-compiler", help="自作コンパイラー（自作定義書生成文書）", default="")
     parser.add_argument(
         "-v", "--version", action="store_true", help="バージョン情報を表示"
     )  # 追加: バージョン情報表示オプション
-    parser.add_argument("-l", "--language", help="出力言語を指定", default=None)  # 追加: 汎用言語指定オプション
+    parser.add_argument("-l", "--language", help="出力言語を指定", default="")  # 追加: 汎用言語指定オプション
     parser.add_argument("-m", "--model_name", help="使用するモデルの名前", default="")
     parser.add_argument(
         "-mm",
@@ -41,10 +45,9 @@ def main():
     parser.add_argument(
         "-ml",
         "--magic_layer",
-        type=MagicLayer,
-        choices=list(MagicLayer),
+        type=str,
         help=MagicLayer.get_description(),
-        default=MagicLayer.LAYER_2_REQUIREMENT_GEN,
+        default=str(MagicLayer.LAYER_2_REQUIREMENT_GEN),
     )
     args = parser.parse_args()
     if args.version:  # バージョン情報表示オプションが指定された場合
@@ -235,30 +238,54 @@ def process_markdown_file(params: ZoltraakParams) -> MagicInfo:
     md_file_path = os.path.abspath(md_file_path)
     py_file_path = os.path.abspath(py_file_path)
 
+    # ここはMagicInfoの定義順に初期化すること！
     magic_info = MagicInfo()
+    magic_info.magic_mode = params.magic_mode
+    magic_info.magic_layer = MagicLayer.new(params.magic_layer)
+    magic_info.model_name = settings.model_name
+    magic_info.prompt = params.prompt
     magic_info.current_grimoire_name = canonical_name
+    magic_info.description = ""  # デフォルト値を使う
     magic_info.grimoire_compiler = compiler_path_abs
     magic_info.grimoire_architect = ""  # 後で設定する
     magic_info.grimoire_formatter = formatter_path
-    magic_info.model_name = settings.model_name
-    magic_info.prompt = params.prompt
-    magic_info.language = params.language
-    magic_info.magic_mode = params.magic_mode
-    magic_info.magic_layer = params.magic_layer
+
+    # file関連
     magic_info.file_info.md_file_path = md_file_path
     magic_info.file_info.py_file_path = py_file_path
     magic_info.file_info.update()
     magic_info.file_info.canonical_name = canonical_name
     magic_info.file_info.target_dir = output_dir_abs
+
+    # その他
+    magic_info.success_message = ""  # 後で設定する
+    magic_info.error_message = ""  # 後で設定する
+    magic_info.language = params.language
+    magic_info.is_debug = False
     display_magic_info_full(magic_info)
 
-    mtp = MarkdownToPythonConverter(magic_info)
+    mtp = create_converter(magic_info)
     os.makedirs(
         os.path.dirname(py_file_path), exist_ok=True
     )  # Pythonファイルの出力ディレクトリを作成（既に存在する場合は何もしない）
     new_file_path = mtp.convert()
     magic_info.file_info.final_output_file_path = new_file_path
     return magic_info
+
+
+# TO_MARKDOWN_CONVERTER を使うレイヤの一覧
+TO_MARKDOWN_CONVERTER_LAYER_LIST = ["layer_1_request_gen", "2_requirement_gen"]
+
+
+def create_converter(magic_info: MagicInfo):
+    log("magic_info.magic_layer=%s", magic_info.magic_layer)
+    if magic_info.magic_layer in TO_MARKDOWN_CONVERTER_LAYER_LIST:
+        # マークダウンに変換するコンバータを使う
+        log("MarkdownToMarkdownConverter")
+        return MarkdownToMarkdownConverter(magic_info)
+    # pythonに変換するコンバータを使う
+    log("MarkdownToPythonConverter")
+    return MarkdownToPythonConverter(magic_info)
 
 
 def get_custom_compiler_path(custom_compiler):
