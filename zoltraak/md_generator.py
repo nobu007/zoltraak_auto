@@ -6,9 +6,10 @@ import time
 
 import zoltraak.llms.litellm_api as litellm
 from zoltraak import settings
+from zoltraak.schema.schema import MagicInfo, MagicLayer
 from zoltraak.utils.gui_util import GuiUtil
 from zoltraak.utils.log_util import log, log_e
-from zoltraak.utils.rich_console import MagicInfo, generate_response_with_spinner
+from zoltraak.utils.rich_console import generate_response_with_spinner
 
 
 def generate_md_from_prompt_recursive(magic_info: MagicInfo):
@@ -40,8 +41,11 @@ def generate_md_from_prompt_recursive(magic_info: MagicInfo):
     file_info.target_file_path = f"requirements/{file_info.canonical_name}"
     response = generate_response_with_spinner(magic_info)
     md_content = response.strip()  # 生成された要件定義書の内容を取得し、前後の空白を削除
-    save_md_content(md_content, file_info.target_file_path)  # 生成された要件定義書の内容をファイルに保存
-    print_generation_result(file_info.target_file_path, compiler_path)  # 生成結果を出力
+    output_file_path = save_md_content(
+        md_content, file_info.target_file_path
+    )  # 生成された要件定義書の内容をファイルに保存
+    file_info.add_output_file_path(output_file_path)
+    print_generation_result(file_info.target_file_path, compiler_path, magic_info.magic_layer)  # 生成結果を出力
 
 
 def get_prompt_formatter(language: str, formatter_path: str):
@@ -208,7 +212,7 @@ def get_formatter(formatter_path, language=None):
     return formatter
 
 
-def save_md_content(md_content, target_file_path):
+def save_md_content(md_content, target_file_path) -> str:
     """
     生成された要件定義書の内容をファイルに保存する関数
 
@@ -224,9 +228,11 @@ def save_md_content(md_content, target_file_path):
     )  # - requirements/ディレクトリとファイル名を結合してターゲットファイルのパスを生成
     with open(target_file_path, "w", encoding="utf-8") as target_file:  # ターゲットファイルを書き込みモードで開く
         target_file.write(md_content)  # - 生成された要件定義書の内容をファイルに書き込む
+        return target_file_path
+    return ""
 
 
-def print_generation_result(target_file_path, compiler_path):
+def print_generation_result(target_file_path, compiler_path, magic_layer: MagicLayer):
     """
     要件定義書の生成結果を表示する関数
 
@@ -248,7 +254,7 @@ def print_generation_result(target_file_path, compiler_path):
 
         import subprocess
 
-        subprocess.run(["zoltraak", target_file_path], check=False)  # noqa: S603, S607
+        subprocess.run(["zoltraak", target_file_path, "-ml", str(magic_layer)], check=False)  # noqa: S603, S607
 
         done = True  # zoltraakコマンド実行後にスピナーの終了フラグをTrueに設定
         spinner_thread.join()  # スピナーの表示を終了

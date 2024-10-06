@@ -4,9 +4,10 @@ import shutil
 import zoltraak
 import zoltraak.llms.litellm_api as litellm
 from zoltraak import settings
+from zoltraak.schema.schema import MagicInfo
 from zoltraak.utils.log_util import log_inout
 from zoltraak.utils.prompt_import import load_prompt
-from zoltraak.utils.rich_console import MagicInfo, display_magic_info_intermediate
+from zoltraak.utils.rich_console import display_magic_info_post, display_magic_info_pre
 from zoltraak.utils.subprocess_util import SubprocessUtil
 
 
@@ -110,8 +111,9 @@ class TargetCodeGenerator:
         結果の出力を行うメソッド
         """
         self.print_target_file_path()  # ターゲットファイルのパスを出力
+        display_magic_info_pre(self.magic_info)
         self.file_info.add_output_file_path(self.file_info.target_file_path)
-        display_magic_info_intermediate(self.magic_info)
+        display_magic_info_post(self.magic_info)
         if self.target_file_path.endswith(".py"):  # ターゲットファイルがPythonファイルの場合
             self.run_python_file()  # - Pythonファイルを実行
 
