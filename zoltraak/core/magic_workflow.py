@@ -2,6 +2,7 @@ from zoltraak.schema.schema import MagicInfo
 from zoltraak.utils.log_util import log, log_inout
 from zoltraak.utils.rich_console import (
     display_magic_info_final,
+    display_magic_info_init,
     display_magic_info_intermediate,
 )
 
@@ -17,7 +18,7 @@ class MagicWorkflow:
     def start_workflow(self):
         # ワークフローを開始したときの共通処理
         log("ワークフローを開始します")
-        # display_magic_info_start(self.magic_info)
+        display_magic_info_init(self.magic_info)
 
     @log_inout
     def pre_process(self):
@@ -44,9 +45,11 @@ class MagicWorkflow:
     @log_inout
     def display_result(self):
         # 結果を表示する
-        print("結果:")
-        for magic_info in self.magic_info_list:
-            print(magic_info)
+        log("結果:")
+        if self.magic_info.is_success:
+            log(self.magic_info.success_message)
+        else:
+            log(self.magic_info.error_message)
 
     @log_inout
     def display_progress(self):
