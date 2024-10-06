@@ -2,10 +2,10 @@ import os
 
 from zoltraak.converter.base_converter import BaseConverter
 from zoltraak.converter.converter import MarkdownToPythonConverter
+from zoltraak.core.magic_workflow import MagicWorkflow
 from zoltraak.schema.schema import MagicInfo, MagicLayer
 from zoltraak.utils.file_util import FileUtil
 from zoltraak.utils.log_util import log, log_inout
-from zoltraak.utils.rich_console import display_magic_info_intermediate
 
 
 class MarkdownToMarkdownConverter(BaseConverter):
@@ -35,9 +35,10 @@ class MarkdownToMarkdownConverter(BaseConverter):
       target => py_file_path
     """
 
-    def __init__(self, magic_info: MagicInfo):
-        super().__init__(magic_info)
-        self.magic_info = magic_info
+    def __init__(self, magic_workflow: MagicWorkflow):
+        super().__init__(magic_workflow)
+        self.magic_workflow = magic_workflow
+        self.magic_info = magic_workflow.magic_info
 
     @log_inout
     def convert_loop(self) -> str:
@@ -50,7 +51,6 @@ class MarkdownToMarkdownConverter(BaseConverter):
             if layer in acceptable_layers and layer == self.magic_info.magic_layer:
                 log("convert layer = " + str(layer))
                 self.magic_info.file_info.final_output_file_path = self.convert()
-                display_magic_info_intermediate(self.magic_info)
                 self.magic_info.magic_layer = layer.next()
                 log("end next = " + str(self.magic_info.magic_layer))
 

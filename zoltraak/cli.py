@@ -285,7 +285,7 @@ def process_markdown_file(params: ZoltraakParams) -> MagicInfo:
 
     magic_workflow = MagicWorkflow(magic_info)
 
-    converter = create_converter(magic_info)
+    converter = create_converter(magic_workflow)
     os.makedirs(
         os.path.dirname(py_file_path), exist_ok=True
     )  # Pythonファイルの出力ディレクトリを作成（既に存在する場合は何もしない）
@@ -298,15 +298,15 @@ def process_markdown_file(params: ZoltraakParams) -> MagicInfo:
 TO_MARKDOWN_CONVERTER_LAYER_LIST = ["layer_1_request_gen", "2_requirement_gen"]
 
 
-def create_converter(magic_info: MagicInfo) -> BaseConverter:
-    log("magic_info.magic_layer=%s", magic_info.magic_layer)
-    if magic_info.magic_layer in TO_MARKDOWN_CONVERTER_LAYER_LIST:
+def create_converter(magic_workflow: MagicWorkflow) -> BaseConverter:
+    log("magic_info.magic_layer=%s", magic_workflow.magic_info.magic_layer)
+    if magic_workflow.magic_info.magic_layer in TO_MARKDOWN_CONVERTER_LAYER_LIST:
         # マークダウンに変換するコンバータを使う
         log("MarkdownToMarkdownConverter")
-        return MarkdownToMarkdownConverter(magic_info)
+        return MarkdownToMarkdownConverter(magic_workflow)
     # pythonに変換するコンバータを使う
     log("MarkdownToPythonConverter")
-    return MarkdownToPythonConverter(magic_info)
+    return MarkdownToPythonConverter(magic_workflow)
 
 
 def get_custom_compiler_path(custom_compiler):

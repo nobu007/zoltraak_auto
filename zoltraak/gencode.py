@@ -6,7 +6,6 @@ from zoltraak import settings
 from zoltraak.schema.schema import MagicInfo
 from zoltraak.utils.log_util import log, log_inout
 from zoltraak.utils.prompt_import import load_prompt
-from zoltraak.utils.rich_console import display_magic_info_post, display_magic_info_pre
 from zoltraak.utils.subprocess_util import SubprocessUtil
 
 
@@ -16,7 +15,7 @@ class TargetCodeGenerator:
         self.file_info = magic_info.file_info
 
     @log_inout
-    def generate_target_code(self):
+    def generate_target_code(self) -> str:
         """
         ソースファイルからターゲットファイルを生成するメソッド
         """
@@ -35,6 +34,8 @@ class TargetCodeGenerator:
         # 5. 結果の出力
         self.output_results()
 
+        return self.file_info.target_file_path
+
     @log_inout
     def prepare_generation(self):
         """
@@ -47,7 +48,7 @@ class TargetCodeGenerator:
 
         self.print_step2_info(self.magic_info.grimoire_architect, self.file_info.py_target_dir)  # ステップ2の情報を出力
 
-        if self.file_info.past_source_file_path is not None:  # 過去のソースファイルパスが指定されている場合
+        if not self.file_info.past_source_file_path:  # 過去のソースファイルパスが指定されている場合
             self.save_current_source_as_past()  # - 現在のソースファイルを過去のソースファイルとして保存
 
         return self.magic_info.grimoire_architect, self.file_info.py_target_dir
@@ -56,7 +57,7 @@ class TargetCodeGenerator:
         """
         ステップ2の情報を出力するメソッド
         """
-        print(
+        log(
             f"""
 
 ==============================================================
@@ -85,36 +86,32 @@ class TargetCodeGenerator:
         prompt = self.load_prompt_with_variables(
             create_domain_grimoire, variables
         )  # 領域術式（要件定義書）からプロンプトを読み込み、変数を埋め込む
-        print(prompt)
         code = self.generate_code(prompt)  # Claudeを使用してコードを生成
 
         return prompt, code
 
-    def process_generated_code(self, code):
+    def process_generated_code(self, code) -> str:
         """
         生成されたコードの処理を行うメソッド
         """
         self.write_code_to_target_file(code)  # 生成されたコードをターゲットファイルに書き込む
 
+        log(f"source_hash: {self.file_info.source_hash}")
         if self.file_info.source_hash is not None:  # ソースファイルのハッシュ値が指定されている場合
             self.append_source_hash_to_target_file()  # - ソースファイルのハッシュ値をターゲットファイルに追記
 
         if self.file_info.target_file_path.endswith(".py"):  # ターゲットファイルがPythonファイルの場合
             self.try_execute_generated_code(code)  # - 生成されたコードを実行
-            return None
+            return self.file_info.target_file_path
         # ターゲットファイルがマークダウンファイルの場合
-        return code  # - 生成されたコードを返す
+        return self.file_info.target_file_path
 
     def output_results(self):
         """
         結果の出力を行うメソッド
         """
-        self.print_target_file_path()  # ターゲットファイルのパスを出力
-        display_magic_info_pre(self.magic_info)
         self.file_info.add_output_file_path(self.file_info.target_file_path)
-        display_magic_info_post(self.magic_info)
-        if self.target_file_path.endswith(".py"):  # ターゲットファイルがPythonファイルの場合
-            self.run_python_file()  # - Pythonファイルを実行
+        log("target_file_path: %s", self.file_info.target_file_path)
 
     def save_current_source_as_past(self):
         """
@@ -181,6 +178,7 @@ class TargetCodeGenerator:
         os.makedirs(os.path.dirname(self.file_info.target_file_path), exist_ok=True)
         with open(self.file_info.target_file_path, "w", encoding="utf-8") as target_file:
             target_file.write(code)
+        log(f"ターゲットファイルにコードを書き込みました: {self.file_info.target_file_path}")
 
     def append_source_hash_to_target_file(self):
         """
@@ -188,20 +186,25 @@ class TargetCodeGenerator:
         """
         with open(self.file_info.target_file_path, "a", encoding="utf-8") as target_file:
             target_file.write(f"\n# HASH: {self.file_info.source_hash}\n")
-        print(f"ターゲットファイルにハッシュ値を埋め込みました: {self.file_info.source_hash}")
+        log(f"ターゲットファイルにハッシュ値を埋め込みました: {self.file_info.source_hash}")
 
     @log_inout
     def try_execute_generated_code(self, code):
         """
         生成されたコードを実行するメソッド
+        なぜ書き込んだファイルではなくコードで実行するのか？
+        ⇒エラー時の再実行でファイル読み書きせず再実行するため
+
+        コメント: 最終的に修正したファイルを再書き込みしている。
         """
         while True:
             try:
                 exec(code)  # noqa: S102
+                break
             except Exception as e:  # noqa: BLE001
-                print("Pythonファイルの実行中にエラーが発生しました。")
-                print(f"\033[91mエラーメッセージ: {e!s}\033[0m")
-                print(f"エラーが発生したPythonファイルのパス: \033[33m{self.file_info.target_file_path}\033[0m")
+                log("Pythonファイルの実行中にエラーが発生しました。")
+                log(f"\033[91mエラーメッセージ: {e!s}\033[0m")
+                log(f"エラーが発生したPythonファイルのパス: \033[33m{self.file_info.target_file_path}\033[0m")
 
                 while True:
                     prompt = f"""
@@ -215,15 +218,16 @@ class TargetCodeGenerator:
                     )
                     code = code.replace("```python", "").replace("```", "")
 
-                    print("修正したコードを再実行します。")
+                    log("修正したコードを再実行します。")
                     try:
                         exec(code)  # noqa: S102
-                        print("コードの実行が成功しました。")
+                        log("修正したコードの再実行が成功しました。")
                         break
                     except Exception as e2:  # noqa: BLE001
-                        print("修正後のコードでもエラーが発生しました。再度修正を試みます。")
-                        print(f"\033[91m修正後のエラーメッセージ: {e2!s}\033[0m")
-                        print(code)
+                        log("修正後のコードでもエラーが発生しました。再度修正を試みます。")
+                        log(f"\033[91m修正後のエラーメッセージ: {e2!s}\033[0m")
+                        log(code)
+                        e = e2
 
                 with open(self.file_info.target_file_path, "w", encoding="utf-8") as target_file:
                     target_file.write(code)

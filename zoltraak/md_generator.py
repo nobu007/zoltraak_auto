@@ -7,12 +7,13 @@ import time
 import zoltraak.llms.litellm_api as litellm
 from zoltraak import settings
 from zoltraak.schema.schema import MagicInfo, MagicLayer
+from zoltraak.utils.file_util import FileUtil
 from zoltraak.utils.gui_util import GuiUtil
 from zoltraak.utils.log_util import log, log_e
 from zoltraak.utils.rich_console import generate_response_with_spinner
 
 
-def generate_md_from_prompt_recursive(magic_info: MagicInfo):
+def generate_md_from_prompt_recursive(magic_info: MagicInfo) -> str:
     file_info = magic_info.file_info
     """
     promptから要件定義書（マークダウンファイル）を生成する関数
@@ -45,7 +46,21 @@ def generate_md_from_prompt_recursive(magic_info: MagicInfo):
         md_content, file_info.target_file_path
     )  # 生成された要件定義書の内容をファイルに保存
     file_info.add_output_file_path(output_file_path)
+
+    # 重要： オリジナルの target_file_path にコピーする
+    output_file_path_abs = os.path.abspath(output_file_path)
+    target_file_path_abs = os.path.abspath(file_info.target_file_path)
+    if output_file_path_abs != target_file_path_abs:
+        # copy to file_info.target_file_path
+        os.makedirs(os.path.dirname(output_file_path_abs), exist_ok=True)
+        return FileUtil.copy_file(output_file_path_abs, target_file_path_abs)
+
+    # 重要： ここで target_file_path をrequirement配下に置き換える
+    file_info.update_source_target(file_info.source_file_path, output_file_path)
+    file_info.update()
+
     print_generation_result(file_info.target_file_path, compiler_path, magic_info.magic_layer)  # 生成結果を出力
+    return output_file_path
 
 
 def get_prompt_formatter(language: str, formatter_path: str):

@@ -2,6 +2,7 @@ import os
 
 import zoltraak.llms.litellm_api as litellm
 from zoltraak import settings
+from zoltraak.core.magic_workflow import MagicWorkflow
 from zoltraak.gen_markdown import generate_md_from_prompt
 from zoltraak.schema.schema import MagicInfo, MagicMode
 from zoltraak.utils.file_util import FileUtil
@@ -22,8 +23,9 @@ class BaseConverter:
         py_file_path
     """
 
-    def __init__(self, magic_info: MagicInfo):
-        self.magic_info = magic_info
+    def __init__(self, magic_workflow: MagicWorkflow):
+        self.magic_workflow = magic_workflow
+        self.magic_info = magic_workflow.magic_info
 
     def convert_loop(self) -> str:
         """ダミー"""
@@ -31,7 +33,7 @@ class BaseConverter:
 
     def convert(self) -> str:
         """生成処理"""
-        final_output_file_path = self.convert_one()
+        final_output_file_path = self.magic_workflow.run(self.convert_one)
         self.magic_info.file_info.final_output_file_path = final_output_file_path
         return final_output_file_path
 

@@ -2,6 +2,7 @@ from zoltraak.schema.schema import FileInfo, MagicInfo
 from zoltraak.utils.log_util import log, log_inout
 from zoltraak.utils.rich_console import (
     display_magic_info_final,
+    display_magic_info_full,
     display_magic_info_init,
     display_magic_info_intermediate,
 )
@@ -25,7 +26,7 @@ class MagicWorkflow:
     def pre_process(self):
         # プロセスを実行する前の共通処理
         self.workflow_history.append(self.magic_info.description)
-        display_magic_info_intermediate(self.magic_info)
+        display_magic_info_full(self.magic_info)
 
     @log_inout
     def run(self, func: callable):

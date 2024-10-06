@@ -3,12 +3,13 @@ import os
 import zoltraak.llms.litellm_api as litellm
 from zoltraak import settings
 from zoltraak.converter.base_converter import BaseConverter
+from zoltraak.core.magic_workflow import MagicWorkflow
 from zoltraak.gencode import TargetCodeGenerator
 from zoltraak.md_generator import generate_md_from_prompt_recursive
-from zoltraak.schema.schema import MagicInfo, MagicLayer
+from zoltraak.schema.schema import MagicLayer
 from zoltraak.utils.file_util import FileUtil
 from zoltraak.utils.log_util import log, log_e, log_inout, log_w
-from zoltraak.utils.rich_console import display_magic_info_full, display_magic_info_intermediate
+from zoltraak.utils.rich_console import display_magic_info_intermediate
 from zoltraak.utils.subprocess_util import SubprocessUtil
 
 
@@ -42,9 +43,10 @@ class MarkdownToPythonConverter(BaseConverter):
       target => py_file_path
     """
 
-    def __init__(self, magic_info: MagicInfo):
-        super().__init__(magic_info)
-        self.magic_info = magic_info
+    def __init__(self, magic_workflow: MagicWorkflow):
+        super().__init__(magic_workflow)
+        self.magic_workflow = magic_workflow
+        self.magic_info = magic_workflow.magic_info
 
     @log_inout
     def convert_loop(self) -> str:
@@ -73,24 +75,15 @@ class MarkdownToPythonConverter(BaseConverter):
             file_info.update_source_target(file_info.md_file_path_abs, file_info.md_file_path_abs)
             file_info.update_hash()
 
-            output_file_path = self.convert_one_md_md()
-            if output_file_path:
-                return output_file_path  # --- 関数を終了
+            return self.magic_workflow.run(self.convert_one_md_md)
 
         # step3: Pythonコードを作成
         if self.magic_info.magic_layer is MagicLayer.LAYER_4_CODE_GEN:
             file_info.update_source_target(file_info.md_file_path_abs, file_info.py_file_path_abs)
             file_info.update_hash()
 
-        # step4: 変換処理
-        new_file_path = self.convert_one()
-        if new_file_path:
-            new_file_path_abs = os.path.abspath(new_file_path)
-            target_file_path_abs = os.path.abspath(file_info.target_file_path)
-            if new_file_path_abs != target_file_path_abs:
-                # copy to file_info.target_file_path
-                return FileUtil.copy_file(new_file_path, target_file_path_abs)
-            return new_file_path
+            return self.magic_workflow.run(self.convert_one_md_py)
+
         return ""
 
     @log_inout
@@ -98,11 +91,9 @@ class MarkdownToPythonConverter(BaseConverter):
         """要件定義書(md_file) => 要件定義書(md_file)の１ファイルを変換する"""
 
         file_info = self.magic_info.file_info
-        if FileUtil.has_content(file_info.md_file_path_abs):  # -- マークダウンファイルのコンテンツが有効な場合
-            file_info.update()
-            display_magic_info_full(self.magic_info)
+        if FileUtil.has_content(file_info.target_file_path):  # -- マークダウンファイルのコンテンツが有効な場合
             log(
-                f"{file_info.md_file_path_abs}は既存のファイルです。promptに従って変更を提案します。"
+                f"{file_info.target_file_path}は既存のファイルです。promptに従って変更を提案します。"
             )  # --- ファイルが既存であることを示すメッセージを表示
             self.propose_target_diff(
                 file_info.target_file_path, self.magic_info.prompt
@@ -113,15 +104,14 @@ class MarkdownToPythonConverter(BaseConverter):
         return self.handle_new_target_file_md()  # --- 新しいターゲットファイルを処理
 
     @log_inout
-    def convert_one(self) -> str:
+    def convert_one_md_py(self) -> str:
         """要件定義書(md_file) => my or pyの１ファイルを変換する"""
         if FileUtil.has_content(self.magic_info.file_info.target_file_path):
-            return self.handle_existing_target_file()
+            return self.handle_existing_target_file_py()
         return self.handle_new_target_file_py()
 
     @log_inout
-    def handle_existing_target_file(self) -> str:
-        # TODO: rename -> handle_existing_target_file_py
+    def handle_existing_target_file_py(self) -> str:
         file_info = self.magic_info.file_info
         with open(file_info.target_file_path, encoding="utf-8") as target_file:
             lines = target_file.readlines()
@@ -131,7 +121,7 @@ class MarkdownToPythonConverter(BaseConverter):
                 log("source_hash=%s", file_info.source_hash)
                 log("prompt=%s", self.magic_info.prompt)
                 if file_info.source_hash == embedded_hash:
-                    if self.magic_info.prompt is None:
+                    if not self.magic_info.prompt:
                         # TODO: targetがpyなら別プロセスで実行の方が良い？
                         # 現状はプロンプトが無い => ユーザ要求がtarget に全て反映済みなら次ステップに進む設計
                         # targetのpastとの差分が一定未満なら次に進むでもいいかも。
@@ -163,7 +153,7 @@ class MarkdownToPythonConverter(BaseConverter):
         return ""
 
     @log_inout
-    def display_source_diff(self):
+    def display_source_diff(self) -> str:
         file_info = self.magic_info.file_info
         import difflib
 
@@ -174,7 +164,8 @@ class MarkdownToPythonConverter(BaseConverter):
 
         source_diff = difflib.unified_diff(old_source_lines, new_source_lines, lineterm="", n=0)
         source_diff_text = "".join(source_diff)
-        log("source_diff_text[:100]=", source_diff_text[:100])
+        log("source_diff_text[:100]=%s", source_diff_text[:100])
+        # TODO: source_diff_textをpromptに追加していいか？
 
         self.propose_target_diff(file_info.target_file_path, self.magic_info.prompt)
         log(f"ターゲットファイル: {file_info.target_file_path}")
