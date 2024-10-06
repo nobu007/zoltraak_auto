@@ -55,7 +55,7 @@ class MarkdownToMarkdownConverter(BaseConverter):
                 log("end next = " + str(self.magic_info.magic_layer))
 
         # MarkdownToPythonConverter
-        call_py_converter_layer = MagicLayer.LAYER_3_CODE_GEN
+        call_py_converter_layer = MagicLayer.LAYER_3_REQUIREMENT_GEN
         for layer in MagicLayer:
             log("MarkdownToPythonConverter check layer = " + str(layer))
             if layer == call_py_converter_layer and layer == self.magic_info.magic_layer:

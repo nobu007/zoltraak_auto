@@ -43,7 +43,7 @@ def main():
         type=MagicMode,
         choices=list(MagicMode),
         help=MagicMode.get_description(),
-        default=MagicMode.GRIMOIRE_AND_PROMPT,
+        default=MagicMode.ZOLTRAAK_LEGACY,
     )
     parser.add_argument(
         "-ml",
@@ -61,6 +61,9 @@ def main():
 
     if args.model_name:  # -- 使用するモデルの名前が指定された場合
         settings.model_name = args.model_name  # -- zoltraak全体設定に保存してどこからでも使えるようにする
+
+    # args表示
+    show_args(args)
 
     # compiler_path確定
     compiler_path = prepare_compiler(args.input, args.compiler, args.custom_compiler)
@@ -226,6 +229,12 @@ def show_compiler_error_and_exit():
 def show_compiler_conflict_error_and_exit():
     print("\033[31mエラー: -c オプションと -cc オプションは同時に指定できません。\033[0m")
     sys.exit(1)
+
+
+def show_args(args: argparse.Namespace):
+    for arg, value in vars(args).items():
+        if value:
+            log(f"args.{arg}={value}")
 
 
 def process_markdown_file(params: ZoltraakParams) -> MagicInfo:

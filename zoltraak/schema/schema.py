@@ -14,6 +14,7 @@ class MagicMode(str, Enum):
     GRIMOIRE_AND_PROMPT = "grimoire_and_prompt"  # グリモア＋プロンプト
     PROMPT_ONLY = "prompt_only"  # プロンプト（グリモアなし）
     SEARCH_GRIMOIRE = "search_grimoire"  # 最適なグリモアを検索
+    ZOLTRAAK_LEGACY = "zoltraak_legacy"  # オリジナルのzoltraakを模擬するモード（デバッグ用）
 
     def __str__(self):
         return self.value
@@ -32,7 +33,10 @@ class MagicMode(str, Enum):
 class MagicLayer(str, Enum):
     LAYER_1_REQUEST_GEN = "layer_1_request_gen"  # レイヤ１： 生のprompt => ユーザ要求記述書
     LAYER_2_REQUIREMENT_GEN = "layer_2_requirement_gen"  # レイヤ２： ユーザ要求記述書 => 要件定義書
-    LAYER_3_CODE_GEN = "layer_3_code_gen"  # レイヤ３： 要件定義書 => コード
+    LAYER_3_REQUIREMENT_GEN = "layer_3_requirement_gen"  # レイヤ３： 要件定義書 => コード
+    LAYER_4_CODE_GEN = "layer_4_code_gen"  # レイヤ４： 要件定義書 => コード
+    LAYER_5_CODE_GEN = "layer_5_code_gen"  # レイヤ５： 要件定義書 => コード
+    LAYER_6_CODE_GEN = "layer_6_code_gen"  # レイヤ６： 要件定義書 => コード
 
     def __str__(self):
         return self.__repr__()
@@ -312,6 +316,7 @@ class MagicInfo(BaseModel):
     file_info: FileInfo = Field(default=FileInfo(), description="入出力ファイル情報")
 
     # その他
+    is_success: bool = Field(default=True, description="魔法式の成否")
     success_message: str = Field(default="魔法式の構築が完了しました。", description="グリモア成功時のメッセージ")
     error_message: str = Field(
         default="魔法式の構築中にエラーが発生しました。", description="グリモア失敗時のメッセージ"
