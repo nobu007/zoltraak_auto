@@ -49,11 +49,11 @@ class MarkdownToPythonConverter(BaseConverter):
     @log_inout
     def convert_loop(self) -> str:
         """convert処理をレイヤを進めながら繰り返す"""
-        acceptable_layers = [MagicLayer.LAYER_3_CODE_GEN]
+        acceptable_layers = [MagicLayer.LAYER_2_REQUIREMENT_GEN, MagicLayer.LAYER_3_CODE_GEN]
         for layer in MagicLayer:
             log("check layer = " + str(layer))
-            if layer in acceptable_layers:
-                log("start layer = " + str(layer))
+            if layer in acceptable_layers and layer == self.magic_info.magic_layer:
+                log("convert layer = " + str(layer))
                 self.magic_info.file_info.final_output_file_path = self.convert()
                 display_magic_info_intermediate(self.magic_info)
                 self.magic_info.magic_layer = layer.next()

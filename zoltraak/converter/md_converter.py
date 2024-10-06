@@ -42,25 +42,29 @@ class MarkdownToMarkdownConverter(BaseConverter):
     @log_inout
     def convert_loop(self) -> str:
         """convert処理をレイヤを進めながら繰り返す"""
+
+        # MarkdownToMarkdownConverter loop
         acceptable_layers = [MagicLayer.LAYER_1_REQUEST_GEN, MagicLayer.LAYER_2_REQUIREMENT_GEN]
-        call_py_converter_layer = MagicLayer.LAYER_3_CODE_GEN
-        layer = self.magic_info.magic_layer
-        while layer:
-            log("check layer = " + str(layer))
-            if layer in acceptable_layers:
-                log("start layer = " + str(layer))
+        for layer in MagicLayer:
+            log("MarkdownToMarkdownConverter check layer = " + str(layer))
+            if layer in acceptable_layers and layer == self.magic_info.magic_layer:
+                log("convert layer = " + str(layer))
                 self.magic_info.file_info.final_output_file_path = self.convert()
                 display_magic_info_intermediate(self.magic_info)
                 self.magic_info.magic_layer = layer.next()
                 log("end next = " + str(self.magic_info.magic_layer))
-                continue
-            if layer == call_py_converter_layer:
-                log("call MarkdownToPythonConverter")
+
+        # MarkdownToPythonConverter
+        call_py_converter_layer = MagicLayer.LAYER_3_CODE_GEN
+        for layer in MagicLayer:
+            log("MarkdownToPythonConverter check layer = " + str(layer))
+            if layer == call_py_converter_layer and layer == self.magic_info.magic_layer:
+                log("call MarkdownToPythonConverter convert_loop")
                 # MarkdownToPythonConverterは再度レイヤ2から実行する
                 self.magic_info.magic_layer = MagicLayer.LAYER_2_REQUIREMENT_GEN
                 py_converter = MarkdownToPythonConverter(self.magic_info)
                 py_converter.convert_loop()
-                break
+
         return self.magic_info.file_info.final_output_file_path
 
     @log_inout
