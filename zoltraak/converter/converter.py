@@ -49,14 +49,14 @@ class MarkdownToPythonConverter(BaseConverter):
     @log_inout
     def convert_loop(self) -> str:
         """convert処理をレイヤを進めながら繰り返す"""
-        acceptable_layers = [MagicLayer.LAYER_2_REQUIREMENT_GEN, MagicLayer.LAYER_3_CODE_GEN]
+        acceptable_layers = [MagicLayer.LAYER_3_REQUIREMENT_GEN, MagicLayer.LAYER_4_CODE_GEN]
         for layer in MagicLayer:
             log("check layer = " + str(layer))
             if layer in acceptable_layers and layer == self.magic_info.magic_layer:
                 log("convert layer = " + str(layer))
                 self.magic_info.file_info.final_output_file_path = self.convert()
                 display_magic_info_intermediate(self.magic_info)
-                self.magic_info.magic_layer = layer.next()
+                self.magic_info.magic_layer = layer.next()  # --- 次のレイヤに進む
                 log("end next = " + str(self.magic_info.magic_layer))
         return self.magic_info.file_info.final_output_file_path
 
@@ -69,25 +69,17 @@ class MarkdownToPythonConverter(BaseConverter):
         file_info.update_path_abs()
 
         # step2: 要件定義書を更新
-        if self.magic_info.magic_layer is MagicLayer.LAYER_2_REQUIREMENT_GEN:
+        if self.magic_info.magic_layer is MagicLayer.LAYER_3_REQUIREMENT_GEN:
             file_info.update_source_target(file_info.md_file_path_abs, file_info.md_file_path_abs)
             file_info.update_hash()
 
-            if FileUtil.has_content(file_info.md_file_path_abs):  # -- マークダウンファイルのコンテンツが有効な場合
-                file_info.update()
-                display_magic_info_full(self.magic_info)
-                log(
-                    f"{file_info.md_file_path_abs}は既存のファイルです。promptに従って変更を提案します。"
-                )  # --- ファイルが既存であることを示すメッセージを表示
-                self.propose_target_diff(
-                    file_info.target_file_path, self.magic_info.prompt
-                )  # --- プロンプトに従ってターゲットファイルの差分を提案
-                return file_info.target_file_path  # --- 関数を終了
-            # TODO: ここで要件定義書を新規作成する必要がある？
+            output_file_path = self.convert_one_md_md()
+            if output_file_path:
+                return output_file_path  # --- 関数を終了
 
         # step3: Pythonコードを作成
-        if self.magic_info.magic_layer is MagicLayer.LAYER_3_CODE_GEN:
-            file_info.update_source_target(file_info.prompt_file_path_abs, file_info.pre_md_file_path_abs)
+        if self.magic_info.magic_layer is MagicLayer.LAYER_4_CODE_GEN:
+            file_info.update_source_target(file_info.md_file_path_abs, file_info.py_file_path_abs)
             file_info.update_hash()
 
         # step4: 変換処理
@@ -102,6 +94,32 @@ class MarkdownToPythonConverter(BaseConverter):
         return ""
 
     @log_inout
+    def convert_one_md_md(self) -> str:
+        """要件定義書(md_file) => 要件定義書(md_file)の１ファイルを変換する"""
+
+        file_info = self.magic_info.file_info
+        if FileUtil.has_content(file_info.md_file_path_abs):  # -- マークダウンファイルのコンテンツが有効な場合
+            file_info.update()
+            display_magic_info_full(self.magic_info)
+            log(
+                f"{file_info.md_file_path_abs}は既存のファイルです。promptに従って変更を提案します。"
+            )  # --- ファイルが既存であることを示すメッセージを表示
+            self.propose_target_diff(
+                file_info.target_file_path, self.magic_info.prompt
+            )  # --- プロンプトに従ってターゲットファイルの差分を提案
+
+            return file_info.target_file_path  # --- 関数を終了
+        # --- マークダウンファイルのコンテンツが無効な場合
+        return self.handle_new_target_file_md()  # --- 新しいターゲットファイルを処理
+
+    @log_inout
+    def convert_one(self) -> str:
+        """要件定義書(md_file) => my or pyの１ファイルを変換する"""
+        if FileUtil.has_content(self.magic_info.file_info.target_file_path):
+            return self.handle_existing_target_file()
+        return self.handle_new_target_file_py()
+
+    @log_inout
     def handle_existing_target_file(self) -> str:
         # TODO: rename -> handle_existing_target_file_py
         file_info = self.magic_info.file_info
@@ -109,12 +127,17 @@ class MarkdownToPythonConverter(BaseConverter):
             lines = target_file.readlines()
             if len(lines) > 0 and lines[-1].startswith("# HASH: "):
                 embedded_hash = lines[-1].split("# HASH: ")[1].strip()
+                log("embedded_hash=%s", embedded_hash)
+                log("source_hash=%s", file_info.source_hash)
+                log("prompt=%s", self.magic_info.prompt)
                 if file_info.source_hash == embedded_hash:
                     if self.magic_info.prompt is None:
                         # TODO: targetがpyなら別プロセスで実行の方が良い？
                         # 現状はプロンプトが無い => ユーザ要求がtarget に全て反映済みなら次ステップに進む設計
                         # targetのpastとの差分が一定未満なら次に進むでもいいかも。
-                        SubprocessUtil.run(["python", file_info.target_file_path], check=False)
+                        SubprocessUtil.run(
+                            ["python", file_info.target_file_path, "-ml", self.magic_info.magic_layer], check=False
+                        )
                         return file_info.target_file_path  # TODO: サブプロセスで作った別ファイルの情報は不要？
                     # target に埋め込まれたハッシュがsource (最新)に一致してたらスキップ
                     # TODO: ハッシュ運用検討
@@ -132,6 +155,11 @@ class MarkdownToPythonConverter(BaseConverter):
                     return self.display_source_diff()
                 # TODO: source のハッシュはあるのにsource 自体が無い場合は処理が止まるけどいいの？
                 log_w(f"過去のソースファイルが存在しません: {file_info.past_source_file_path}")
+            else:
+                log_w(
+                    f"埋め込まれたハッシュが存在しません。ファイルを削除してください。\n: {file_info.target_file_path}"
+                )
+                log_w("最後の10行:%s", "\n".join(lines[-10:]))
         return ""
 
     @log_inout
@@ -153,17 +181,23 @@ class MarkdownToPythonConverter(BaseConverter):
         return file_info.target_file_path
 
     @log_inout
-    def handle_new_target_file(self) -> str:
+    def handle_new_target_file_py(self) -> str:
+        """ソースコード(py_file)を新規作成する"""
         file_info = self.magic_info.file_info
-        if self.magic_info.prompt is None:
-            log(
-                f"""
+        log(
+            f"""
 高級言語コンパイル中: {file_info.target_file_path}は新しいファイルです。少々お時間をいただきます。
 {file_info.source_file_path} -> {file_info.target_file_path}
-                  """
-            )
-            target = TargetCodeGenerator(self.magic_info)
-            return target.generate_target_code()
+                """
+        )
+        target = TargetCodeGenerator(self.magic_info)
+        return target.generate_target_code()
+
+    @log_inout
+    def handle_new_target_file_md(self) -> str:
+        """要件定義書(md_file)を新規作成する
+        TODO: BaseConverter.handle_new_target_file() に統合する"""
+        file_info = self.magic_info.file_info
         log(
             f"""
     {"検索結果生成中" if self.magic_info.current_grimoire_name is None else "要件定義書執筆中"}:
@@ -175,7 +209,7 @@ class MarkdownToPythonConverter(BaseConverter):
 
     def propose_target_diff(self, target_file_path, prompt=None) -> None:
         """
-        ターゲットファイルの変更差分を提案する関数
+        ターゲットファイルの変更差分を提案する関数(md/py共通)
 
         Args:
             target_file_path (str): 現在のターゲットファイルのパス

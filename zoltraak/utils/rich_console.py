@@ -67,6 +67,25 @@ def run_function_with_spinner(magic_info: MagicInfo, func: Callable[..., Any], *
     return None
 
 
+def display_magic_info_init(magic_info: MagicInfo):
+    """
+    初期の魔法術式の情報を整形して表示します。
+    """
+    table = Table(title="MagicInfo(初期値)", title_style="bold")
+    table.add_column("項目", style="cyan", no_wrap=True)
+    table.add_column("内容", style="magenta")
+
+    file_info = magic_info.file_info
+    table.add_row("自然言語 (ユーザー入力.md)", file_info.prompt_file_path_abs)
+    table.add_row("起動術式 (ユーザ要求記述書.md)", file_info.pre_md_file_path_abs)
+    table.add_row("魔法術式 (要件定義書.md)", file_info.md_file_path_abs)
+    table.add_row("古代魔導書 (高級言語プログラム)", file_info.py_file_path_abs)
+    table.add_row("制御方式(モード) ", magic_info.magic_mode)
+    table.add_row("術式階層(レイヤ) ", magic_info.magic_layer)
+
+    console_print_all(Panel(table, title="魔法術式情報(構築中)", border_style="green"))
+
+
 def display_magic_info_pre(magic_info: MagicInfo):
     """
     これから実行する魔法術式の情報を整形して表示します。

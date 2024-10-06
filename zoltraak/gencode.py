@@ -1,11 +1,10 @@
 import os
 import shutil
 
-import zoltraak
 import zoltraak.llms.litellm_api as litellm
 from zoltraak import settings
 from zoltraak.schema.schema import MagicInfo
-from zoltraak.utils.log_util import log_inout
+from zoltraak.utils.log_util import log, log_inout
 from zoltraak.utils.prompt_import import load_prompt
 from zoltraak.utils.rich_console import display_magic_info_post, display_magic_info_pre
 from zoltraak.utils.subprocess_util import SubprocessUtil
@@ -153,8 +152,8 @@ class TargetCodeGenerator:
         """
         領域術式（要件定義書）からプロンプトを読み込み、変数を埋め込むメソッド
         """
-        zoltraak_dir = os.path.dirname(zoltraak.__file__)
-        return load_prompt(f"{zoltraak_dir}/{create_domain_grimoire}", variables)
+        log("create_domain_grimoire=%s", create_domain_grimoire)
+        return load_prompt(create_domain_grimoire, variables)
 
     def generate_code(self, prompt):
         """

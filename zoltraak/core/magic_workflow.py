@@ -1,4 +1,4 @@
-from zoltraak.schema.schema import MagicInfo
+from zoltraak.schema.schema import FileInfo, MagicInfo
 from zoltraak.utils.log_util import log, log_inout
 from zoltraak.utils.rich_console import (
     display_magic_info_final,
@@ -9,8 +9,8 @@ from zoltraak.utils.rich_console import (
 
 class MagicWorkflow:
     def __init__(self, magic_info: MagicInfo):
-        self.magic_info = magic_info
-        self.file_info = magic_info.file_info
+        self.magic_info: MagicInfo = magic_info
+        self.file_info: FileInfo = magic_info.file_info
         self.workflow_history = []
         self.start_workflow()
 
@@ -19,6 +19,7 @@ class MagicWorkflow:
         # ワークフローを開始したときの共通処理
         log("ワークフローを開始します")
         display_magic_info_init(self.magic_info)
+        self.file_info.update_work_dir()
 
     @log_inout
     def pre_process(self):
