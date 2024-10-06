@@ -6,12 +6,14 @@ import sys
 import zoltraak
 import zoltraak.llms.litellm_api as litellm
 from zoltraak import settings
+from zoltraak.converter.base_converter import BaseConverter
 from zoltraak.converter.converter import MarkdownToPythonConverter
 from zoltraak.converter.md_converter import MarkdownToMarkdownConverter
+from zoltraak.core.magic_workflow import MagicWorkflow
 from zoltraak.schema.schema import MagicInfo, MagicLayer, MagicMode, ZoltraakParams
 from zoltraak.utils.file_util import FileUtil
 from zoltraak.utils.log_util import log
-from zoltraak.utils.rich_console import display_info_full, display_magic_info_final, display_magic_info_full
+from zoltraak.utils.rich_console import display_info_full, display_magic_info_final
 from zoltraak.utils.subprocess_util import SubprocessUtil
 
 
@@ -271,13 +273,14 @@ def process_markdown_file(params: ZoltraakParams) -> MagicInfo:
     magic_info.error_message = ""  # 後で設定する
     magic_info.language = params.language
     magic_info.is_debug = False
-    display_magic_info_full(magic_info)
+
+    magic_workflow = MagicWorkflow(magic_info)
 
     converter = create_converter(magic_info)
     os.makedirs(
         os.path.dirname(py_file_path), exist_ok=True
     )  # Pythonファイルの出力ディレクトリを作成（既に存在する場合は何もしない）
-    new_file_path = converter.convert_loop()
+    new_file_path = magic_workflow.run(converter.convert_loop)
     magic_info.file_info.final_output_file_path = new_file_path
     return magic_info
 
@@ -286,7 +289,7 @@ def process_markdown_file(params: ZoltraakParams) -> MagicInfo:
 TO_MARKDOWN_CONVERTER_LAYER_LIST = ["layer_1_request_gen", "2_requirement_gen"]
 
 
-def create_converter(magic_info: MagicInfo):
+def create_converter(magic_info: MagicInfo) -> BaseConverter:
     log("magic_info.magic_layer=%s", magic_info.magic_layer)
     if magic_info.magic_layer in TO_MARKDOWN_CONVERTER_LAYER_LIST:
         # マークダウンに変換するコンバータを使う
