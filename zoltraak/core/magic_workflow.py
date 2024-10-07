@@ -96,7 +96,7 @@ class MagicWorkflow:
         # target_file_pathとoutput_file_pathが異なる場合にコピーを配置する
         output_file_path_abs = os.path.abspath(self.file_info.output_file_path)
         target_file_path_abs = os.path.abspath(self.file_info.target_file_path)
-        if output_file_path_abs != target_file_path_abs:
+        if os.path.isfile(output_file_path_abs) and output_file_path_abs != target_file_path_abs:
             # target_file_pathをコピーで更新
             FileUtil.copy_file(output_file_path_abs, target_file_path_abs)
             log("target_file_pathにコピーを配置しました。 : %s", target_file_path_abs)
