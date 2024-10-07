@@ -167,6 +167,7 @@ class FileInfo(BaseModel):
     past_dir: str = Field(default="./past", description="過去の出力先のルートディレクトリ")
     past_source_dir: str = Field(default="./past/source", description="過去のソースフォルダ")
     past_target_dir: str = Field(default="./past/target", description="過去の出力先ファイルフォルダ")
+    prompt_dir: str = Field(default="./prompt", description="利用したプロンプト離籍のルートディレクトリ")
 
     # 処理対象ファイル(convert source => targetに利用)
     source_file_path: str = Field(default=DEFAULT_PRE_MD_FILE, description="ソースファイルパス(絶対パス)")
@@ -196,6 +197,7 @@ class FileInfo(BaseModel):
             new_work_dir = os.getcwd()
         self.work_dir = os.path.abspath(new_work_dir)
         self.past_dir = os.path.abspath(os.path.join(self.work_dir, "past"))
+        self.prompt_dir = os.path.abspath(os.path.join(self.work_dir, "prompt"))
         self.update_path_abs()
 
     def update(self):

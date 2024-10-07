@@ -1,10 +1,7 @@
-import os
-
 from zoltraak.converter.base_converter import BaseConverter
 from zoltraak.converter.converter import MarkdownToPythonConverter
 from zoltraak.core.magic_workflow import MagicWorkflow
-from zoltraak.schema.schema import MagicInfo, MagicLayer
-from zoltraak.utils.file_util import FileUtil
+from zoltraak.schema.schema import MagicLayer
 from zoltraak.utils.log_util import log, log_inout
 
 
@@ -60,9 +57,7 @@ class MarkdownToMarkdownConverter(BaseConverter):
             log("MarkdownToPythonConverter check layer = " + str(layer))
             if layer == call_py_converter_layer and layer == self.magic_info.magic_layer:
                 log("call MarkdownToPythonConverter convert_loop")
-                # MarkdownToPythonConverterは再度レイヤ2から実行する
-                self.magic_info.magic_layer = MagicLayer.LAYER_2_REQUIREMENT_GEN
-                py_converter = MarkdownToPythonConverter(self.magic_info)
+                py_converter = MarkdownToPythonConverter(self.magic_workflow)
                 py_converter.convert_loop()
 
         return self.magic_info.file_info.final_output_file_path
@@ -86,24 +81,18 @@ class MarkdownToMarkdownConverter(BaseConverter):
             file_info.update_hash()
 
         # step4: 変換処理
-        new_file_path = self.convert_one()
-        new_file_path_abs = os.path.abspath(new_file_path)
-        target_file_path_abs = os.path.abspath(file_info.target_file_path)
-        if new_file_path_abs != target_file_path_abs:
-            # copy to file_info.target_file_path
-            return FileUtil.copy_file(new_file_path, target_file_path_abs)
-        return target_file_path_abs
+        return self.magic_workflow.run(self.convert_one)
 
 
 if __name__ == "__main__":  # このスクリプトが直接実行された場合にのみ、以下のコードを実行します。
-    magic_info_ = MagicInfo()
+    magic_workflow = MagicWorkflow()
 
     # レイヤ１
-    magic_info_.magic_layer = MagicLayer.LAYER_1_REQUEST_GEN
-    converter = MarkdownToMarkdownConverter(magic_info_)
+    magic_workflow.magic_info.magic_layer = MagicLayer.LAYER_1_REQUEST_GEN
+    converter = MarkdownToMarkdownConverter(magic_workflow)
     converter.convert()
 
-    # レイヤ２
-    magic_info_.magic_layer = MagicLayer.LAYER_2_REQUIREMENT_GEN
-    converter = MarkdownToMarkdownConverter(magic_info_)
+    # レイヤ３
+    magic_workflow.magic_info.magic_layer = MagicLayer.LAYER_3_REQUIREMENT_GEN
+    converter = MarkdownToMarkdownConverter(magic_workflow)
     converter.convert()

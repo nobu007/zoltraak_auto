@@ -6,7 +6,7 @@ from zoltraak.core.magic_workflow import MagicWorkflow
 from zoltraak.gen_markdown import generate_md_from_prompt
 from zoltraak.schema.schema import MagicInfo, MagicMode
 from zoltraak.utils.file_util import FileUtil
-from zoltraak.utils.log_util import log, log_e, log_inout
+from zoltraak.utils.log_util import log, log_e, log_head, log_inout
 from zoltraak.utils.rich_console import display_magic_info_full
 
 
@@ -164,8 +164,7 @@ promptの内容:
         )
         target_diff = response.strip()
         # ターゲットファイルの差分を表示
-        log("ターゲットファイルの差分(冒頭100字):")
-        log(target_diff[:100])
+        log_head("ターゲットファイルの差分", target_diff)
 
         # ユーザーに適用方法を尋ねる
         log("差分をどのように適用しますか?")

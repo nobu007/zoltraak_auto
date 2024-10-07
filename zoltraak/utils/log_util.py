@@ -153,6 +153,12 @@ def log_d(msg: str, *args, **kwargs):
     logger.debug(msg, *args, **kwargs)
 
 
+def log_head(title: str, msg: str, *args, **kwargs):
+    if settings.is_debug:
+        msg_with_title = f"{title}(冒頭100字): {msg[:100]}"
+        logger.info(msg_with_title, *args, **kwargs)
+
+
 def show_fully_qualified_name(obj: Any) -> str:
     module = inspect.getmodule(obj)
     # obj_name
