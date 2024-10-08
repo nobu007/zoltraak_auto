@@ -1,5 +1,6 @@
 import os
 from collections.abc import Callable
+from datetime import datetime
 from typing import Any
 
 from pydantic import BaseModel
@@ -67,13 +68,25 @@ def run_function_with_spinner(magic_info: MagicInfo, func: Callable[..., Any], *
     return None
 
 
+def prepare_table_common(title: str, title_style: str = "bold") -> Table:
+    table = Table(title="title", title_style=title_style)
+    table.title = title
+    table.title_style = title_style
+    table.add_column("項目", style="cyan", no_wrap=True)
+
+    # ローカルマシンに設定されているタイムゾーンを取得
+    local_tz = datetime.now().astimezone().tzinfo
+    table.caption = f"取得日時: {datetime.now(tz=local_tz).strftime('%Y-%m-%d %H:%M:%S')}"
+    table.caption_justify = "left"
+    table.title = f"{title} 取得日時: {datetime.now(tz=local_tz).strftime('%Y-%m-%d %H:%M:%S')}"
+    return table
+
+
 def display_magic_info_init(magic_info: MagicInfo):
     """
     初期の魔法術式の情報を整形して表示します。
     """
-    table = Table(title="MagicInfo(初期値)", title_style="bold")
-    table.add_column("項目", style="cyan", no_wrap=True)
-    table.add_column("内容", style="magenta")
+    table = prepare_table_common("MagicInfo(初期値)")
 
     file_info = magic_info.file_info
     table.add_row("自然言語 (ユーザー入力.md)", file_info.prompt_file_path_abs)
@@ -90,9 +103,7 @@ def display_magic_info_pre(magic_info: MagicInfo):
     """
     これから実行する魔法術式の情報を整形して表示します。
     """
-    table = Table(title=magic_info.description, title_style="bold")
-    table.add_column("項目", style="cyan", no_wrap=True)
-    table.add_column("内容", style="magenta")
+    table = prepare_table_common(magic_info.description)
 
     table.add_row("起動術式 (プロンプトコンパイラ)", magic_info.grimoire_compiler)
     table.add_row("魔法術式 (要件定義書)", magic_info.file_info.target_file_path)
@@ -107,9 +118,7 @@ def display_magic_info_post(magic_info: MagicInfo):
     """
     実行した魔法術式の結果を表示します。
     """
-    table = Table(title="MagicInfo", title_style="bold")
-    table.add_column("項目", style="cyan", no_wrap=True)
-    table.add_column("内容", style="magenta")
+    table = prepare_table_common("MagicInfo(結果)")
 
     table.add_row("完了術式", magic_info.current_grimoire_name)
     table.add_row("魔法術式 (要件定義書)", magic_info.file_info.target_file_path)
@@ -130,9 +139,7 @@ def display_magic_info_full(magic_info: MagicInfo):
     """
     魔法術式の情報を整形して表示します。
     """
-    table = Table(title="MagicInfoFull", title_style="bold")
-    table.add_column("項目", style="cyan", no_wrap=True)
-    table.add_column("内容", style="magenta")
+    table = prepare_table_common("MagicInfo(FULL)")
 
     for key, value in magic_info.model_dump().items():
         if key == "file_info":
@@ -153,9 +160,7 @@ def display_info_full(any_info: BaseModel, title: str = "詳細", table_title: s
     """
     魔法術式の情報を整形して表示します。
     """
-    table = Table(title=table_title, title_style="bold")
-    table.add_column("項目", style="cyan", no_wrap=True)
-    table.add_column("内容", style="magenta")
+    table = prepare_table_common(table_title)
 
     for key, value in any_info.model_dump().items():
         table.add_row(key, str(value))
@@ -167,9 +172,7 @@ def display_magic_info_intermediate(magic_info: MagicInfo):
     """
     実行した領域術式の中間結果を整形して表示します。
     """
-    table = Table(title="領域術式(途中経過)", title_style="bold")
-    table.add_column("項目", style="cyan", no_wrap=True)
-    table.add_column("内容", style="magenta")
+    table = prepare_table_common("領域術式(途中経過)")
 
     table.add_row("絶対空間", magic_info.file_info.work_dir)
     table.add_row("領域名", magic_info.file_info.canonical_name)
@@ -184,9 +187,7 @@ def display_magic_info_final(magic_info: MagicInfo):
     """
     実行した領域術式の最終結果を整形して表示します。
     """
-    table = Table(title="領域術式", title_style="bold")
-    table.add_column("項目", style="cyan", no_wrap=True)
-    table.add_column("内容", style="magenta")
+    table = prepare_table_common("領域術式(結果)")
 
     table.add_row("絶対空間", magic_info.file_info.work_dir)
     table.add_row("領域名", magic_info.file_info.canonical_name)
