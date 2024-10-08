@@ -50,7 +50,7 @@ def main():
         "--magic_layer",
         type=str,
         help=MagicLayer.get_description(),
-        default=str(MagicLayer.LAYER_2_REQUIREMENT_GEN),
+        default=str(MagicLayer.LAYER_3_REQUIREMENT_GEN),
     )
     args = parser.parse_args()
     if args.version:  # バージョン情報表示オプションが指定された場合
