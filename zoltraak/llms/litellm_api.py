@@ -60,6 +60,7 @@ def generate_response(model, prompt, max_tokens, temperature):
             "litellm_params": {
                 "model": DEFAULT_MODEL_GEMINI,
                 "api_key": os.getenv("GEMINI_API_KEY"),
+                "num_retries": 2,
             },
         },
         {
@@ -67,6 +68,7 @@ def generate_response(model, prompt, max_tokens, temperature):
             "litellm_params": {
                 "model": DEFAULT_MODEL_GEMINI,
                 "api_key": os.getenv("GEMINI_API_KEY2"),
+                "num_retries": 2,
             },
         },
         {
@@ -74,6 +76,7 @@ def generate_response(model, prompt, max_tokens, temperature):
             "litellm_params": {
                 "model": DEFAULT_MODEL_CLAUDE,
                 "api_key": os.getenv("ANTHROPIC_API_KEY"),
+                "num_retries": 2,
             },
         },
     ]
@@ -99,7 +102,7 @@ def generate_response(model, prompt, max_tokens, temperature):
 
     if not show_input_prompt_warning(prompt):
         return "promptが空なので応答を生成できませんでした"
-    router = Router(model_list=model_list, fallbacks=fallbacks_dict)
+    router = Router(model_list=model_list, fallbacks=fallbacks_dict, retry_after=3)  # 3秒待機してからリトライ
     response = router.completion(
         model=model,
         messages=[{"content": prompt, "role": "user"}],
