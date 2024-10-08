@@ -1,6 +1,6 @@
 import os
 
-from zoltraak.schema.schema import FileInfo, MagicInfo
+from zoltraak.schema.schema import FileInfo, MagicInfo, MagicLayer, MagicMode
 from zoltraak.utils.file_util import FileUtil
 from zoltraak.utils.log_util import log, log_inout
 from zoltraak.utils.rich_console import (
@@ -26,6 +26,24 @@ class MagicWorkflow:
         log("ワークフローを開始します")
         display_magic_info_init(self.magic_info)
         self.file_info.update_work_dir()
+
+    @log_inout
+    def run_loop(self, convert_fn: callable, acceptable_layers: list[MagicLayer]) -> str:
+        """run処理をレイヤを進めながら繰り返す"""
+        for layer in MagicLayer:
+            log("check layer = " + str(layer))
+            if layer in acceptable_layers and layer == self.magic_info.magic_layer:
+                log("convert layer = " + str(layer))
+                self.magic_info.file_info.final_output_file_path = convert_fn()
+                display_magic_info_intermediate(self.magic_info)
+                self.magic_info.magic_layer = layer.next()  # --- 次のレイヤに進む
+                log("end next = " + str(self.magic_info.magic_layer))
+
+                # ZOLTRAAK_LEGACYモードの場合は１回で終了
+                if self.magic_info.magic_mode == MagicMode.ZOLTRAAK_LEGACY:
+                    log("ZOLTRAAK_LEGACYモードにより、convert処理を終了します")
+                    break
+        return self.magic_info.file_info.final_output_file_path
 
     @log_inout
     def pre_process(self):
@@ -146,3 +164,9 @@ class MagicWorkflow:
         self.file_info.final_output_file_path = final_output_file_path
         display_magic_info_final(self.magic_info)
         log("ワークフローを終了します")
+
+    def __str__(self) -> str:
+        return f"MagicWorkflow({self.magic_info.description})"
+
+    def __repr__(self) -> str:
+        return self.__str__()

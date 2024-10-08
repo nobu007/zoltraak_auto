@@ -43,24 +43,15 @@ class MarkdownToMarkdownConverter(BaseConverter):
 
         # MarkdownToMarkdownConverter loop
         acceptable_layers = [MagicLayer.LAYER_1_REQUEST_GEN, MagicLayer.LAYER_2_REQUIREMENT_GEN]
-        for layer in MagicLayer:
-            log("MarkdownToMarkdownConverter check layer = " + str(layer))
-            if layer in acceptable_layers and layer == self.magic_info.magic_layer:
-                log("convert layer = " + str(layer))
-                self.magic_info.file_info.final_output_file_path = self.convert()
-                self.magic_info.magic_layer = layer.next()
-                log("end next = " + str(self.magic_info.magic_layer))
+        output_file_path = self.magic_workflow.run_loop(self.convert, acceptable_layers)
+        log("output_file_path=%s", output_file_path)
 
         # MarkdownToPythonConverter
-        call_py_converter_layer = MagicLayer.LAYER_3_REQUIREMENT_GEN
-        for layer in MagicLayer:
-            log("MarkdownToPythonConverter check layer = " + str(layer))
-            if layer == call_py_converter_layer and layer == self.magic_info.magic_layer:
-                log("call MarkdownToPythonConverter convert_loop")
-                py_converter = MarkdownToPythonConverter(self.magic_workflow)
-                py_converter.convert_loop()
+        py_converter = MarkdownToPythonConverter(self.magic_workflow)
+        output_file_path_final = py_converter.convert_loop()
+        log("output_file_path_final=%s", output_file_path_final)
 
-        return self.magic_info.file_info.final_output_file_path
+        return output_file_path_final
 
     @log_inout
     def convert(self) -> str:

@@ -43,7 +43,7 @@ def main():
         type=MagicMode,
         choices=list(MagicMode),
         help=MagicMode.get_description(),
-        default=MagicMode.ZOLTRAAK_LEGACY,
+        default=MagicMode.GRIMOIRE_AND_PROMPT,
     )
     parser.add_argument(
         "-ml",
