@@ -8,7 +8,7 @@ from zoltraak.gencode import TargetCodeGenerator
 from zoltraak.md_generator import generate_md_from_prompt_recursive
 from zoltraak.schema.schema import MagicLayer
 from zoltraak.utils.file_util import FileUtil
-from zoltraak.utils.log_util import log, log_e, log_inout, log_w
+from zoltraak.utils.log_util import log, log_e, log_head, log_inout, log_w
 from zoltraak.utils.rich_console import display_magic_info_intermediate
 from zoltraak.utils.subprocess_util import SubprocessUtil
 
@@ -118,8 +118,9 @@ class MarkdownToPythonConverter(BaseConverter):
             if len(lines) > 0 and lines[-1].startswith("# HASH: "):
                 embedded_hash = lines[-1].split("# HASH: ")[1].strip()
                 log("embedded_hash=%s", embedded_hash)
-                log("source_hash=%s", file_info.source_hash)
-                log("prompt=%s", self.magic_info.prompt)
+                log("source_hash  =%s", file_info.source_hash)
+                log_head("prompt=%s", self.magic_info.prompt)
+                # TODO: 次処理に進むのプロンプトなし時だけなのか？全体に薄く適用するformatterみたいなケースは不要？
                 if file_info.source_hash == embedded_hash:
                     if not self.magic_info.prompt:
                         # TODO: targetがpyなら別プロセスで実行の方が良い？
@@ -133,9 +134,10 @@ class MarkdownToPythonConverter(BaseConverter):
                     # TODO: ハッシュ運用検討
                     # source が同じでもコンパイラやプロンプトの更新でtarget が変わる可能性もある？
                     # どこかにtarget のinput全部を詰め込んだハッシュが必要？
+
                     return file_info.target_file_path
 
-                # file_info.source_hash != embedded_hash
+                # file_info.source_hash != embedded_hash または promptで修正要求がある場合
                 # source が変わってたらtarget を作り直す
                 # TODO: 前回のtarget を加味したほうが良い？
                 # =>source の前回差分が小さい & 前回target が存在でプロンプトに含める。
@@ -143,8 +145,8 @@ class MarkdownToPythonConverter(BaseConverter):
                 log("ソースファイルの差分:")
                 if os.path.exists(file_info.past_source_file_path):
                     return self.display_source_diff()
-                # TODO: source のハッシュはあるのにsource 自体が無い場合は処理が止まるけどいいの？
-                log_w(f"過去のソースファイルが存在しません: {file_info.past_source_file_path}")
+                log_w(f"過去のソースファイルが存在しないため再作成します: {file_info.past_source_file_path}")
+                self.handle_new_target_file_py()
             else:
                 log_w(
                     f"埋め込まれたハッシュが存在しません。ファイルを削除してください。\n: {file_info.target_file_path}"
