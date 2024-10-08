@@ -1,14 +1,12 @@
 import os
 
-import zoltraak.llms.litellm_api as litellm
-from zoltraak import settings
 from zoltraak.converter.base_converter import BaseConverter
 from zoltraak.core.magic_workflow import MagicWorkflow
 from zoltraak.gencode import TargetCodeGenerator
 from zoltraak.md_generator import generate_md_from_prompt_recursive
 from zoltraak.schema.schema import MagicLayer
 from zoltraak.utils.file_util import FileUtil
-from zoltraak.utils.log_util import log, log_e, log_head, log_inout, log_w
+from zoltraak.utils.log_util import log, log_head, log_inout, log_w
 from zoltraak.utils.subprocess_util import SubprocessUtil
 
 
@@ -86,7 +84,7 @@ class MarkdownToPythonConverter(BaseConverter):
             log(
                 f"{file_info.target_file_path}は既存のファイルです。promptに従って変更を提案します。"
             )  # --- ファイルが既存であることを示すメッセージを表示
-            self.propose_target_diff(
+            self.update_target_file_propose_and_apply(
                 file_info.target_file_path, self.magic_info.prompt
             )  # --- プロンプトに従ってターゲットファイルの差分を提案
 
@@ -135,7 +133,7 @@ class MarkdownToPythonConverter(BaseConverter):
                 log(f"{file_info.source_file_path}の変更を検知しました。")
                 log("ソースファイルの差分:")
                 if os.path.exists(file_info.past_source_file_path):
-                    return self.display_source_diff()
+                    return self.update_target_file_from_source_diff()
                 log_w(f"過去のソースファイルが存在しないため再作成します: {file_info.past_source_file_path}")
                 self.handle_new_target_file_py()
             else:
@@ -143,25 +141,6 @@ class MarkdownToPythonConverter(BaseConverter):
                 log_w("最後の10行:%s", "\n".join(lines[-10:]))
                 self.handle_new_target_file_py()
         return ""
-
-    @log_inout
-    def display_source_diff(self) -> str:
-        file_info = self.magic_info.file_info
-        import difflib
-
-        with open(file_info.past_source_file_path, encoding="utf-8") as old_source_file:
-            old_source_lines = old_source_file.readlines()
-        with open(file_info.source_file_path, encoding="utf-8") as new_source_file:
-            new_source_lines = new_source_file.readlines()
-
-        source_diff = difflib.unified_diff(old_source_lines, new_source_lines, lineterm="", n=0)
-        source_diff_text = "".join(source_diff)
-        log("source_diff_text[:100]=%s", source_diff_text[:100])
-        # TODO: source_diff_textをpromptに追加していいか？
-
-        self.propose_target_diff(file_info.target_file_path, self.magic_info.prompt)
-        log(f"ターゲットファイル: {file_info.target_file_path}")
-        return file_info.target_file_path
 
     @log_inout
     def handle_new_target_file_py(self) -> str:
@@ -189,64 +168,3 @@ class MarkdownToPythonConverter(BaseConverter):
             """
         )
         return generate_md_from_prompt_recursive(self.magic_info)
-
-    def propose_target_diff(self, target_file_path, prompt=None) -> None:
-        """
-        ターゲットファイルの変更差分を提案する関数(md/py共通)
-
-        Args:
-            target_file_path (str): 現在のターゲットファイルのパス
-            prompt (str): promptの内容
-        """
-        # プロンプトにターゲットファイルの内容を変数として追加
-        with open(target_file_path, encoding="utf-8") as target_file:
-            current_target_code = target_file.read()
-        prompt_additional_part = ""
-        if prompt:
-            prompt_additional_part = f"""
-promptの内容:
-{prompt}
-をもとに、
-"""
-        prompt = f"""
-現在のターゲットファイルの内容:
-{current_target_code}
-
-上記から
-{prompt_additional_part}
-
-ターゲットファイルの変更が必要な部分"のみ"をプログラムで出力してください。
-出力はunified diff形式で、削除した文を薄い赤色、追加した文を薄い緑色にして
-
-@@ -1,4 +1,4 @@
- line1
--line2
-+line2 modified
- line3
--line4
-+line4 modified
-
-        """
-        response = litellm.generate_response(
-            model=settings.model_name_lite,
-            prompt=prompt,
-            max_tokens=1000,
-            temperature=0.0,
-        )
-        target_diff = response.strip()
-        # ターゲットファイルの差分を表示
-        log("ターゲットファイルの差分(冒頭100字):")
-        log(target_diff[:100])
-
-        # ユーザーに適用方法を尋ねる
-        log("差分をどのように適用しますか？")
-        log("1. AIで適用する")
-        choice = "1"
-
-        while True:
-            if choice == "1":
-                # 差分をターゲットファイルに自動で適用
-                self.apply_diff_to_target_file(target_file_path, target_diff)
-                log(f"{target_file_path}に差分を自動で適用しました。")
-                break
-            log_e("論理異常： choice=%d", choice)
