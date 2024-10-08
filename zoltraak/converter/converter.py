@@ -148,10 +148,9 @@ class MarkdownToPythonConverter(BaseConverter):
                 log_w(f"過去のソースファイルが存在しないため再作成します: {file_info.past_source_file_path}")
                 self.handle_new_target_file_py()
             else:
-                log_w(
-                    f"埋め込まれたハッシュが存在しません。ファイルを削除してください。\n: {file_info.target_file_path}"
-                )
+                log_w(f"埋め込まれたハッシュが存在しないため再作成します。\n: {file_info.target_file_path}")
                 log_w("最後の10行:%s", "\n".join(lines[-10:]))
+                self.handle_new_target_file_py()
         return ""
 
     @log_inout

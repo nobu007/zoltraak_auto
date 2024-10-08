@@ -295,7 +295,7 @@ def process_markdown_file(params: ZoltraakParams) -> MagicInfo:
 
 
 # TO_MARKDOWN_CONVERTER を使うレイヤの一覧
-TO_MARKDOWN_CONVERTER_LAYER_LIST = ["layer_1_request_gen", "2_requirement_gen"]
+TO_MARKDOWN_CONVERTER_LAYER_LIST = [MagicLayer.LAYER_1_REQUEST_GEN, MagicLayer.LAYER_2_REQUIREMENT_GEN]
 
 
 def create_converter(magic_workflow: MagicWorkflow) -> BaseConverter:
