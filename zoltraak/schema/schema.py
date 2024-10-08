@@ -237,8 +237,8 @@ class FileInfo(BaseModel):
         target_file_path_rel = os.path.relpath(self.target_file_path, self.work_dir)
 
         # past_path更新(絶対パス)
-        self.past_source_file_path = os.path.abspath(os.path.join(self.past_dir, source_file_path_rel))
-        self.past_target_file_path = os.path.abspath(os.path.join(self.past_dir, target_file_path_rel))
+        self.past_source_file_path = os.path.abspath(os.path.join(self.past_dir, "source", source_file_path_rel))
+        self.past_target_file_path = os.path.abspath(os.path.join(self.past_dir, "target", target_file_path_rel))
 
         # past_dir更新
         self.past_source_dir = os.path.dirname(self.past_source_file_path)
