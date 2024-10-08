@@ -127,6 +127,7 @@ class MagicWorkflow:
     def copy_past_files(self) -> None:
         # ソースは固定場所なのでfile_infoの情報を使う
         if os.path.isfile(self.file_info.source_file_path):
+            os.makedirs(os.path.dirname(self.file_info.past_source_file_path), exist_ok=True)
             FileUtil.copy_file(self.file_info.source_file_path, self.file_info.past_source_file_path)
             log("past_source_file_path にコピーを配置しました。 : %s", self.file_info.past_source_file_path)
 

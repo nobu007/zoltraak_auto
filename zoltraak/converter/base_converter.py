@@ -4,10 +4,9 @@ import zoltraak.llms.litellm_api as litellm
 from zoltraak import settings
 from zoltraak.core.magic_workflow import MagicWorkflow
 from zoltraak.gen_markdown import generate_md_from_prompt
-from zoltraak.schema.schema import MagicInfo, MagicMode
+from zoltraak.schema.schema import MagicLayer, MagicMode
 from zoltraak.utils.file_util import FileUtil
 from zoltraak.utils.log_util import log, log_e, log_head, log_inout
-from zoltraak.utils.rich_console import display_magic_info_full
 
 
 class BaseConverter:
@@ -29,7 +28,8 @@ class BaseConverter:
 
     def convert_loop(self) -> str:
         """ダミー"""
-        return self.convert()
+        acceptable_layers = [MagicLayer.LAYER_1_REQUEST_GEN]
+        return self.magic_workflow.run_loop(self.convert, acceptable_layers)
 
     def convert(self) -> str:
         """生成処理"""
@@ -49,11 +49,8 @@ class BaseConverter:
             self.magic_info.prompt += "\n\n<<追加指示>>\n"
             self.magic_info.prompt += FileUtil.read_file(file_info.source_file_path)
         else:
-            # 次回に備えてソースファイルを保存
+            # ソースファイルを保存(設計では初回のprompt_file_pathにだけ保存する)
             FileUtil.write_file(file_info.source_file_path, self.magic_info.prompt)
-
-        # ソースファイルまでプロンプトに反映できた時点でデバッグ表示
-        display_magic_info_full(self.magic_info)
 
         # ターゲットファイルの有無による分岐
         if FileUtil.has_content(file_info.target_file_path):  # ターゲットファイルが存在する場合
@@ -100,8 +97,8 @@ class BaseConverter:
             if os.path.exists(file_info.past_source_file_path):
                 return self.update_target_file_from_source_diff()
             return self.update_target_file_propose_and_apply(file_info.target_file_path, self.magic_info.prompt)
-        # ソースファイルが変わってない場合は再処理する
-        return self.update_target_file_propose_and_apply(file_info.target_file_path, self.magic_info.prompt)
+        # ソースファイルが変わってない場合はスキップする
+        return file_info.target_file_path
 
     @log_inout
     def update_target_file_from_source_diff(self) -> str:
@@ -114,6 +111,11 @@ class BaseConverter:
         source_diff = difflib.unified_diff(old_source_lines, new_source_lines, lineterm="", n=0)
         source_diff_text = "".join(source_diff)
         log(f"source_diff_text={source_diff_text}")
+
+        if source_diff_text == "":
+            # 差分がない場合はスキップ
+            log("ソースファイルの差分がないためスキップします。")
+            return file_info.target_file_path
 
         self.magic_info.prompt += "\n\n<<(注意)重要な変化点(注意)>>\n"
         self.magic_info.prompt += source_diff_text
@@ -232,6 +234,6 @@ promptの内容:
 
 
 if __name__ == "__main__":  # このスクリプトが直接実行された場合にのみ、以下のコードを実行します。
-    magic_info_ = MagicInfo()
-    converter = BaseConverter(magic_info_)
+    magic_workflow = MagicWorkflow()
+    converter = BaseConverter(magic_workflow)
     converter.convert()

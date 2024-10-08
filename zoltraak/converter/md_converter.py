@@ -76,14 +76,14 @@ class MarkdownToMarkdownConverter(BaseConverter):
 
 
 if __name__ == "__main__":  # このスクリプトが直接実行された場合にのみ、以下のコードを実行します。
-    magic_workflow = MagicWorkflow()
+    magic_workflow_ = MagicWorkflow()
 
     # レイヤ１
-    magic_workflow.magic_info.magic_layer = MagicLayer.LAYER_1_REQUEST_GEN
-    converter = MarkdownToMarkdownConverter(magic_workflow)
+    magic_workflow_.magic_info.magic_layer = MagicLayer.LAYER_1_REQUEST_GEN
+    converter = MarkdownToMarkdownConverter(magic_workflow_)
     converter.convert()
 
     # レイヤ３
-    magic_workflow.magic_info.magic_layer = MagicLayer.LAYER_3_REQUIREMENT_GEN
-    converter = MarkdownToMarkdownConverter(magic_workflow)
+    magic_workflow_.magic_info.magic_layer = MagicLayer.LAYER_3_REQUIREMENT_GEN
+    converter = MarkdownToMarkdownConverter(magic_workflow_)
     converter.convert()
