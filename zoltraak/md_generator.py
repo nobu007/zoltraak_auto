@@ -1,14 +1,12 @@
 import os
 import re
 import sys
-import threading
 import time
 
 import zoltraak.llms.litellm_api as litellm
 from zoltraak import settings
-from zoltraak.schema.schema import MagicInfo, MagicLayer
+from zoltraak.schema.schema import MagicInfo
 from zoltraak.utils.file_util import FileUtil
-from zoltraak.utils.gui_util import GuiUtil
 from zoltraak.utils.log_util import log, log_e
 from zoltraak.utils.rich_console import generate_response_with_spinner
 
@@ -59,7 +57,7 @@ def generate_md_from_prompt_recursive(magic_info: MagicInfo) -> str:
     file_info.update_source_target(file_info.source_file_path, output_file_path)
     file_info.update()
 
-    print_generation_result(file_info.target_file_path, compiler_path, magic_info.magic_layer)  # 生成結果を出力
+    print_generation_result(file_info.target_file_path)  # 生成結果を出力
     return output_file_path
 
 
@@ -247,39 +245,12 @@ def save_md_content(md_content, target_file_path) -> str:
     return ""
 
 
-def print_generation_result(target_file_path, compiler_path, magic_layer: MagicLayer):
+def print_generation_result(target_file_path):
     """
     要件定義書の生成結果を表示する関数
 
     Args:
         target_file_path (str): 生成された要件定義書のファイルパス
-        compiler_path (str): コンパイラのパス
     """
     print()
     log(f"\033[32m魔法術式を構築しました: {target_file_path}\033[0m")  # 要件定義書の生成完了メッセージを緑色で表示
-
-    # 検索結果生成以外ではユーザーに要件定義書からディレクトリを構築するかどうかを尋ねる
-    if compiler_path is not None:
-        # ユーザーがyと答えた場合、zoltraakコマンドを実行してディレクトリを構築
-        done = False  # スピナーの終了フラグを追加
-        spinner_thread = threading.Thread(  # スピナーを表示するスレッドを作成し、終了フラグとgoalを渡す
-            target=show_spinner, args=(lambda: done, "ステップ2. \033[32m魔法式\033[0mから\033[33m領域\033[0mを構築")
-        )
-        spinner_thread.start()  # スピナーの表示を開始
-
-        import subprocess
-
-        subprocess.run(["zoltraak", target_file_path, "-ml", str(magic_layer)], check=False)  # noqa: S603, S607
-
-        done = True  # zoltraakコマンド実行後にスピナーの終了フラグをTrueに設定
-        spinner_thread.join()  # スピナーの表示を終了
-    else:
-        # ユーザーがnと答えた場合、既存の手順を表示
-        log(
-            "\033[33m以下のコマンドをコピーして、ターミナルに貼り付けて実行してください。\033[0m"
-        )  # 実行方法の説明を黄色で表示
-        log(f"\033[36mzoltraak {target_file_path}\033[0m")  # 実行コマンドを水色で表示
-        GuiUtil.copy_to_clipboard(f"zoltraak {target_file_path}")  # 実行コマンドをクリップボードにコピー
-        log(
-            "\033[35mコマンドをクリップボードにコピーしました。ターミナルに貼り付けて実行できます。\033[0m"
-        )  # コピー完了メッセージを紫色で表示
