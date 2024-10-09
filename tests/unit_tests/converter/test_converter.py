@@ -56,7 +56,7 @@ class TestMarkdownToPythonConverter(TestBaseConverter):
     def test_update_grimoire_and_prompt(self):
         self.converter.update_grimoire_and_prompt()
         self.assertIn("", self.magic_info.grimoire_compiler)
-        self.assertIn(PROMPT_KEYWORD, self.converter.magic_info.prompt)
+        self.assertIn(PROMPT_KEYWORD, self.converter.magic_info.prompt_input)
         self.check_mock_call_count_llm_generate_response(0)
 
     def test_handle_existing_target_file(self):
@@ -69,7 +69,7 @@ class TestMarkdownToPythonConverter(TestBaseConverter):
     def test_handle_new_target_file(self):
         self.set_mock_return_value(MOCK_GENERATE_TARGET_CODE, return_value="output1.md")
         self.set_mock_return_value(MOCK_GENERATE_MD_FROM_PROMPT, return_value="output2.md")
-        self.magic_info.prompt = None
+        self.magic_info.prompt_input = None
         result = self.converter.handle_new_target_file()
         self.assertEqual(result, "output1.md")
         self.check_mock_call_count_llm_generate_response(0)

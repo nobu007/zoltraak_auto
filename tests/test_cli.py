@@ -256,7 +256,7 @@ class TestCompilerFunctionality(unittest.TestCase):  # クラス名をTestCompil
         magic_info = MagicInfo()
         magic_info.grimoire_compiler = f"{setting_dir}/compiler/{compiler_path}"
         magic_info.grimoire_formatter = f"{setting_dir}/formatter/None.md"
-        magic_info.prompt = goal_prompt
+        magic_info.prompt_input = goal_prompt
         magic_info.file_info.target_file_path = expected_md_path
         generate_md_from_prompt_recursive(magic_info)
 

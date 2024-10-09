@@ -22,7 +22,7 @@ def generate_md_from_prompt(magic_info: MagicInfo) -> str:
     formatter_path = magic_info.get_formatter_path()
     language = magic_info.language
 
-    prompt_final = create_prompt(magic_info.prompt, compiler_path, formatter_path, language)  # プロンプトを作成
+    prompt_final = create_prompt(magic_info.prompt_input, compiler_path, formatter_path, language)  # プロンプトを作成
     magic_info.prompt_final = prompt_final
     response = generate_response_with_spinner(magic_info, prompt_final)
     md_content = response.strip()  # 生成された要件定義書の内容を取得し、前後の空白を削除

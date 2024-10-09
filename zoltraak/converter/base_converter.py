@@ -47,11 +47,12 @@ class BaseConverter:
         # ソースファイルの有無による分岐
         if FileUtil.has_content(file_info.source_file_path):  # -- マークダウンファイルが存在する場合
             log(f"既存のソースファイル {file_info.source_file_path} が存在しました。")
-            self.magic_info.prompt += "\n\n<<追加指示>>\n"
-            self.magic_info.prompt += FileUtil.read_file(file_info.source_file_path)
+            self.magic_info.prompt_goal = self.magic_info.prompt_input
+            self.magic_info.prompt_goal += "\n\n<<追加指示>>\n"
+            self.magic_info.prompt_goal += FileUtil.read_file(file_info.source_file_path)
         else:
             # ソースファイルを保存(設計では初回のprompt_file_pathにだけ保存する)
-            FileUtil.write_file(file_info.source_file_path, self.magic_info.prompt)
+            FileUtil.write_file(file_info.source_file_path, self.magic_info.prompt_input)
 
         # ターゲットファイルの有無による分岐
         if FileUtil.has_content(file_info.target_file_path):  # ターゲットファイルが存在する場合
@@ -73,27 +74,27 @@ class BaseConverter:
             if not os.path.isfile(compiler_path):
                 log("コンパイラが存在しないため、デフォルトのコンパイラを使用します。")
                 compiler_path = default_compiler_path
-            self.magic_info.prompt = ""
+            self.magic_info.prompt_input = ""
         elif self.magic_info.magic_mode is MagicMode.GRIMOIRE_AND_PROMPT:
             # グリモアまたはプロンプトどちらか TODO: 用語をコンパイラに統一したい
             if not os.path.isfile(compiler_path):
                 compiler_path = ""
-                if not self.magic_info.prompt:
+                if not self.magic_info.prompt_input:
                     log("コンパイラもプロンプトも未設定のため、一般的なプロンプトを使用します。")
                     compiler_path = ""
-                    self.magic_info.prompt = FileUtil.read_grimoire(default_compiler_path)
+                    self.magic_info.prompt_input = FileUtil.read_grimoire(default_compiler_path)
         elif self.magic_info.magic_mode is MagicMode.PROMPT_ONLY:
             # プロンプトのみ
             compiler_path = ""
-            if not self.magic_info.prompt:
+            if not self.magic_info.prompt_input:
                 log("プロンプトが未設定のため、一般的なプロンプトを使用します。")
-                self.magic_info.prompt = FileUtil.read_grimoire(default_compiler_path)
+                self.magic_info.prompt_input = FileUtil.read_grimoire(default_compiler_path)
         else:
             # SEARCH_GRIMOIRE or ZOLTRAAK_LEGACY(ノーケア、別のところで処理すること！)
             log("(SEARCH_GRIMOIRE)一般的なプロンプトを使用します。")
             if not os.path.isfile(compiler_path):
                 compiler_path = default_compiler_path
-                self.magic_info.prompt = FileUtil.read_grimoire(default_compiler_path)
+                self.magic_info.prompt_input = FileUtil.read_grimoire(default_compiler_path)
 
         # レイヤによる分岐
         if self.magic_info.magic_layer == MagicLayer.LAYER_1_REQUEST_GEN:
@@ -116,7 +117,7 @@ class BaseConverter:
         log(f"{file_info.source_file_path}の変更を検知しました。")
         if os.path.exists(file_info.past_source_file_path):
             return self.update_target_file_from_source_diff()
-        return self.update_target_file_propose_and_apply(file_info.target_file_path, self.magic_info.prompt)
+        return self.update_target_file_propose_and_apply(file_info.target_file_path, self.magic_info.prompt_input)
 
     # ソースファイルの差分比率のしきい値（超えると差分では処理できないので再作成）
     SOURCE_DIFF_RATIO_THREADHOLD = 0.1

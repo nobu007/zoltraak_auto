@@ -31,7 +31,7 @@ def generate_md_from_prompt_recursive(magic_info: MagicInfo) -> str:
         prompt_compiler = compiler_path  # - コンパイラパスをそのままprompt_compilerに代入
 
     prompt_formatter = get_prompt_formatter(language, formatter_path)
-    prompt_final = create_prompt(magic_info.prompt, compiler_path, formatter_path, language)  # プロンプトを作成
+    prompt_final = create_prompt(magic_info.prompt_input, compiler_path, formatter_path, language)  # プロンプトを作成
     magic_info.current_grimoire_name = prompt_compiler
     magic_info.grimoire_formatter = prompt_formatter
     magic_info.description = "ステップ1. \033[31m起動術式\033[0mを用いて\033[32m魔法術式\033[0mを構築"

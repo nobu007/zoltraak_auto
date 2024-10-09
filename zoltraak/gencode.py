@@ -26,7 +26,7 @@ class TargetCodeGenerator:
         source_content, source_file_name, variables = self.load_source_and_create_variables()
 
         # 3. プロンプトの読み込みとコード生成
-        self.magic_info.prompt, code = self.load_prompt_and_generate_code(create_domain_grimoire, variables)
+        self.magic_info.prompt_final, code = self.load_prompt_and_generate_code(create_domain_grimoire, variables)
 
         # 4. 生成されたコードの処理
         self.process_generated_code(code)

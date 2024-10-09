@@ -205,7 +205,7 @@ def process_markdown_file(params: ZoltraakParams) -> MagicInfo:
     magic_info.magic_mode = params.magic_mode
     magic_info.magic_layer = MagicLayer.new(params.magic_layer)
     magic_info.model_name = settings.model_name
-    magic_info.prompt = params.prompt
+    magic_info.prompt_input = params.prompt
     magic_info.current_grimoire_name = canonical_name
     magic_info.description = ""  # デフォルト値を使う
     magic_info.grimoire_compiler = compiler_path

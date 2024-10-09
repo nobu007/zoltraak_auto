@@ -68,7 +68,7 @@ class TestBaseConverter(BaseTestCase):
         self.assertEqual(result, "")
         self.check_mock_call_count(ALL_MOCK_HANDLE_EXISTING_TARGET_FILE, 1)
         self.check_mock_call_count(MOCK_HANDLE_NEW_TARGET_FILE, 0)
-        self.assertIn(PROMPT_KEYWORD, self.base_converter.magic_info.prompt)
+        self.assertIn(PROMPT_KEYWORD, self.base_converter.magic_info.prompt_input)
 
     # source: False, target: True
     def test_convert_one_source_false_target_true(self):
@@ -78,7 +78,7 @@ class TestBaseConverter(BaseTestCase):
         self.assertEqual(result, "")
         self.check_mock_call_count(ALL_MOCK_HANDLE_EXISTING_TARGET_FILE, 1)
         self.check_mock_call_count(MOCK_HANDLE_NEW_TARGET_FILE, 0)
-        self.assertNotIn(PROMPT_KEYWORD, self.base_converter.magic_info.prompt)
+        self.assertNotIn(PROMPT_KEYWORD, self.base_converter.magic_info.prompt_input)
 
     # source: True, target: False
     def test_convert_one_source_true_target_false(self):
@@ -88,7 +88,7 @@ class TestBaseConverter(BaseTestCase):
         self.assertEqual(result, "")
         self.check_mock_call_count(ALL_MOCK_HANDLE_EXISTING_TARGET_FILE, 0)
         self.check_mock_call_count(MOCK_HANDLE_NEW_TARGET_FILE, 1)
-        self.assertIn(PROMPT_KEYWORD, self.base_converter.magic_info.prompt)
+        self.assertIn(PROMPT_KEYWORD, self.base_converter.magic_info.prompt_input)
 
     # source: False, target: False
     def test_convert_one_source_false_target_false(self):
@@ -99,7 +99,7 @@ class TestBaseConverter(BaseTestCase):
         self.assertEqual(result, "")
         self.check_mock_call_count(ALL_MOCK_HANDLE_EXISTING_TARGET_FILE, 0)
         self.check_mock_call_count(MOCK_HANDLE_NEW_TARGET_FILE, 1)
-        self.assertNotIn(PROMPT_KEYWORD, self.base_converter.magic_info.prompt)
+        self.assertNotIn(PROMPT_KEYWORD, self.base_converter.magic_info.prompt_input)
 
     # =============  handle_existing_target_file  ==============
 
@@ -109,7 +109,7 @@ class TestBaseConverter(BaseTestCase):
         self.assertEqual(result, "")
         self.check_mock_call_count(ALL_MOCK_UPDATE_TARGET_FILE_FROM_SOURCE_DIFF, 0)
         self.check_mock_call_count(ALL_MOCK_UPDATE_TARGET_FILE_PROPOSE_AND_APPLY, 0)
-        self.assertNotIn(PROMPT_KEYWORD, self.base_converter.magic_info.prompt)
+        self.assertNotIn(PROMPT_KEYWORD, self.base_converter.magic_info.prompt_input)
 
     # =============  handle_new_target_file  ==============
 

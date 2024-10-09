@@ -289,12 +289,12 @@ class MagicInfo(BaseModel):
     magic_mode: MagicMode = Field(default=MagicMode.PROMPT_ONLY, description="実行モード")
     magic_layer: MagicLayer = Field(default=MagicLayer.LAYER_1_REQUEST_GEN, description="実行モード")
     model_name: str = Field(default=settings.model_name, description="使用するLLMモデルの名前")
-    prompt: str = Field(
+    prompt_input: str = Field(
         default="""
         zoltraakシステムは曖昧なユーザー入力を、ユーザ要求記述書 => 要件定義書 => Pythonコードと段階的に詳細化します。
         このシステムの情報を提供しますので作業指示に従ってください。
         """,
-        description="ユーザ入力を保持するためのプロンプト(入力用、 goal_prompt)",
+        description="ユーザ入力を保持するためのプロンプト(cli.pyで-iまたは引数なしで指定されたオリジナルを保持)",
     )
     prompt_match_rate: str = Field(
         default="",
@@ -312,9 +312,13 @@ class MagicInfo(BaseModel):
         default="",
         description="既存のターゲットファイルに対して、差分を適用するためのプロンプト(履歴用)",
     )
+    prompt_goal: str = Field(
+        default="",
+        description="ターゲットファイルを新規作成するときのゴール(履歴用)",
+    )
     prompt_final: str = Field(
         default="",
-        description="ターゲットファイルを新規生成するためのプロンプト(履歴用)",
+        description="ターゲットファイルを新規生成するために最終的に使われた(履歴用)",
     )
 
     # grimoire関連

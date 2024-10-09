@@ -85,7 +85,7 @@ class MarkdownToPythonConverter(BaseConverter):
                 f"{file_info.target_file_path}は既存のファイルです。promptに従って変更を提案します。"
             )  # --- ファイルが既存であることを示すメッセージを表示
             self.update_target_file_propose_and_apply(
-                file_info.target_file_path, self.magic_info.prompt
+                file_info.target_file_path, self.magic_info.prompt_input
             )  # --- プロンプトに従ってターゲットファイルの差分を提案
 
             return file_info.target_file_path  # --- 関数を終了
@@ -108,10 +108,10 @@ class MarkdownToPythonConverter(BaseConverter):
                 embedded_hash = lines[-1].split("# HASH: ")[1].strip()
                 log("embedded_hash=%s", embedded_hash)
                 log("source_hash  =%s", file_info.source_hash)
-                log_head("prompt=%s", self.magic_info.prompt)
+                log_head("prompt=%s", self.magic_info.prompt_input)
                 # TODO: 次処理に進むのプロンプトなし時だけなのか？全体に薄く適用するformatterみたいなケースは不要？
                 if file_info.source_hash == embedded_hash:
-                    if not self.magic_info.prompt:
+                    if not self.magic_info.prompt_input:
                         # TODO: targetがpyなら別プロセスで実行の方が良い？
                         # 現状はプロンプトが無い => ユーザ要求がtarget に全て反映済みなら次ステップに進む設計
                         # targetのpastとの差分が一定未満なら次に進むでもいいかも。
