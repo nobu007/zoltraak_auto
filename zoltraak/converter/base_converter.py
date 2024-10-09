@@ -113,14 +113,10 @@ class BaseConverter:
             str: 処理結果のファイルパス
         """
         file_info = self.magic_info.file_info
-        is_source_changed = True  # TODO: hash check
-        if is_source_changed:
-            log(f"{file_info.source_file_path}の変更を検知しました。")
-            if os.path.exists(file_info.past_source_file_path):
-                return self.update_target_file_from_source_diff()
-            return self.update_target_file_propose_and_apply(file_info.target_file_path, self.magic_info.prompt)
-        # ソースファイルが変わってない場合はスキップする
-        return file_info.target_file_path
+        log(f"{file_info.source_file_path}の変更を検知しました。")
+        if os.path.exists(file_info.past_source_file_path):
+            return self.update_target_file_from_source_diff()
+        return self.update_target_file_propose_and_apply(file_info.target_file_path, self.magic_info.prompt)
 
     # ソースファイルの差分比率のしきい値（超えると差分では処理できないので再作成）
     SOURCE_DIFF_RATIO_THREADHOLD = 0.1
@@ -163,24 +159,24 @@ class BaseConverter:
 
         return self.update_target_file_propose_and_apply(file_info.target_file_path, self.magic_info.prompt_diff)
 
-    def update_target_file_propose_and_apply(self, target_file_path, prompt_diff=None) -> str:
+    def update_target_file_propose_and_apply(self, target_file_path, prompt=None) -> str:
         """
         ターゲットファイルの変更差分を提案して適用する関数
 
         Args:
             target_file_path (str): 現在のターゲットファイルのパス
-            prompt_diff (str): ソースファイルの差分などターゲットファイルに適用するべき作業指示を含むprompt
+            prompt (str): ソースファイルの差分などターゲットファイルに適用するべき作業指示を含むprompt
         """
         # プロンプトにターゲットファイルの内容を変数として追加
         current_target_code = FileUtil.read_file(target_file_path)
         prompt_additional_part = ""
-        if prompt_diff:
+        if prompt:
             prompt_additional_part = f"""
 promptの内容:
-{prompt_diff}
+{prompt}
 をもとに、
 """
-        prompt_diff = f"""
+        prompt = f"""
 現在のターゲットファイルの内容:
 {current_target_code}
 
@@ -199,10 +195,10 @@ promptの内容:
 +line4 modified
 
         """
-        self.magic_info.prompt_diff = prompt_diff
+        self.magic_info.prompt_diff = prompt
         response = litellm.generate_response(
             model=settings.model_name_lite,
-            prompt=prompt_diff,
+            prompt=prompt,
             max_tokens=1000,
             temperature=0.0,
         )
@@ -245,9 +241,6 @@ promptの内容:
 {current_content}
 上記のターゲットファイルの内容に対して、以下のUnified diff 適用後のターゲットファイルの内容を生成してください。
 
-提案された差分:
-{target_diff}
-
 例)
 変更前
 - graph.node(week_node_name, shape='box', style='filled', fillcolor='#FFCCCC')
@@ -256,6 +249,10 @@ promptの内容:
 + graph.node(week_node_name, shape='box', style='filled', fillcolor='#CCCCFF')
 
 番号など変わった場合は振り直しもお願いします。
+
+提案された差分:
+{target_diff}
+
         """
 
         self.magic_info.prompt_apply = prompt_apply
