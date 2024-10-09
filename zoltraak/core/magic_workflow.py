@@ -36,13 +36,15 @@ class MagicWorkflow:
                 log("convert layer = " + str(layer))
                 self.magic_info.file_info.final_output_file_path = convert_fn()
                 display_magic_info_intermediate(self.magic_info)
-                self.magic_info.magic_layer = layer.next()  # --- 次のレイヤに進む
-                log("end next = " + str(self.magic_info.magic_layer))
 
                 # ZOLTRAAK_LEGACYモードの場合は１回で終了
                 if self.magic_info.magic_mode == MagicMode.ZOLTRAAK_LEGACY:
                     log("ZOLTRAAK_LEGACYモードにより、convert処理を終了します")
                     break
+
+                # 次のレイヤに進む
+                self.magic_info.magic_layer = layer.next()
+                log("end next = " + str(self.magic_info.magic_layer))
         return self.magic_info.file_info.final_output_file_path
 
     @log_inout
