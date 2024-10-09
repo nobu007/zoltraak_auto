@@ -294,19 +294,27 @@ class MagicInfo(BaseModel):
         zoltraakシステムは曖昧なユーザー入力を、ユーザ要求記述書 => 要件定義書 => Pythonコードと段階的に詳細化します。
         このシステムの情報を提供しますので作業指示に従ってください。
         """,
-        description="使用するグリモアのプロンプト(入力用、 goal_prompt)",
+        description="ユーザ入力を保持するためのプロンプト(入力用、 goal_prompt)",
+    )
+    prompt_match_rate: str = Field(
+        default="",
+        description="既存のターゲットファイルと現在のソースファイルの適合度を取得するプロンプト(履歴用)",
+    )
+    prompt_diff_order: str = Field(
+        default="",
+        description="既存のターゲットファイルに対して、どのような差分を適用するべきかを指示するプロンプト(履歴用)",
     )
     prompt_diff: str = Field(
         default="",
-        description="差分を取得するためのプロンプト(履歴用)",
+        description="既存のターゲットファイルに対して、差分を取得するためのプロンプト(履歴用)",
     )
     prompt_apply: str = Field(
         default="",
-        description="差分を適用するためのプロンプト(履歴用)",
+        description="既存のターゲットファイルに対して、差分を適用するためのプロンプト(履歴用)",
     )
     prompt_final: str = Field(
         default="",
-        description="新規生成するためのプロンプト(履歴用)",
+        description="ターゲットファイルを新規生成するためのプロンプト(履歴用)",
     )
 
     # grimoire関連

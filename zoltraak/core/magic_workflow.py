@@ -103,6 +103,8 @@ class MagicWorkflow:
 
         # promptの保存先パス取得
         self.save_prompt(self.magic_info.prompt, target_file_path_rel)
+        self.save_prompt(self.magic_info.prompt_match_rate, target_file_path_rel, "_match_rate")
+        self.save_prompt(self.magic_info.prompt_diff_order, target_file_path_rel, "_diff_order")
         self.save_prompt(self.magic_info.prompt_diff, target_file_path_rel, "_diff")
         self.save_prompt(self.magic_info.prompt_apply, target_file_path_rel, "_apply")
         self.save_prompt(self.magic_info.prompt_final, target_file_path_rel, "_final")
