@@ -18,8 +18,8 @@ from zoltraak.utils.rich_console import display_info_full, display_magic_info_fi
 from zoltraak.utils.subprocess_util import SubprocessUtil
 
 
-def main():
-    """メイン処理"""
+def main() -> None:
+    """メイン処理(args前処理、コンパイラー確認、パラメータ設定)"""
     log("")
     log("========================================")
     log("||         zoltraak cli start         ||")
@@ -38,6 +38,9 @@ def main():
     )  # 追加: バージョン情報表示オプション
     parser.add_argument("-l", "--language", help="出力言語を指定", default="")  # 追加: 汎用言語指定オプション
     parser.add_argument("-m", "--model_name", help="使用するモデルの名前", default="")
+    parser.add_argument(
+        "-n", "--canonical_name", help="アウトプットファイルやフォルダを一意に識別するための正規名称", default=""
+    )
     parser.add_argument(
         "-mm",
         "--magic_mode",
@@ -76,17 +79,22 @@ def main():
     params.formatter = args.formatter
     params.language = args.language
     params.model_name = args.model_name
+    params.canonical_name = args.canonical_name
     params.magic_mode = args.magic_mode
     params.magic_layer = args.magic_layer
     log("params.input=" + params.input)
-    if params.input.endswith(".md"):
+    if params.input.endswith(".md") and not params.canonical_name:
         params.canonical_name = os.path.basename(params.input)
         # 初回になければ作成対象のファイルを生成する
         first_md_file_path = os.path.abspath(params.input)
         if not os.path.isfile(first_md_file_path):
             FileUtil.write_file(first_md_file_path, "")
     display_info_full(params, title="ZoltraakParams")
+    main_exec(params)
 
+
+def main_exec(params: ZoltraakParams) -> None:
+    """メイン処理(メイン処理実行)"""
     if params.input.endswith(".md"):
         # (暫定) inputで要件定義書.mdを指定されたらメイン処理実行
         magic_info = process_markdown_file(params)
