@@ -12,6 +12,7 @@ from zoltraak.converter.md_converter import MarkdownToMarkdownConverter
 from zoltraak.core.magic_workflow import MagicWorkflow
 from zoltraak.schema.schema import MagicInfo, MagicLayer, MagicMode, ZoltraakParams
 from zoltraak.utils.file_util import FileUtil
+from zoltraak.utils.grimoires_util import GrimoireUtil
 from zoltraak.utils.log_util import log
 from zoltraak.utils.rich_console import display_info_full, display_magic_info_final
 from zoltraak.utils.subprocess_util import SubprocessUtil
@@ -104,73 +105,7 @@ def prepare_compiler(input_: str, compiler: str, custom_compiler: str) -> str:
         show_compiler_conflict_error_and_exit()  # --- コンパイラー競合エラーを表示して終了
 
     # compilerが有効かチェック
-    valid_compiler = get_valid_compiler(compiler)
-    if valid_compiler:
-        return valid_compiler
-
-    # custom_compilerが有効かチェック
-    valid_compiler = get_valid_compiler(custom_compiler)
-    if valid_compiler:
-        return valid_compiler
-
-    # inputで指定されたcompilerが有効かチェック
-    valid_compiler = get_valid_compiler(input_)
-    if valid_compiler:
-        return valid_compiler
-
-    # inputでcompilerが指定されているかチェック
-    valid_compiler = get_valid_compiler(compiler)
-    if valid_compiler:
-        return valid_compiler
-
-    # どれも無効な場合はデフォルトコンパイラを返す
-    return get_valid_compiler("dev_obj")
-
-
-def get_valid_compiler(compiler_candidate: str) -> str:
-    """有効なcompilerだったらその絶対パスを返す
-    無効なら空文字を返す"""
-    return get_valid_markdown(compiler_candidate, settings.compiler_dir)
-
-
-def get_valid_architect(compiler_candidate: str) -> str:
-    """有効なarchitectだったらその絶対パスを返す
-    無効なら空文字を返す"""
-    return get_valid_markdown(compiler_candidate, settings.architects_dir)
-
-
-def get_valid_formatter(compiler_candidate: str) -> str:
-    """有効なformatterだったらその絶対パスを返す
-    無効なら空文字を返す"""
-    return get_valid_markdown(compiler_candidate, settings.formatter_dir)
-
-
-def get_valid_markdown(markdown_candidate: str, additional_dir: str = "") -> str:
-    """有効だったらその絶対パスを返す
-    無効なら空文字を返す"""
-    if not markdown_candidate:
-        log("空文字")
-        return ""
-
-    # 拡張子".md"を準備して、以降はファイル存在チェックする
-    if not markdown_candidate.endswith(".md"):
-        markdown_candidate += ".md"
-
-    # カレントディレクトリをチェック(絶対パスで来た場合もここで返す)
-    candidate_abs = os.path.abspath(markdown_candidate)
-    if os.path.isfile(candidate_abs):
-        log("検出 " + candidate_abs)
-        return candidate_abs
-
-    # additional_dir配下をチェック
-    if additional_dir:
-        candidate_abs = os.path.join(additional_dir, markdown_candidate)
-        if os.path.isfile(candidate_abs):
-            log("検出(additional_dir配下) " + candidate_abs)
-            return candidate_abs
-
-    log("無効 " + markdown_candidate)
-    return ""
+    return GrimoireUtil.prepare_compiler(input_, compiler, custom_compiler)
 
 
 def show_version_and_exit():
@@ -245,8 +180,8 @@ def process_markdown_file(params: ZoltraakParams) -> MagicInfo:
     output_dir_abs = os.path.abspath(params.output_dir)
 
     compiler_path = os.path.abspath(params.compiler)
-    architect_path = get_valid_architect("architect_claude.md")
-    formatter_path = get_valid_formatter(params.formatter)
+    architect_path = GrimoireUtil.get_valid_architect("architect_claude.md")
+    formatter_path = GrimoireUtil.get_valid_formatter(params.formatter)
 
     canonical_name = params.canonical_name
     md_file_path = params.input  # この時点では新規ファイルの可能性があるので、get_valid_markdown()はNG

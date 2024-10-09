@@ -6,6 +6,7 @@ from zoltraak.core.magic_workflow import MagicWorkflow
 from zoltraak.gen_markdown import generate_md_from_prompt
 from zoltraak.schema.schema import MagicLayer, MagicMode
 from zoltraak.utils.file_util import FileUtil
+from zoltraak.utils.grimoires_util import GrimoireUtil
 from zoltraak.utils.log_util import log, log_e, log_inout
 
 
@@ -62,36 +63,47 @@ class BaseConverter:
     def update_grimoire_and_prompt(self):
         # モードによる分岐
         log(f"{self.magic_info.magic_mode}で変更を提案します。")
+
+        # コンパイラのパスを取得
+        compiler_path = GrimoireUtil.get_valid_compiler(self.magic_info.grimoire_compiler)
+        default_compiler_path = GrimoireUtil.get_valid_compiler("general_prompt.md")
+
         if self.magic_info.magic_mode is MagicMode.GRIMOIRE_ONLY:
             # グリモアのみ
-            if not os.path.isfile(self.magic_info.get_compiler_path()):
-                log("コンパイラが存在しないため、一般的なプロンプトを使用します。")
-                self.magic_info.grimoire_compiler = "general_prompt.md"
+            if not os.path.isfile(compiler_path):
+                log("コンパイラが存在しないため、デフォルトのコンパイラを使用します。")
+                compiler_path = default_compiler_path
             self.magic_info.prompt = ""
         elif self.magic_info.magic_mode is MagicMode.GRIMOIRE_AND_PROMPT:
             # グリモアまたはプロンプトどちらか TODO: 用語をコンパイラに統一したい
-            if not os.path.isfile(self.magic_info.get_compiler_path()):
-                self.magic_info.grimoire_compiler = ""
+            if not os.path.isfile(compiler_path):
+                compiler_path = ""
                 if not self.magic_info.prompt:
                     log("コンパイラもプロンプトも未設定のため、一般的なプロンプトを使用します。")
-                    self.magic_info.prompt = FileUtil.read_grimoire("general_prompt.md")
+                    compiler_path = ""
+                    self.magic_info.prompt = FileUtil.read_grimoire(default_compiler_path)
         elif self.magic_info.magic_mode is MagicMode.PROMPT_ONLY:
             # プロンプトのみ
-            self.magic_info.grimoire_compiler = ""
+            compiler_path = ""
             if not self.magic_info.prompt:
                 log("プロンプトが未設定のため、一般的なプロンプトを使用します。")
-                self.magic_info.prompt = FileUtil.read_grimoire("general_prompt.md")
+                self.magic_info.prompt = FileUtil.read_grimoire(default_compiler_path)
         else:
-            # SEARCH_GRIMOIRE(ノーケア、別のところで処理すること！)
+            # SEARCH_GRIMOIRE or ZOLTRAAK_LEGACY(ノーケア、別のところで処理すること！)
             log("(SEARCH_GRIMOIRE)一般的なプロンプトを使用します。")
-            if not os.path.isfile(self.magic_info.get_compiler_path()):
-                self.magic_info.grimoire_compiler = ""
-                self.magic_info.prompt = FileUtil.read_grimoire("general_prompt.md")
+            if not os.path.isfile(compiler_path):
+                compiler_path = default_compiler_path
+                self.magic_info.prompt = FileUtil.read_grimoire(default_compiler_path)
 
         # レイヤによる分岐
         if self.magic_info.magic_layer == MagicLayer.LAYER_1_REQUEST_GEN:
-            self.magic_info.grimoire_compiler = "general_prompt.md"  # レイヤ１専用のプロンプトを使用
-            log("レイヤ１専用のプロンプト: %s", self.magic_info.grimoire_compiler)
+            # レイヤ１専用のプロンプトを使用
+            compiler_path = GrimoireUtil.get_valid_compiler("general_prompt.md")
+            log("レイヤ１専用のプロンプト: %s", compiler_path)
+
+        # grimoire_compiler更新
+        self.magic_info.grimoire_compiler = compiler_path
+        log("grimoire_compilerを更新しました。 %s", self.magic_info.grimoire_compiler)
 
     @log_inout
     def handle_existing_target_file(self) -> str:

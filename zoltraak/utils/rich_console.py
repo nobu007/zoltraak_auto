@@ -206,7 +206,8 @@ def _add_row_relpath(table: Table, key: str, path: str, base_path: str) -> None:
     abs_path = os.path.abspath(path)
     abs_base_path = os.path.abspath(base_path)
     rel_path = os.path.relpath(abs_path, abs_base_path)
-    table.add_row(key, rel_path)
+    rel_path_with_abs_path = f"{rel_path} ({abs_path})"
+    table.add_row(key, rel_path_with_abs_path)
 
 
 def generate_response_with_spinner(magic_info: MagicInfo, prompt: str):

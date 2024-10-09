@@ -343,8 +343,10 @@ class MagicInfo(BaseModel):
             setattr(self, key, value)
         self.file_info.update()
 
-    def get_compiler_path(self):
-        return os.path.join(settings.compiler_dir, self.grimoire_compiler)
+    def get_compiler_path(self, grimoire_compiler: str = ""):
+        if grimoire_compiler == "":
+            grimoire_compiler = self.grimoire_compiler
+        return os.path.join(settings.compiler_dir, grimoire_compiler)
 
     def get_architect_path(self):
         return os.path.join(settings.architects_dir, self.grimoire_architect)
