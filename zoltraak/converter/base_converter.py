@@ -126,7 +126,7 @@ class BaseConverter:
         old_source_lines = FileUtil.read_file(file_info.past_source_file_path)
         new_source_lines = FileUtil.read_file(file_info.source_file_path)
 
-        source_diff = difflib.unified_diff(old_source_lines, new_source_lines, lineterm="\n", n=0)
+        source_diff = difflib.unified_diff(old_source_lines, new_source_lines, lineterm="", n=0)
         source_diff_text = "".join(source_diff)
         log(f"source_diff_text={source_diff_text}")
 

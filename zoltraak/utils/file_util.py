@@ -6,11 +6,17 @@ from zoltraak.utils.log_util import log, log_i
 
 class FileUtil:
     @staticmethod
+    # def read_file(file_path: str) -> str:
+    #     # ターゲットファイルの現在の内容を読み込む
+    #     if os.path.isfile(file_path):
+    #         with open(file_path, encoding="utf-8") as file:
+    #             return "\n".join(file.readlines())
+    #     return f"{file_path} を開けませんでした。"
     def read_file(file_path: str) -> str:
-        # ターゲットファイルの現在の内容を読み込む
         if os.path.isfile(file_path):
             with open(file_path, encoding="utf-8") as file:
-                return "\n".join(file.readlines())
+                lines = [line.rstrip() for line in file.readlines()]
+                return "\n".join(lines)
         return f"{file_path} を開けませんでした。"
 
     @staticmethod
