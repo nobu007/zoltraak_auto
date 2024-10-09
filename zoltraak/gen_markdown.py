@@ -22,9 +22,9 @@ def generate_md_from_prompt(magic_info: MagicInfo) -> str:
     formatter_path = magic_info.get_formatter_path()
     language = magic_info.language
 
-    prompt = create_prompt(magic_info.prompt, compiler_path, formatter_path, language)  # プロンプトを作成
-    magic_info.prompt = prompt
-    response = generate_response_with_spinner(magic_info)
+    prompt_final = create_prompt(magic_info.prompt, compiler_path, formatter_path, language)  # プロンプトを作成
+    magic_info.prompt_final = prompt_final
+    response = generate_response_with_spinner(magic_info, prompt_final)
     md_content = response.strip()  # 生成された要件定義書の内容を取得し、前後の空白を削除
     return save_md_content(md_content, file_info.target_file_path)  # 生成された要件定義書の内容をファイルに保存
 
@@ -37,14 +37,14 @@ def create_prompt(goal_prompt: str, compiler_path: str, formatter_path: str, lan
         str: 作成されたプロンプト
     """
 
-    prompt = goal_prompt
+    prompt_final = goal_prompt
     if os.path.isfile(compiler_path):
         # コンパイラが存在する場合、コンパイラベースでプロンプトを取得
-        prompt = FileUtil.read_grimoire(compiler_path, goal_prompt, language)
-        prompt += "\n\n"
+        prompt_final = FileUtil.read_grimoire(compiler_path, goal_prompt, language)
+        prompt_final += "\n\n"
     if os.path.exists(formatter_path):
-        prompt = modify_prompt(prompt, formatter_path, language)
-    return prompt
+        prompt_final = modify_prompt(prompt_final, formatter_path, language)
+    return prompt_final
 
 
 def modify_prompt(final_prompt: str, formatter_path: str, language: str):

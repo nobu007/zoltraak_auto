@@ -33,14 +33,14 @@ def generate_md_from_prompt_recursive(magic_info: MagicInfo) -> str:
         prompt_compiler = compiler_path  # - コンパイラパスをそのままprompt_compilerに代入
 
     prompt_formatter = get_prompt_formatter(language, formatter_path)
-    prompt = create_prompt(magic_info.prompt, compiler_path, formatter_path, language)  # プロンプトを作成
+    prompt_final = create_prompt(magic_info.prompt, compiler_path, formatter_path, language)  # プロンプトを作成
     magic_info.current_grimoire_name = prompt_compiler
     magic_info.grimoire_formatter = prompt_formatter
     magic_info.description = "ステップ1. \033[31m起動術式\033[0mを用いて\033[32m魔法術式\033[0mを構築"
-    magic_info.prompt = prompt
+    magic_info.prompt_final = prompt_final
     file_info.canonical_name = os.path.basename(file_info.target_file_path)
     file_info.target_file_path = f"requirements/{file_info.canonical_name}"
-    response = generate_response_with_spinner(magic_info)
+    response = generate_response_with_spinner(magic_info, prompt_final)
     md_content = response.strip()  # 生成された要件定義書の内容を取得し、前後の空白を削除
     output_file_path = save_md_content(
         md_content, file_info.target_file_path

@@ -69,7 +69,7 @@ class MagicWorkflow:
         log("プロセス完了： ↓実行履歴↓\n%s", self.workflow_history)
 
         # プロンプトを保存
-        self.save_prompt()
+        self.save_prompts()
 
         # target_file_pathにコピーを配置
         self.copy_output_to_target()
@@ -97,20 +97,30 @@ class MagicWorkflow:
         pass
 
     @log_inout
-    def save_prompt(self):
+    def save_prompts(self):
         # work_dirからの相対パス取得
         target_file_path_rel = os.path.relpath(self.file_info.target_file_path, self.file_info.work_dir)
 
         # promptの保存先パス取得
-        prompt_output_path = os.path.join(self.file_info.prompt_dir, target_file_path_rel + ".prompt")
+        self.save_prompt(self.magic_info.prompt, target_file_path_rel)
+        self.save_prompt(self.magic_info.prompt_diff, target_file_path_rel, "_diff")
+        self.save_prompt(self.magic_info.prompt_apply, target_file_path_rel, "_apply")
+        self.save_prompt(self.magic_info.prompt_final, target_file_path_rel, "_final")
+
+    @log_inout
+    def save_prompt(self, prompt: str, target_file_path_rel: str, sub_string: str = "") -> None:
+        prompt_output_path = os.path.join(self.file_info.prompt_dir, target_file_path_rel + sub_string + ".prompt")
         prompt_output_path_abs = os.path.abspath(prompt_output_path)
+
+        if prompt == "":
+            return
 
         # フォルダがない場合は作成
         os.makedirs(os.path.dirname(prompt_output_path_abs), exist_ok=True)
 
         # プロンプトを保存
-        FileUtil.write_file(prompt_output_path_abs, self.magic_info.prompt)
-        log("プロンプトを保存しました: %s", prompt_output_path_abs)
+        FileUtil.write_file(prompt_output_path_abs, prompt)
+        log("プロンプトを保存しました %s: %s", sub_string, prompt_output_path_abs)
 
     @log_inout
     def copy_output_to_target(self) -> str:

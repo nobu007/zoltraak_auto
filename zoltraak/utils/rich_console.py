@@ -147,7 +147,7 @@ def display_magic_info_full(magic_info: MagicInfo):
             add_file_info_full(value, table)
             table.add_row(key, "<<==== FileInfo  end  ====>>")
             continue
-        if key == "prompt":
+        if "prompt" in key:
             # プロンプトは長くなることがあるので、100文字までに制限
             table.add_row(key, str(value[:100]))
             continue
@@ -209,14 +209,12 @@ def _add_row_relpath(table: Table, key: str, path: str, base_path: str) -> None:
     table.add_row(key, rel_path)
 
 
-def generate_response_with_spinner(
-    magic_info: MagicInfo,
-):
+def generate_response_with_spinner(magic_info: MagicInfo, prompt: str):
     """
     スピナーを表示しながらコマンドを実行し、結果を表示します。
     """
     display_magic_info_pre(magic_info)
-    result = run_function_with_spinner(magic_info, generate_response, magic_info.model_name, magic_info.prompt)
+    result = run_function_with_spinner(magic_info, generate_response, magic_info.model_name, prompt)
     display_magic_info_post(magic_info)
     if result is None:
         return "グリモアの展開に失敗しました"

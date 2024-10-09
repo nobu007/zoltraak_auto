@@ -88,8 +88,18 @@ class BaseConverter:
                 self.magic_info.grimoire_compiler = ""
                 self.magic_info.prompt = FileUtil.read_grimoire("general_prompt.md")
 
+        # レイヤによる分岐
+        if self.magic_info.magic_layer == MagicLayer.LAYER_1_REQUEST_GEN:
+            self.magic_info.grimoire_compiler = "general_prompt.md"  # レイヤ１専用のプロンプトを使用
+            log("レイヤ１専用のプロンプト: %s", self.magic_info.grimoire_compiler)
+
     @log_inout
     def handle_existing_target_file(self) -> str:
+        """ターゲットファイルが存在する場合の処理
+
+        Returns:
+            str: 処理結果のファイルパス
+        """
         file_info = self.magic_info.file_info
         is_source_changed = True  # TODO: hash check
         if is_source_changed:
@@ -100,46 +110,65 @@ class BaseConverter:
         # ソースファイルが変わってない場合はスキップする
         return file_info.target_file_path
 
+    # ソースファイルの差分比率のしきい値（超えると差分では処理できないので再作成）
+    SOURCE_DIFF_RATIO_THREADHOLD = 0.1
+
     @log_inout
     def update_target_file_from_source_diff(self) -> str:
+        """ターゲットファイルをソースファイルの差分から更新する処理
+
+        Returns:
+            str: 処理結果のファイルパス
+        """
         file_info = self.magic_info.file_info
         import difflib
 
         old_source_lines = FileUtil.read_file(file_info.past_source_file_path)
         new_source_lines = FileUtil.read_file(file_info.source_file_path)
 
-        source_diff = difflib.unified_diff(old_source_lines, new_source_lines, lineterm="", n=0)
+        source_diff = difflib.unified_diff(old_source_lines, new_source_lines, lineterm="\n", n=0)
         source_diff_text = "".join(source_diff)
         log(f"source_diff_text={source_diff_text}")
 
+        # source差分比率を計算
+        source_diff_ratio = len(source_diff_text) / len(new_source_lines)
+        log("source_dsource_diff_ratio=%f", source_diff_ratio)
+
+        # source_diffを加味したプロンプト(prompt_diff)を作成
+        prompt_diff = "\n<<最新の作業指示>>\n" + new_source_lines
         if source_diff_text == "":
-            # 差分がない場合はスキップ
-            log("ソースファイルの差分がないためスキップします。")
-            return file_info.target_file_path
+            # 差分がない
+            log("ソースファイルの差分がないため再適用します。")
+        elif source_diff_ratio > BaseConverter.SOURCE_DIFF_RATIO_THREADHOLD:
+            # 差分が大きすぎる
+            log("ソースファイルの差分が大きいためターゲットファイルを再作成します。")
+            return self.handle_new_target_file()
+        else:
+            # (通常処理)差分をプロンプトに追加
+            prompt_diff += "\n\n<<(注意)重要な変化点(注意)>>\n"
+            prompt_diff += source_diff_text
+        self.magic_info.prompt_diff = prompt_diff
 
-        self.magic_info.prompt += "\n\n<<(注意)重要な変化点(注意)>>\n"
-        self.magic_info.prompt += source_diff_text
+        return self.update_target_file_propose_and_apply(file_info.target_file_path, self.magic_info.prompt_diff)
 
-        return self.update_target_file_propose_and_apply(file_info.target_file_path, self.magic_info.prompt)
-
-    def update_target_file_propose_and_apply(self, target_file_path, prompt=None) -> str:
+    def update_target_file_propose_and_apply(self, target_file_path, prompt_diff=None) -> str:
         """
         ターゲットファイルの変更差分を提案して適用する関数
 
         Args:
             target_file_path (str): 現在のターゲットファイルのパス
-            prompt (str): promptの内容
+            prompt_diff (str): ソースファイルの差分などターゲットファイルに適用するべき作業指示を含むprompt
         """
         # プロンプトにターゲットファイルの内容を変数として追加
         current_target_code = FileUtil.read_file(target_file_path)
         prompt_additional_part = ""
-        if prompt:
+        if prompt_diff:
             prompt_additional_part = f"""
 promptの内容:
-{prompt}
+{prompt_diff}
 をもとに、
 """
-        final_prompt = f"""
+        prompt_diff = f"""
 現在のターゲットファイルの内容:
 {current_target_code}
 
@@ -158,9 +187,10 @@ promptの内容:
 +line4 modified
 
         """
+        self.magic_info.prompt_diff = prompt_diff
         response = litellm.generate_response(
             model=settings.model_name_lite,
-            prompt=final_prompt,
+            prompt=prompt_diff,
             max_tokens=1000,
             temperature=0.0,
         )
@@ -186,7 +216,7 @@ promptの内容:
         return target_file_path
 
     @log_inout
-    def apply_diff_to_target_file(self, target_file_path, target_diff) -> str:
+    def apply_diff_to_target_file(self, target_file_path: str, target_diff: str) -> str:
         """
         提案された差分をターゲットファイルに適用する関数
 
@@ -198,7 +228,7 @@ promptの内容:
         current_content = FileUtil.read_file(target_file_path)
 
         # プロンプトを作成してAPIに送信し、修正された内容を取得
-        prompt = f"""
+        prompt_apply = f"""
 現在のターゲットファイルの内容:
 {current_content}
 上記のターゲットファイルの内容に対して、以下のUnified diff 適用後のターゲットファイルの内容を生成してください。
@@ -215,7 +245,9 @@ promptの内容:
 
 番号など変わった場合は振り直しもお願いします。
         """
-        modified_content = litellm.generate_response(settings.model_name, prompt, 2000, 0.3)
+
+        self.magic_info.prompt_apply = prompt_apply
+        modified_content = litellm.generate_response(settings.model_name, prompt_apply, 2000, 0.3)
 
         # 修正後の内容をターゲットファイルに書き込む
         new_target_file_path = FileUtil.write_file(target_file_path, modified_content)
