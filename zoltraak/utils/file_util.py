@@ -60,7 +60,7 @@ class FileUtil:
     def copy_file(src_file_path: str, dis_file_path: str) -> str:
         return shutil.copy(src_file_path, dis_file_path)
 
-    THRESHOLD_BYTES_MIN_CONTENT = 500  # ファイル内にコンテンツありと見なす閾値
+    THRESHOLD_BYTES_MIN_CONTENT = 100  # ファイル内にコンテンツありと見なす閾値
 
     @staticmethod
     def has_content(file_path: str, threshold: int = THRESHOLD_BYTES_MIN_CONTENT) -> bool:

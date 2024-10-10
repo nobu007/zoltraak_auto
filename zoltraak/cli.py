@@ -113,11 +113,6 @@ def preprocess_input_canonical_name(params: ZoltraakParams) -> None:
     params.canonical_name = canonical_name
     log("canonical_name: %s", params.canonical_name)
 
-    # 初回になければ作成対象のファイルを生成する
-    original_md_file_path = os.path.abspath(params.canonical_name)
-    if not os.path.isfile(original_md_file_path):
-        FileUtil.write_file(original_md_file_path, "")
-
 
 def preprocess_input_prompt(params: ZoltraakParams) -> None:
     # ---- promptの決定ロジック ----
@@ -241,13 +236,6 @@ def process_markdown_file(params: ZoltraakParams) -> MagicInfo:
     formatter_path = GrimoireUtil.get_valid_formatter(params.formatter)
 
     canonical_name = params.canonical_name
-    md_file_path = canonical_name
-    py_file_path = ""
-    py_file_path = os.path.splitext(md_file_path)[0] + ".py"  # Markdownファイルの拡張子を.pyに変更
-
-    # 絶対パスに変換
-    md_file_path = os.path.abspath(md_file_path)
-    py_file_path = os.path.abspath(py_file_path)
 
     # ここはMagicInfoの定義順に初期化すること！
     magic_info = MagicInfo()
@@ -275,9 +263,6 @@ def process_markdown_file(params: ZoltraakParams) -> MagicInfo:
     magic_workflow = MagicWorkflow(magic_info)
 
     converter = create_converter(magic_workflow)
-    os.makedirs(
-        os.path.dirname(py_file_path), exist_ok=True
-    )  # Pythonファイルの出力ディレクトリを作成（既に存在する場合は何もしない）
     new_file_path = magic_workflow.run(converter.convert_loop)
     magic_info.file_info.final_output_file_path = new_file_path
     return magic_info

@@ -48,10 +48,13 @@ class BaseConverter:
         if FileUtil.has_content(file_info.source_file_path):  # -- マークダウンファイルが存在する場合
             log(f"既存のソースファイル {file_info.source_file_path} が存在しました。")
             self.magic_info.prompt_goal = self.magic_info.prompt_input
-            self.magic_info.prompt_goal += "\n\n<<追加指示>>\n"
-            self.magic_info.prompt_goal += FileUtil.read_file(file_info.source_file_path)
+            if file_info.source_file_path != file_info.target_file_path:
+                # ソースファイルとターゲットファイルが異なる場合のみ、ソースファイルの指示を追加
+                self.magic_info.prompt_goal += "\n\n<<追加指示>>\n"
+                self.magic_info.prompt_goal += FileUtil.read_file(file_info.source_file_path)
         else:
             # ソースファイルを保存(設計では初回のprompt_file_pathにだけ保存する)
+            log(f"既存のソースファイル {file_info.source_file_path} が無効なのでプロンプトを保存します。")
             FileUtil.write_file(file_info.source_file_path, self.magic_info.prompt_input)
 
         # ターゲットファイルの有無による分岐
