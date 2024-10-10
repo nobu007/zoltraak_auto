@@ -2,7 +2,7 @@ import os
 
 from tests.unit_tests.helper import BaseTestCase
 from zoltraak.converter.base_converter import BaseConverter
-from zoltraak.schema.schema import MagicInfo
+from zoltraak.core.magic_workflow import MagicWorkflow
 
 # モック用の定義
 # 1. モジュールのインポート方法に応じたモックの定義(bb.xxを置き換える例):
@@ -35,10 +35,11 @@ class TestBaseConverter(BaseTestCase):
         super().setUp()
 
         self.set_up_files()
-        self.magic_info = MagicInfo()
-        self.magic_info.file_info.update_source_target("pre.md", "output.md")
-        self.magic_info.update()
-        self.base_converter = BaseConverter(self.magic_info)
+        self.magic_workflow = MagicWorkflow()
+        self.magic_workflow.magic_info.file_info.update_source_target("pre.md", "output.md")
+        self.magic_workflow.magic_info.update()
+        self.magic_info = self.magic_workflow.magic_info
+        self.base_converter = BaseConverter(self.magic_workflow)
         self.set_mock_return_value(ALL_MOCK_HANDLE_EXISTING_TARGET_FILE)
         self.set_mock_return_value(ALL_MOCK_UPDATE_TARGET_FILE_PROPOSE_AND_APPLY)
         self.set_mock_return_value(ALL_MOCK_UPDATE_TARGET_FILE_FROM_SOURCE_DIFF)

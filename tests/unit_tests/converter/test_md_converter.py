@@ -43,7 +43,7 @@ class TestMarkdownToMarkdownConverter(TestBaseConverter):
         )
         self.magic_info.file_info.update_source_target("pre.md", "output.md")
         self.magic_info.update()
-        self.md_converter = MarkdownToMarkdownConverter(self.magic_info)
+        self.md_converter = MarkdownToMarkdownConverter(self.magic_workflow)
 
     def tearDown(self):
         super().tearDown()
