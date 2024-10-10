@@ -55,7 +55,7 @@ def generate_md_from_prompt_recursive(magic_info: MagicInfo) -> str:
 
     # 重要： ここで target_file_path をrequirement配下に置き換える
     file_info.update_source_target(file_info.source_file_path, output_file_path)
-    file_info.update()
+    file_info.update_hash()
 
     print_generation_result(file_info.target_file_path)  # 生成結果を出力
     return output_file_path

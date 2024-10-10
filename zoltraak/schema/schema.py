@@ -115,6 +115,7 @@ class ZoltraakParams(BaseModel):
         return cmd
 
 
+DEFAULT_CANONICAL_NAME = "zoltraak.md"
 DEFAULT_COMPILER = "general_prompt.md"
 DEFAULT_PROMPT_FILE = "PROMPT.md"
 DEFAULT_PRE_MD_FILE = "REQUEST.md"
@@ -125,40 +126,23 @@ DEFAULT_PY_FILE = "ARCHITECTURE.py"
 class FileInfo(BaseModel):
     # 識別子
     canonical_name: str = Field(
-        default="zoltraak", description="対象のファイル群をシステム全体で一意に識別するための標準的な名前"
+        default="zoltraak.md", description="対象のファイル群をシステム全体で一意に識別するための標準的な名前"
     )
 
     # Input/Outputファイル
     prompt_file_path: str = Field(
-        default=DEFAULT_PROMPT_FILE,
-        description="ユーザ要求を保存するファイル(カレントからの相対パス or 絶対パス)",
-    )
-    prompt_file_path_abs: str = Field(
         default=os.path.abspath(DEFAULT_PROMPT_FILE),
         description="ユーザ要求を保存するファイル(絶対パス)",
     )
     pre_md_file_path: str = Field(
-        default=DEFAULT_PRE_MD_FILE,
-        description="ユーザ要求記述書のmdファイル(カレントからの相対パス or grimoires_dirからの相対パス or 絶対パス)",
-    )
-    pre_md_file_path_abs: str = Field(
         default=os.path.abspath(DEFAULT_PRE_MD_FILE),
         description="ユーザ要求記述書のmdファイル(絶対パス)",
     )
     md_file_path: str = Field(
-        default=DEFAULT_MD_FILE,
-        description="要件定義書のmdファイル(カレントからの相対パス or grimoires_dirからの相対パス or 絶対パス)",
-    )
-    md_file_path_abs: str = Field(
         default=os.path.abspath(DEFAULT_MD_FILE),
         description="要件定義書のmdファイル(絶対パス)",
     )
-    py_file_path: str = Field(
-        default=DEFAULT_PY_FILE, description="処理対象のpyファイル(カレントからの相対パス or 絶対パス)"
-    )
-    py_file_path_abs: str = Field(
-        default=os.path.abspath(DEFAULT_PY_FILE), description="処理対象のpyファイル(絶対パス)"
-    )
+    py_file_path: str = Field(default=os.path.abspath(DEFAULT_PY_FILE), description="処理対象のpyファイル(絶対パス)")
 
     # ルートディレクトリ
     work_dir: str = Field(default=os.getcwd(), description="作業ディレクトリ")
@@ -200,18 +184,31 @@ class FileInfo(BaseModel):
         self.prompt_dir = os.path.abspath(os.path.join(self.work_dir, "prompt"))
         self.update_path_abs()
 
-    def update(self):
+    def update(self, canonical_name: str = ""):
+        if not canonical_name:
+            canonical_name = self.canonical_name
+        else:
+            self.canonical_name = canonical_name
+        self.update_canonical_name(canonical_name)
         self.update_path_abs()
         self.update_source_target_past()
         self.update_hash()
 
+    def update_canonical_name(self, canonical_name: str):
+        self.prompt_file_path = "prompt_" + canonical_name
+        self.pre_md_file_path = "pre_" + canonical_name
+        self.md_file_path = canonical_name
+        self.py_file_path = os.path.splitext(self.md_file_path)[0] + ".py"  # Markdownファイルの拡張子を.pyに変更
+
     def update_path_abs(self):
+        if self.prompt_file_path:
+            self.prompt_file_path = os.path.abspath(self.prompt_file_path)
         if self.pre_md_file_path:
-            self.pre_md_file_path_abs = os.path.abspath(self.pre_md_file_path)
+            self.pre_md_file_path = os.path.abspath(self.pre_md_file_path)
         if self.md_file_path:
-            self.md_file_path_abs = os.path.abspath(self.md_file_path)
+            self.md_file_path = os.path.abspath(self.md_file_path)
         if self.py_file_path:
-            self.py_file_path_abs = os.path.abspath(self.py_file_path)
+            self.py_file_path = os.path.abspath(self.py_file_path)
 
     def update_source_target(self, source_file_path, target_file_path):
         # source_file_path, source_file_path を更新する処理(path系のトリガー)

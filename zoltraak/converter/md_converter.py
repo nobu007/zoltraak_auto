@@ -63,12 +63,12 @@ class MarkdownToMarkdownConverter(BaseConverter):
 
         # step2: ユーザ要求記述書を作成
         if self.magic_info.magic_layer is MagicLayer.LAYER_1_REQUEST_GEN:
-            file_info.update_source_target(file_info.prompt_file_path_abs, file_info.pre_md_file_path_abs)
+            file_info.update_source_target(file_info.prompt_file_path, file_info.pre_md_file_path)
             file_info.update_hash()
 
         # step3: 要件定義書を作成
         if self.magic_info.magic_layer is MagicLayer.LAYER_2_REQUIREMENT_GEN:
-            file_info.update_source_target(file_info.pre_md_file_path_abs, file_info.md_file_path_abs)
+            file_info.update_source_target(file_info.pre_md_file_path, file_info.md_file_path)
             file_info.update_hash()
 
         # step4: 変換処理
