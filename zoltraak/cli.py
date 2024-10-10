@@ -82,25 +82,40 @@ def main() -> None:
     params.canonical_name = args.canonical_name
     params.magic_mode = args.magic_mode
     params.magic_layer = args.magic_layer
-    log("params.input=" + params.input)
-    if params.input.endswith(".md") and not params.canonical_name:
-        params.canonical_name = os.path.basename(params.input)
-        # 初回になければ作成対象のファイルを生成する
-        first_md_file_path = os.path.abspath(params.input)
-        if not os.path.isfile(first_md_file_path):
-            FileUtil.write_file(first_md_file_path, "")
+    init_canonical_name_and_origin_md_file(params)
     display_info_full(params, title="ZoltraakParams")
     main_exec(params)
 
 
+def init_canonical_name_and_origin_md_file(params: ZoltraakParams) -> None:
+    log("params.input=" + params.input)
+    # canonical_nameはparams ⇒ input ⇒デフォルト値(空白) の順に優先して設定
+
+    default_canonical_name = ""  # ここでデフォルトを空白にしているのはprocess_text_input()への分岐判定のため
+    canonical_name = default_canonical_name
+
+    if params.canonical_name:
+        # paramsから決める
+        canonical_name = params.canonical_name
+    elif params.input.endswith(".md"):
+        # inputから決める
+        canonical_name = os.path.basename(params.input)
+    params.canonical_name = canonical_name
+    log("canonical_name: %s", params.canonical_name)
+
+    # 初回になければ作成対象のファイルを生成する
+    original_md_file_path = os.path.abspath(params.canonical_name)
+    if not os.path.isfile(original_md_file_path):
+        FileUtil.write_file(original_md_file_path, "")
+
+
 def main_exec(params: ZoltraakParams) -> None:
     """メイン処理(メイン処理実行)"""
-    if params.input.endswith(".md"):
-        # (暫定) inputで要件定義書.mdを指定されたらメイン処理実行
+    if params.canonical_name:
         magic_info = process_markdown_file(params)
         display_magic_info_final(magic_info)
     else:
-        # inputでテキストを指定されたらテキスト入力処理
+        # canonical_nameが未確定ならテキスト入力から確定させてから再実行
         zoltraak_command = process_text_input(params)  # - テキスト入力を処理する関数を呼び出す
         log("zoltraak_command=" + zoltraak_command)  # - 実行したzoltraakコマンドを表示 (デバッグ用)
 
