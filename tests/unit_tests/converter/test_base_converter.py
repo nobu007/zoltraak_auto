@@ -27,6 +27,7 @@ MOCK_GENERATE_MD_FROM_PROMPT = "zoltraak.converter.base_converter.generate_md_fr
 
 # キーワード定義
 PROMPT_KEYWORD = "<<追加指示>>"
+PROMPT_KEYWORD_NO_SOURCE = "zoltraakシステムは曖昧なユーザー入力を"
 DUMMY_CONTENTS = "# Test File\nThis is a test file.\n# HASH: e32c2339" * 100
 
 
@@ -69,7 +70,7 @@ class TestBaseConverter(BaseTestCase):
         self.assertEqual(result, "")
         self.check_mock_call_count(ALL_MOCK_HANDLE_EXISTING_TARGET_FILE, 1)
         self.check_mock_call_count(MOCK_HANDLE_NEW_TARGET_FILE, 0)
-        self.assertIn(PROMPT_KEYWORD, self.base_converter.magic_info.prompt_input)
+        self.assertIn(PROMPT_KEYWORD_NO_SOURCE, self.base_converter.magic_info.prompt_input)
 
     # source: False, target: True
     def test_convert_one_source_false_target_true(self):
@@ -89,7 +90,7 @@ class TestBaseConverter(BaseTestCase):
         self.assertEqual(result, "")
         self.check_mock_call_count(ALL_MOCK_HANDLE_EXISTING_TARGET_FILE, 0)
         self.check_mock_call_count(MOCK_HANDLE_NEW_TARGET_FILE, 1)
-        self.assertIn(PROMPT_KEYWORD, self.base_converter.magic_info.prompt_input)
+        self.assertIn(PROMPT_KEYWORD_NO_SOURCE, self.base_converter.magic_info.prompt_input)
 
     # source: False, target: False
     def test_convert_one_source_false_target_false(self):
