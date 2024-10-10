@@ -82,14 +82,24 @@ def main() -> None:
     params.canonical_name = args.canonical_name
     params.magic_mode = args.magic_mode
     params.magic_layer = args.magic_layer
-    init_canonical_name_and_origin_md_file(params)
+    preprocess_input(params)
     display_info_full(params, title="ZoltraakParams")
     main_exec(params)
 
 
-def init_canonical_name_and_origin_md_file(params: ZoltraakParams) -> None:
+def preprocess_input(params: ZoltraakParams) -> None:
     log("params.input=" + params.input)
-    # canonical_nameはparams ⇒ input ⇒デフォルト値(空白) の順に優先して設定
+    # input は canonical_name または promptが入る
+    # この関数ではinputからcanonical_name、promptを決定する
+    # 以降はinputを参照しないこと！
+    preprocess_input_canonical_name(params)
+    preprocess_input_prompt(params)
+
+
+def preprocess_input_canonical_name(params: ZoltraakParams) -> None:
+    log("params.input=" + params.input)
+    # ---- canonical_nameの決定ロジック ----
+    # canonical_name は params ⇒ input ⇒デフォルト値(空白) の順に優先して設定
 
     default_canonical_name = ""  # ここでデフォルトを空白にしているのはprocess_text_input()への分岐判定のため
     canonical_name = default_canonical_name
@@ -107,6 +117,30 @@ def init_canonical_name_and_origin_md_file(params: ZoltraakParams) -> None:
     original_md_file_path = os.path.abspath(params.canonical_name)
     if not os.path.isfile(original_md_file_path):
         FileUtil.write_file(original_md_file_path, "")
+
+
+def preprocess_input_prompt(params: ZoltraakParams) -> None:
+    # ---- promptの決定ロジック ----
+    # 1. promptが引数で指定済みならそのまま採用
+    # 2. inputが有効、かつmdファイル以外ならpromptとして採用
+    # 3. canonical_nameで指定されたmdの中身があれば、promptは空で確定
+    # 4. promptは未定かつmdも空なのでエラー終了
+
+    # promptが引数で指定済みならそのまま採用
+    if params.prompt:
+        return
+
+    # inputが有効、かつmdファイル以外ならpromptとして採用
+    if params.input and not params.input.endswith(".md"):
+        params.prompt = params.input
+        return
+
+    # canonical_nameで指定されたmdの中身があれば、promptは空で確定
+    if FileUtil.has_content(params.canonical_name, 10):
+        return
+
+    # promptは未定かつmdも空なのでエラー終了
+    show_usage_and_exit()
 
 
 def main_exec(params: ZoltraakParams) -> None:
@@ -207,7 +241,7 @@ def process_markdown_file(params: ZoltraakParams) -> MagicInfo:
     formatter_path = GrimoireUtil.get_valid_formatter(params.formatter)
 
     canonical_name = params.canonical_name
-    md_file_path = params.input  # この時点では新規ファイルの可能性があるので、get_valid_markdown()はNG
+    md_file_path = canonical_name
     py_file_path = ""
     py_file_path = os.path.splitext(md_file_path)[0] + ".py"  # Markdownファイルの拡張子を.pyに変更
 

@@ -17,7 +17,7 @@ class FileUtil:
             with open(file_path, encoding="utf-8") as file:
                 lines = [line.rstrip() for line in file.readlines()]
                 return "\n".join(lines)
-        return f"{file_path} を開けませんでした。"
+        return ""
 
     @staticmethod
     def write_file(file_path: str, content: str) -> str:
@@ -63,7 +63,7 @@ class FileUtil:
     THRESHOLD_BYTES_MIN_CONTENT = 500  # ファイル内にコンテンツありと見なす閾値
 
     @staticmethod
-    def has_content(file_path: str) -> bool:
+    def has_content(file_path: str, threshold: int = THRESHOLD_BYTES_MIN_CONTENT) -> bool:
         content = FileUtil.read_file(file_path)
         log_i("has_content file_path= %s, content(len)= %d", file_path, len(content))
-        return len(content) > FileUtil.THRESHOLD_BYTES_MIN_CONTENT
+        return len(content) > threshold
