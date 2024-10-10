@@ -4,6 +4,7 @@ import shutil
 import zoltraak.llms.litellm_api as litellm
 from zoltraak import settings
 from zoltraak.schema.schema import MagicInfo
+from zoltraak.utils.file_util import FileUtil
 from zoltraak.utils.log_util import log, log_inout
 from zoltraak.utils.prompt_import import load_prompt
 from zoltraak.utils.subprocess_util import SubprocessUtil
@@ -123,8 +124,7 @@ class TargetCodeGenerator:
         """
         ソースファイルの内容を読み込むメソッド
         """
-        with open(self.file_info.source_file_path, encoding="utf-8") as source_file:
-            return source_file.read()
+        return FileUtil.read_file(self.file_info.source_file_path)
 
     def get_source_file_name(self):
         """
