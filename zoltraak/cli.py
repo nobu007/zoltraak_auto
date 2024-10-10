@@ -113,6 +113,11 @@ def preprocess_input_canonical_name(params: ZoltraakParams) -> None:
     params.canonical_name = canonical_name
     log("canonical_name: %s", params.canonical_name)
 
+    # 初回になければ作成対象のファイルを生成する
+    original_md_file_path = os.path.abspath(params.canonical_name)
+    if not os.path.isfile(original_md_file_path):
+        FileUtil.write_file(original_md_file_path, "")
+
 
 def preprocess_input_prompt(params: ZoltraakParams) -> None:
     # ---- promptの決定ロジック ----
