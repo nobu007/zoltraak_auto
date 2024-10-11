@@ -117,9 +117,11 @@ class BaseConverter:
             str: 処理結果のファイルパス
         """
         file_info = self.magic_info.file_info
-        log(f"{file_info.source_file_path}の変更を検知しました。")
+        log(f"{file_info.target_file_path}を更新します。")
         if os.path.exists(file_info.past_source_file_path):
+            log(f"{file_info.source_file_path}の差分から更新リクエストを生成中・・・")
             return self.update_target_file_from_source_diff()
+        log("プロンプトから更新リクエストを生成中・・・")
         return self.update_target_file_propose_and_apply(file_info.target_file_path, self.magic_info.prompt_input)
 
     # ソースファイルの差分比率のしきい値（超えると差分では処理できないので再作成）

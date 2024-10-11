@@ -1,3 +1,4 @@
+import os
 import unittest
 from unittest.mock import patch
 
@@ -16,14 +17,6 @@ from zoltraak.utils.file_util import FileUtil
 # 2. 命名規約
 #    a. MOCK_(関数名): 単独のテストだけに使用するモック
 #    a. ALL_MOCK_(関数名)： 全てのテストで使用するモック
-MOCK_HANDLE_EXISTING_TARGET_FILE = "zoltraak.converter.base_converter.BaseConverter.handle_existing_target_file"
-MOCK_UPDATE_TARGET_FILE_PROPOSE_AND_APPLY = (
-    "zoltraak.converter.base_converter.BaseConverter.update_target_file_propose_and_apply"
-)
-MOCK_HANDLE_NEW_TARGET_FILE = "zoltraak.converter.base_converter.BaseConverter.handle_new_target_file"
-MOCK_UPDATE_TARGET_FILE_FROM_SOURCE_DIFF = (
-    "zoltraak.converter.base_converter.BaseConverter.update_target_file_from_source_diff"
-)
 MOCK_GENERATE_TARGET_CODE = "zoltraak.gencode.TargetCodeGenerator.generate_target_code"
 MOCK_GENERATE_MD_FROM_PROMPT = "zoltraak.md_generator.generate_md_from_prompt_recursive"
 MOCK_GENERATE_MD_FROM_PROMPT2 = "zoltraak.gen_markdown.generate_md_from_prompt"
@@ -31,13 +24,16 @@ PROMPT_KEYWORD = "zoltraakシステムは曖昧なユーザー入力を"
 
 # キーワード定義
 PROMPT_KEYWORD = "zoltraakシステムは曖昧なユーザー入力を"
+DUMMY_CONTENTS_PAST = "# Test File\nThis is a test file.\n# HASH: e32c2339" * 2
+DUMMY_CONTENTS = "# Test File\nThis is a test file.\n# HASH: e32c2339" * 3
 
 
 class TestMarkdownToPythonConverter(TestBaseConverter):
     def setUp(self):
         super().setUp()
 
-        self.magic_info.magic_layer = MagicLayer.LAYER_3_CODE_GEN
+        self.set_up_files()
+        self.magic_info.magic_layer = MagicLayer.LAYER_4_CODE_GEN
         self.magic_info.magic_mode = MagicMode.PROMPT_ONLY
         self.magic_info.file_info = FileInfo(
             prompt_file_path="prompt.md",
@@ -47,7 +43,19 @@ class TestMarkdownToPythonConverter(TestBaseConverter):
         )
         self.magic_info.file_info.update_source_target("pre.md", "output.md")
         self.magic_info.update()
-        self.converter = MarkdownToPythonConverter(self.magic_info)
+        self.converter = MarkdownToPythonConverter(self.magic_workflow)
+
+    def set_up_files(self):
+        # テスト全体で使用するファイルのセットアップ
+        os.makedirs("./past/source", exist_ok=True)
+        with open("./past/source/pre.md", "w", encoding="utf-8") as f:
+            f.write("past/source/pre.md\n" + DUMMY_CONTENTS_PAST)
+
+        with open("./pre.md", "w", encoding="utf-8") as f:
+            f.write("pre.md\n" + DUMMY_CONTENTS)
+
+        with open("./output.md", "w", encoding="utf-8") as f:
+            f.write("output.md\n" + DUMMY_CONTENTS)
 
     def tearDown(self):
         super().tearDown()
@@ -59,20 +67,17 @@ class TestMarkdownToPythonConverter(TestBaseConverter):
         self.assertIn(PROMPT_KEYWORD, self.converter.magic_info.prompt_input)
         self.check_mock_call_count_llm_generate_response(0)
 
-    def test_handle_existing_target_file(self):
-        self.set_mock_return_value(MOCK_GENERATE_TARGET_CODE, return_value="output.md")
-        self.set_mock_return_value(MOCK_GENERATE_MD_FROM_PROMPT, return_value="output.md")
-        result = self.converter.handle_existing_target_file()
-        self.assertIn("output.md", result)
-        self.check_mock_call_count_llm_generate_response(2)
+    # 対象外： TestBaseConverterでmockに置き換えている（かつpy独自処理がない）
+    # def test_handle_existing_target_file(self):
+    #     result = self.converter.handle_existing_target_file()
+    #     self.assertIn("output.md", result)
+    #     self.check_mock_call_count_llm_generate_response(2)
 
     def test_handle_new_target_file(self):
-        self.set_mock_return_value(MOCK_GENERATE_TARGET_CODE, return_value="output1.md")
-        self.set_mock_return_value(MOCK_GENERATE_MD_FROM_PROMPT, return_value="output2.md")
-        self.magic_info.prompt_input = None
+        self.magic_info.prompt_input = ""
         result = self.converter.handle_new_target_file()
-        self.assertEqual(result, "output1.md")
-        self.check_mock_call_count_llm_generate_response(0)
+        self.assertEqual(result, "requirements/output.md")
+        self.check_mock_call_count_llm_generate_response(1)
 
     def test_apply_diff_to_target_file(self):
         with (
