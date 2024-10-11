@@ -85,13 +85,9 @@ class ZoltraakParams(BaseModel):
     formatter: str = Field(default="", description="対変換対象のMarkdownファイルのパスまたはテキスト")
     language: str = Field(default="", description="対出力言語を指定")
     model_name: str = Field(default="", description="使用するモデルの名前")
+    canonical_name: str = Field(default="zoltraak.md", description="正規名称(最初のinputのMarkdownファイル名: xx.md）")
     magic_mode: str = Field(default="", description="グリモアの利用方法")
     magic_layer: str = Field(default="", description="グリモアの起動レイヤ")
-
-    # 以降は自動設定される項目(引数由来ではない)
-    canonical_name: str = Field(
-        default="zoltraak.md", description="作成対象の識別子(通常はinputのMarkdownファイル名: xx.md）"
-    )
 
     def get_zoltraak_command(self):
         cmd = f"zoltraak {self.input}"
@@ -111,6 +107,8 @@ class ZoltraakParams(BaseModel):
             cmd += f" --magic_mode {self.magic_mode}"
         if self.magic_layer:
             cmd += f" --magic_layer {self.magic_layer}"
+        if self.canonical_name:
+            cmd += f" --canonical_name {self.canonical_name}"
         print("get_zoltraak_command cmd=", cmd)
         return cmd
 
