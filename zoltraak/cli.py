@@ -148,6 +148,7 @@ def main_exec(params: ZoltraakParams) -> None:
     if params.canonical_name:
         magic_info = process_markdown_file(params)
         display_magic_info_final(magic_info)
+        FileUtil.log_file_content(magic_info.file_info.final_output_file_path)
     else:
         # canonical_nameが未確定ならテキスト入力から確定させてから再実行
         zoltraak_command = process_text_input(params)  # - テキスト入力を処理する関数を呼び出す

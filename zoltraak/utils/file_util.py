@@ -1,6 +1,7 @@
 import os
 import shutil
 
+from zoltraak import settings
 from zoltraak.utils.log_util import log, log_i
 
 
@@ -67,3 +68,11 @@ class FileUtil:
         content = FileUtil.read_file(file_path)
         log_i("has_content file_path= %s, content(len)= %d", file_path, len(content))
         return len(content) > threshold
+
+    @staticmethod
+    def log_file_content(file_path: str):
+        if settings.is_debug:
+            file_content = FileUtil.read_file(file_path)
+            log_i("=" * 80)
+            log_i("%s content=%s", file_path, file_content)
+            log_i("=" * 80)
