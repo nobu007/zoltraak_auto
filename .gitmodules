@@ -1,0 +1,3 @@
+[submodule "InstantPromptBox"]
+	path = InstantPromptBox
+	url = https://github.com/nobu007/InstantPromptBox.git
