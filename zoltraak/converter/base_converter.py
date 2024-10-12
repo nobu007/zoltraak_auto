@@ -239,16 +239,17 @@ class BaseConverter:
         current_target_code = FileUtil.read_file(target_file_path)
 
         prompt_diff = f"""
-あなたは優秀なプログラマーです。以下の指示に従って、ターゲットファイルを修正してください。
+以下の指示に従って、ターゲットファイルの変更案を作成してください。
 手順
-　1. 最初に、現在のターゲットファイルの内容を確認してください。
-  2. 次に、変更内容を確認してください。
-  3. 最後に、ターゲットファイルの変更が必要な部分"のみ"をunified diff形式で出力してください。他の出力は一切不要です。
+　1. 現在のターゲットファイルの内容を確認してください。
+  2. 変更内容(依頼内容)を確認してください。
+  3. 基本的に現在の内容を尊重して情報を追加する方向で検討してください。
+  4. ターゲットファイルの変更が必要な部分"のみ"をunified diff形式で出力してください。他の出力は一切不要です。
 
 現在のターゲットファイルの内容:
 {current_target_code}
 
-変更内容:
+変更内容(依頼内容):
 {prompt_diff_order}
 
 出力内容指示(再掲):
@@ -311,15 +312,9 @@ class BaseConverter:
         prompt_apply = f"""
 現在のターゲットファイルの内容:
 {current_content}
-上記のターゲットファイルの内容に対して、以下のUnified diff 適用後のターゲットファイルの内容を生成してください。
 
-例)
-変更前
-- graph.node(week_node_name, shape='box', style='filled', fillcolor='#FFCCCC')
-
-変更後
-+ graph.node(week_node_name, shape='box', style='filled', fillcolor='#CCCCFF')
-
+上記のターゲットファイルの内容に対して、以下のUnified diff 形式で提案された差分が分かっています。
+差分適用後に不備や不要部分がなくなった最終的なターゲットファイルの内容だけを生成してください。
 番号など変わった場合は振り直しもお願いします。
 
 提案された差分:
@@ -328,7 +323,7 @@ class BaseConverter:
         """
 
         self.magic_info.prompt_apply = prompt_apply
-        modified_content = litellm.generate_response(settings.model_name, prompt_apply, 2000, 0.3)
+        modified_content = litellm.generate_response(settings.model_name, prompt_apply, 8000, 0.3)
 
         # 修正後の内容をターゲットファイルに書き込む
         new_target_file_path = FileUtil.write_file(target_file_path, modified_content)

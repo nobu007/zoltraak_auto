@@ -103,6 +103,9 @@ def generate_response(model, prompt, max_tokens, temperature):
     if not show_input_prompt_warning(prompt):
         return "promptが空なので応答を生成できませんでした"
     router = Router(model_list=model_list, fallbacks=fallbacks_dict, retry_after=3)  # 3秒待機してからリトライ
+    log("prompt len=%s, max_tokens=%d", len(prompt), max_tokens)
+    if len(prompt) + 1000 > max_tokens:
+        log_w("WARN: max_tokens might is too small. prompt len=%s, max_tokens=%d", len(prompt), max_tokens)
     response = router.completion(
         model=model,
         messages=[{"content": prompt, "role": "user"}],

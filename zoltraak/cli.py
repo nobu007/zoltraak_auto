@@ -47,7 +47,7 @@ def main() -> None:
         type=MagicMode,
         choices=list(MagicMode),
         help=MagicMode.get_description(),
-        default=MagicMode.GRIMOIRE_AND_PROMPT,
+        default=MagicMode.GRIMOIRE_ONLY,
     )
     parser.add_argument(
         "-ml",
