@@ -87,14 +87,19 @@ class MarkdownToPythonConverter(BaseConverter):
 
         file_info = self.magic_info.file_info
         if FileUtil.has_content(file_info.target_file_path):  # -- マークダウンファイルのコンテンツが有効な場合
-            log(
-                f"{file_info.target_file_path}は既存のファイルです。promptに従って変更を提案します。"
-            )  # --- ファイルが既存であることを示すメッセージを表示
-            self.update_target_file_propose_and_apply(
-                file_info.target_file_path, self.magic_info.prompt_input
-            )  # --- プロンプトに従ってターゲットファイルの差分を提案
+            past_prompt_input = self.magic_workflow.load_prompt()
+            if self.magic_info.prompt_input != past_prompt_input:
+                log(
+                    f"{file_info.target_file_path}は既存のファイルです。promptに従って変更を提案します。"
+                )  # --- ファイルが既存であることを示すメッセージを表示
+                return self.update_target_file_propose_and_apply(
+                    file_info.target_file_path, self.magic_info.prompt_input
+                )  # --- プロンプトに従ってターゲットファイルの差分を提案
 
-            return file_info.target_file_path  # --- 関数を終了
+            # 前回と同じプロンプトの場合
+            log(f"{file_info.target_file_path}は既存のファイルです。スキップします。")
+            return file_info.target_file_path  # --- 処理をスキップし既存のターゲットファイルを返す
+
         # --- マークダウンファイルのコンテンツが無効な場合
         return self.handle_new_target_file_md()  # --- 新しいターゲットファイルを処理
 
@@ -181,9 +186,8 @@ class MarkdownToPythonConverter(BaseConverter):
         file_info = self.magic_info.file_info
         log(
             f"""
-    {"検索結果生成中" if self.magic_info.current_grimoire_name is None else "要件定義書執筆中"}:
-    {file_info.target_file_path}は新しいファイルです。少々お時間をいただきます。
-    {file_info.source_file_path} -> {file_info.target_file_path}
+要件定義書執筆中(requirements): {file_info.target_file_path}は新しいファイルです。少々お時間をいただきます。
+{file_info.source_file_path} -> {file_info.target_file_path}
             """
         )
         return generate_md_from_prompt_recursive(self.magic_info)

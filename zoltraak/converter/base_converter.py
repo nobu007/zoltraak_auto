@@ -125,10 +125,10 @@ class BaseConverter:
         return self.update_target_file_propose_and_apply(file_info.target_file_path, self.magic_info.prompt_input)
 
     # ソースファイルの差分比率のしきい値（超えると差分では処理できないので再作成）
-    SOURCE_DIFF_RATIO_THREADHOLD = 0.1
+    SOURCE_DIFF_RATIO_THRESHOLD = 0.1
 
     # match_rateのしきい値（未満なら再作成）
-    MATCH_RATE_THREADHOLD = 50
+    MATCH_RATE_THRESHOLD = 50
 
     @log_inout
     def update_target_file_from_source_diff(self) -> str:
@@ -152,20 +152,20 @@ class BaseConverter:
         source_diff_ratio = 1.0
         if len(new_source_lines) > 0:
             source_diff_ratio = len(source_diff_text) / len(new_source_lines)
-            log("source_dsource_diff_ratio=%f", source_diff_ratio)
+            log("source_diff_ratio=%f", source_diff_ratio)
 
         # source_diffを加味したプロンプト(prompt_diff)を作成
         prompt_diff_order = "\n<<最新の作業指示>>\n" + new_source_lines
-        if source_diff_ratio > BaseConverter.SOURCE_DIFF_RATIO_THREADHOLD:
+        if source_diff_ratio > BaseConverter.SOURCE_DIFF_RATIO_THRESHOLD:
             # 差分が大きすぎる
             log("ソースファイルの差分が大きいためターゲットファイルを再作成します。")
             return self.handle_new_target_file()
         if (
             self.get_match_rate_source_and_target_file(old_target_lines, new_source_lines)
-            < BaseConverter.MATCH_RATE_THREADHOLD
+            < BaseConverter.MATCH_RATE_THRESHOLD
         ):
             # match_rateが低すぎる
-            log("MATCH_RATE_THREADHOLDに満たないためターゲットファイルを再作成します。")
+            log("MATCH_RATE_THRESHOLD に満たないためターゲットファイルを再作成します。")
             return self.handle_new_target_file()
 
         # source_diffを加味したプロンプト(prompt_diff)を作成
@@ -173,6 +173,10 @@ class BaseConverter:
         if source_diff_text:
             prompt_diff_order += "\n\n<<(注意)重要な変化点(注意)>>\n"
             prompt_diff_order += source_diff_text
+        else:
+            # 差分がない場合はスキップ
+            log("source_diff_textが空のため、target_fileを更新しません。")
+            return file_info.target_file_path
         self.magic_info.prompt_diff_order = prompt_diff_order
 
         return self.update_target_file_propose_and_apply(file_info.target_file_path, prompt_diff_order)
@@ -339,10 +343,9 @@ class BaseConverter:
     def handle_new_target_file(self):
         file_info = self.magic_info.file_info
         log(f"""
-{file_info.target_file_path}は新しいファイルです。少々お時間をいただきます。
+要件定義書執筆中: {file_info.target_file_path}は新しいファイルです。少々お時間をいただきます。
 {file_info.source_file_path} -> {file_info.target_file_path}
                   """)
-
         return generate_md_from_prompt(self.magic_info)
 
 

@@ -107,6 +107,11 @@ class MagicWorkflow:
         pass
 
     @log_inout
+    def get_prompt_file_path(self, target_file_path_rel: str, sub_string: str = "") -> None:
+        prompt_output_path = os.path.join(self.file_info.prompt_dir, target_file_path_rel + sub_string + ".prompt")
+        return os.path.abspath(prompt_output_path)
+
+    @log_inout
     def save_prompts(self):
         # work_dirからの相対パス取得
         target_file_path_rel = os.path.relpath(self.file_info.target_file_path, self.file_info.work_dir)
@@ -122,18 +127,24 @@ class MagicWorkflow:
 
     @log_inout
     def save_prompt(self, prompt: str, target_file_path_rel: str, sub_string: str = "") -> None:
-        prompt_output_path = os.path.join(self.file_info.prompt_dir, target_file_path_rel + sub_string + ".prompt")
-        prompt_output_path_abs = os.path.abspath(prompt_output_path)
-
         if prompt == "":
             return
 
+        prompt_output_path = self.get_prompt_file_path(target_file_path_rel, sub_string)
+
         # フォルダがない場合は作成
-        os.makedirs(os.path.dirname(prompt_output_path_abs), exist_ok=True)
+        os.makedirs(os.path.dirname(prompt_output_path), exist_ok=True)
 
         # プロンプトを保存
-        FileUtil.write_file(prompt_output_path_abs, prompt)
-        log("プロンプトを保存しました %s: %s", sub_string, prompt_output_path_abs)
+        FileUtil.write_file(prompt_output_path, prompt)
+        log("プロンプトを保存しました %s: %s", sub_string, prompt_output_path)
+
+    @log_inout
+    def load_prompt(self, sub_string: str = "_input") -> None:
+        # work_dirからの相対パス取得
+        target_file_path_rel = os.path.relpath(self.file_info.target_file_path, self.file_info.work_dir)
+        prompt_output_path = self.get_prompt_file_path(target_file_path_rel, sub_string)
+        return FileUtil.read_file(prompt_output_path)
 
     @log_inout
     def copy_output_to_target(self) -> str:
