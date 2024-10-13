@@ -48,7 +48,10 @@ class MarkdownToPythonConverter(BaseConverter):
     @log_inout
     def convert_loop(self) -> str:
         """convert処理をレイヤを進めながら繰り返す"""
-        acceptable_layers = [MagicLayer.LAYER_3_REQUIREMENT_GEN, MagicLayer.LAYER_4_CODE_GEN]
+        acceptable_layers = [
+            MagicLayer.LAYER_3_REQUIREMENT_GEN,
+            MagicLayer.LAYER_4_CODE_GEN,
+        ]
         return self.magic_workflow.run_loop(self.convert, acceptable_layers)
 
     @log_inout
@@ -58,17 +61,20 @@ class MarkdownToPythonConverter(BaseConverter):
         # step1: ファイル情報を更新
         file_info = self.magic_info.file_info
         file_info.update_path_abs()
+        requirements_md_file_path = os.path.join(
+            file_info.work_dir, "requirements", os.path.basename(file_info.md_file_path)
+        )
 
         # step2: 要件定義書を更新
         if self.magic_info.magic_layer is MagicLayer.LAYER_3_REQUIREMENT_GEN:
-            file_info.update_source_target(file_info.md_file_path, file_info.md_file_path)
+            file_info.update_source_target(file_info.md_file_path, requirements_md_file_path)
             file_info.update_hash()
 
             return self.magic_workflow.run(self.convert_one_md_md)
 
         # step3: Pythonコードを作成
         if self.magic_info.magic_layer is MagicLayer.LAYER_4_CODE_GEN:
-            file_info.update_source_target(file_info.md_file_path, file_info.py_file_path)
+            file_info.update_source_target(requirements_md_file_path, file_info.py_file_path)
             file_info.update_hash()
 
             return self.magic_workflow.run(self.convert_one_md_py)
@@ -115,15 +121,28 @@ class MarkdownToPythonConverter(BaseConverter):
                         # TODO: targetがpyなら別プロセスで実行の方が良い？
                         # 現状はプロンプトが無い => ユーザ要求がtarget に全て反映済みなら次ステップに進む設計
                         # targetのpastとの差分が一定未満なら次に進むでもいいかも。
-                        SubprocessUtil.run(
-                            ["python", file_info.target_file_path, "-ml", self.magic_info.magic_layer], check=False
-                        )
+                        SubprocessUtil.run(["python", file_info.target_file_path], check=False)
                         return file_info.target_file_path  # TODO: サブプロセスで作った別ファイルの情報は不要？
+
+                    # プロンプトがある場合はプロンプトを再適用してtargetを更新
+                    SubprocessUtil.run(
+                        [
+                            "zoltraak",
+                            "-n",
+                            file_info.canonical_name,
+                            "-p",
+                            self.magic_info.prompt_input,
+                            "-ml",
+                            self.magic_info.magic_layer,
+                            "-mm",
+                            "grimoire_only",
+                        ],
+                        check=False,
+                    )
                     # target に埋め込まれたハッシュがsource (最新)に一致してたらスキップ
                     # TODO: ハッシュ運用検討
                     # source が同じでもコンパイラやプロンプトの更新でtarget が変わる可能性もある？
                     # どこかにtarget のinput全部を詰め込んだハッシュが必要？
-
                     return file_info.target_file_path
 
                 # file_info.source_hash != embedded_hash または promptで修正要求がある場合

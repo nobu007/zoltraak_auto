@@ -149,8 +149,10 @@ class BaseConverter:
         log(f"source_diff_text={source_diff_text}")
 
         # source差分比率を計算
-        source_diff_ratio = len(source_diff_text) / len(new_source_lines)
-        log("source_dsource_diff_ratio=%f", source_diff_ratio)
+        source_diff_ratio = 1.0
+        if len(new_source_lines) > 0:
+            source_diff_ratio = len(source_diff_text) / len(new_source_lines)
+            log("source_dsource_diff_ratio=%f", source_diff_ratio)
 
         # source_diffを加味したプロンプト(prompt_diff)を作成
         prompt_diff_order = "\n<<最新の作業指示>>\n" + new_source_lines

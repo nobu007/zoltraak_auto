@@ -113,11 +113,6 @@ def save_md_content(md_content, target_file_path) -> str:
         md_content (str): 生成された要件定義書の内容
         target_file_path (str): 保存先のファイルパス
     """
-    requirements_dir = "requirements"  # 生成された要件定義書をrequirements/の中に格納する
-    target_file_name = os.path.basename(target_file_path)  # - ターゲットファイルのファイル名を取得
-    target_file_path = os.path.join(
-        requirements_dir, target_file_name
-    )  # - requirements/ディレクトリとファイル名を結合してターゲットファイルのパスを生成
     return FileUtil.write_grimoire(md_content, target_file_path)
 
 

@@ -6,7 +6,6 @@ import time
 import zoltraak.llms.litellm_api as litellm
 from zoltraak import settings
 from zoltraak.schema.schema import MagicInfo
-from zoltraak.utils.file_util import FileUtil
 from zoltraak.utils.log_util import log, log_e
 from zoltraak.utils.rich_console import generate_response_with_spinner
 
@@ -20,44 +19,18 @@ def generate_md_from_prompt_recursive(magic_info: MagicInfo) -> str:
     formatter_path = magic_info.get_formatter_path()
     language = magic_info.language
 
-    # プロンプトコンパイラとプロンプトフォーマッタを変数として受け取る
-    if (
-        compiler_path is not None and "grimoires" in compiler_path
-    ):  # grimoires/ディレクトリにコンパイラパスが含まれている場合
-        prompt_compiler = os.path.basename(
-            compiler_path
-        )  # - コンパイラパスからファイル名のみを取得してprompt_compilerに代入
-    else:  # grimoires/ディレクトリにコンパイラパスが含まれていない場合
-        prompt_compiler = compiler_path  # - コンパイラパスをそのままprompt_compilerに代入
-
     prompt_formatter = get_prompt_formatter(language, formatter_path)
     prompt_final = create_prompt(magic_info.prompt_input, compiler_path, formatter_path, language)  # プロンプトを作成
-    magic_info.current_grimoire_name = prompt_compiler
     magic_info.grimoire_formatter = prompt_formatter
     magic_info.description = "ステップ1. \033[31m起動術式\033[0mを用いて\033[32m魔法術式\033[0mを構築"
     magic_info.prompt_final = prompt_final
-    file_info.canonical_name = os.path.basename(file_info.target_file_path)
-    file_info.target_file_path = f"requirements/{file_info.canonical_name}"
     response = generate_response_with_spinner(magic_info, prompt_final)
     md_content = response.strip()  # 生成された要件定義書の内容を取得し、前後の空白を削除
     output_file_path = save_md_content(
         md_content, file_info.target_file_path
     )  # 生成された要件定義書の内容をファイルに保存
-    file_info.add_output_file_path(output_file_path)
 
-    # 重要： オリジナルの target_file_path にコピーする
-    output_file_path_abs = os.path.abspath(output_file_path)
-    target_file_path_abs = os.path.abspath(file_info.target_file_path)
-    if output_file_path_abs != target_file_path_abs:
-        # copy to file_info.target_file_path
-        os.makedirs(os.path.dirname(output_file_path_abs), exist_ok=True)
-        return FileUtil.copy_file(output_file_path_abs, target_file_path_abs)
-
-    # 重要： ここで target_file_path をrequirement配下に置き換える
-    file_info.update_source_target(file_info.source_file_path, output_file_path)
-    file_info.update_hash()
-
-    print_generation_result(file_info.target_file_path)  # 生成結果を出力
+    print_generation_result(output_file_path)  # 生成結果を出力
     return output_file_path
 
 
@@ -233,24 +206,18 @@ def save_md_content(md_content, target_file_path) -> str:
         md_content (str): 生成された要件定義書の内容
         target_file_path (str): 保存先のファイルパス
     """
-    requirements_dir = "requirements"  # 生成された要件定義書をrequirements/の中に格納する
-    os.makedirs(requirements_dir, exist_ok=True)  # - requirements/ディレクトリを作成（既に存在する場合は何もしない）
-    target_file_name = os.path.basename(target_file_path)  # - ターゲットファイルのファイル名を取得
-    target_file_path = os.path.join(
-        requirements_dir, target_file_name
-    )  # - requirements/ディレクトリとファイル名を結合してターゲットファイルのパスを生成
-    with open(target_file_path, "w", encoding="utf-8") as target_file:  # ターゲットファイルを書き込みモードで開く
-        target_file.write(md_content)  # - 生成された要件定義書の内容をファイルに書き込む
+    with open(target_file_path, "w", encoding="utf-8") as output_file:  # ターゲットファイルを書き込みモードで開く
+        output_file.write(md_content)  # - 生成された要件定義書の内容をファイルに書き込む
         return target_file_path
     return ""
 
 
-def print_generation_result(target_file_path):
+def print_generation_result(output_file_path):
     """
     要件定義書の生成結果を表示する関数
 
     Args:
-        target_file_path (str): 生成された要件定義書のファイルパス
+        output_file_path (str): 生成された要件定義書のファイルパス
     """
     print()
-    log(f"\033[32m魔法術式を構築しました: {target_file_path}\033[0m")  # 要件定義書の生成完了メッセージを緑色で表示
+    log(f"\033[32m魔法術式を構築しました: {output_file_path}\033[0m")  # 要件定義書の生成完了メッセージを緑色で表示
