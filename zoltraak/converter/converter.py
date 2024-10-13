@@ -110,7 +110,7 @@ class MarkdownToPythonConverter(BaseConverter):
                 log("source_hash  =%s", file_info.source_hash)
                 log_head("prompt=%s", self.magic_info.prompt_input)
                 # TODO: 次処理に進むのプロンプトなし時だけなのか？全体に薄く適用するformatterみたいなケースは不要？
-                if file_info.source_hash == embedded_hash:
+                if file_info.source_hash and file_info.source_hash == embedded_hash:
                     if not self.magic_info.prompt_input:
                         # TODO: targetがpyなら別プロセスで実行の方が良い？
                         # 現状はプロンプトが無い => ユーザ要求がtarget に全て反映済みなら次ステップに進む設計
@@ -135,12 +135,12 @@ class MarkdownToPythonConverter(BaseConverter):
                 if os.path.exists(file_info.past_source_file_path):
                     return self.update_target_file_from_source_diff()
                 log_w(f"過去のソースファイルが存在しないため再作成します: {file_info.past_source_file_path}")
-                self.handle_new_target_file_py()
-            else:
-                log_w(f"埋め込まれたハッシュが存在しないため再作成します。\n: {file_info.target_file_path}")
-                log_w("最後の10行:%s", "\n".join(lines[-10:]))
-                self.handle_new_target_file_py()
-        return ""
+                return self.handle_new_target_file_py()
+            log_w(f"埋め込まれたハッシュが存在しないため再作成します。\n: {file_info.target_file_path}")
+            log_w("最後の10行:%s", "\n".join(lines[-10:]))
+            return self.handle_new_target_file_py()
+        log_w(f"想定外の動作です。再作成します。\n: {file_info.target_file_path}")
+        return self.handle_new_target_file_py()
 
     @log_inout
     def handle_new_target_file_py(self) -> str:
