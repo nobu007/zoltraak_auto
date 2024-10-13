@@ -25,6 +25,7 @@ class MagicWorkflow:
         # ワークフローを開始したときの共通処理
         log("ワークフローを開始します")
         display_magic_info_init(self.magic_info)
+        log(f"display_magic_info_init called({self.magic_info.magic_layer})")
         self.file_info.update_work_dir()
 
     @log_inout
@@ -36,6 +37,7 @@ class MagicWorkflow:
                 log("convert layer = " + str(layer))
                 self.magic_info.file_info.final_output_file_path = convert_fn()
                 display_magic_info_intermediate(self.magic_info)
+                log(f"display_magic_info_intermediate called({self.magic_info.magic_layer})")
 
                 # ZOLTRAAK_LEGACYモードの場合は１回で終了
                 if self.magic_info.magic_mode == MagicMode.ZOLTRAAK_LEGACY:
@@ -52,6 +54,7 @@ class MagicWorkflow:
         # プロセスを実行する前の共通処理
         self.workflow_history.append(self.magic_info.description)
         display_magic_info_full(self.magic_info)
+        log(f"display_magic_info_full called({self.magic_info.magic_layer})")
 
     @log_inout
     def run(self, func: callable):
@@ -66,9 +69,10 @@ class MagicWorkflow:
     @log_inout
     def post_process(self):
         # プロセスを実行した後の共通処理
+        log("プロセス完了： ↓実行履歴↓\n%s", self.workflow_history)
         self.display_result()
         display_magic_info_intermediate(self.magic_info)
-        log("プロセス完了： ↓実行履歴↓\n%s", self.workflow_history)
+        log(f"display_magic_info_intermediate called({self.magic_info.magic_layer})")
 
         # プロンプトを保存
         self.save_prompts()
@@ -177,9 +181,10 @@ class MagicWorkflow:
     @log_inout
     def end_workflow(self, final_output_file_path: str):
         # ワークフローを終了するときの共通処理
+        log("ワークフローを終了します")
         self.file_info.final_output_file_path = final_output_file_path
         display_magic_info_final(self.magic_info)
-        log("ワークフローを終了します")
+        log(f"display_magic_info_final called({self.magic_info.magic_layer})")
 
     def __str__(self) -> str:
         return f"MagicWorkflow({self.magic_info.description})"
