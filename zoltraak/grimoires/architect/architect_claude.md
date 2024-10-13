@@ -62,7 +62,7 @@ from zoltraak.utils.process_text import `normal`
 # - ファイルを書き込みモードで開く
 # -- LLMを使用してレスポンスを生成
 # --- モデル名を指定
-ロンプトを作成 readme_content + \n 上記の内容をもとにしてprompt
+プロンプトを作成 readme_content + \n 上記の内容をもとにしてprompt
 # --- 最大トークン数を指定
 # --- 温度パラメータを指定
 # --
