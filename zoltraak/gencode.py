@@ -1,6 +1,8 @@
 import os
 import shutil
 
+from instant_prompt_box import InstantPromptBox
+
 import zoltraak.llms.litellm_api as litellm
 from zoltraak import settings
 from zoltraak.schema.schema import MagicInfo
@@ -225,13 +227,9 @@ class TargetCodeGenerator:
                 log(f"コードの修正が完了しました。try{i}")
                 return True
 
-            fix_code_prompt = f"""
-            以下のPythonコードにエラーがあります。修正してください。
-            コード: {code}
-            エラーメッセージ: {self.last_exception!s}
-            プログラムコードのみ記載してください。
-            """
-
+            fix_code_prompt = InstantPromptBox.zoltraak.zoltraak_prompt_fix_code(
+                code=code, error_message=str(self.last_exception)
+            )
             code = self.get_fixed_code(code, fix_code_prompt)
             log(f"修正したコードを再実行します。try{i}")
         log(f"{max_try_count}回トライしましたが、エラーが解消できませんでした。スマート推論を試みます。")
@@ -245,13 +243,9 @@ class TargetCodeGenerator:
         max_try_count = 3
         for i in range(max_try_count):
             error_reason = self.get_error_reason(code)
-            fix_code_prompt = f"""
-            以下のPythonコードにエラーがあります。修正してください。
-            コード: {code}
-            エラーメッセージ: {self.last_exception!s}
-            エラー原因と解決方法: {error_reason}
-            修正後のプログラムコードのみ記載してください。
-            """
+            fix_code_prompt = InstantPromptBox.zoltraak.zoltraak_prompt_fix_code_smart(
+                code=code, error_message=str(self.last_exception), error_reason=error_reason
+            )
             code = self.get_fixed_code(code, fix_code_prompt)
             log(f"修正したコードを再実行します(smart)。try{i}")
 
