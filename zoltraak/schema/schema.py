@@ -82,6 +82,9 @@ class ZoltraakParams(BaseModel):
     output_dir: str = Field(default="generated", description="生成されたPythonファイルの出力ディレクトリ")
     prompt: str = Field(default="", description="追加のプロンプト情報")
     compiler: str = Field(default="", description="コンパイラー（要件定義書のテンプレート）")
+    architect: str = Field(
+        default="architect_claude.md", description="対変換対象のarchitectファイルのパスまたはテキスト"
+    )
     formatter: str = Field(default="", description="対変換対象のMarkdownファイルのパスまたはテキスト")
     language: str = Field(default="", description="対出力言語を指定")
     model_name: str = Field(default="", description="使用するモデルの名前")
@@ -91,24 +94,9 @@ class ZoltraakParams(BaseModel):
 
     def get_zoltraak_command(self):
         cmd = f"zoltraak {self.input}"
-        if self.output_dir:
-            cmd += f" --output-dir {self.output_dir}"
-        if self.prompt:
-            cmd += f" --prompt {self.prompt}"
-        if self.compiler:
-            cmd += f" --compiler {self.compiler}"
-        if self.formatter:
-            cmd += f" --formatter {self.formatter}"
-        if self.language:
-            cmd += f" --language {self.language}"
-        if self.model_name:
-            cmd += f" --model_name {self.model_name}"
-        if self.magic_mode:
-            cmd += f" --magic_mode {self.magic_mode}"
-        if self.magic_layer:
-            cmd += f" --magic_layer {self.magic_layer}"
-        if self.canonical_name:
-            cmd += f" --canonical_name {self.canonical_name}"
+        for field, value in self:
+            if value and value != "input":
+                cmd += f" --{field} {value}"
         print("get_zoltraak_command cmd=", cmd)
         return cmd
 

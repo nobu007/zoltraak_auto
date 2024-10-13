@@ -28,11 +28,16 @@ def main() -> None:
         description="MarkdownファイルをPythonファイルに変換します", formatter_class=argparse.RawTextHelpFormatter
     )
     parser.add_argument("input", help="変換対象のMarkdownファイルのパスまたはテキスト", nargs="?")
-    parser.add_argument("--output-dir", help="生成されたPythonファイルの出力ディレクトリ", default="generated")
+    parser.add_argument(
+        "-o", "--output-dir", "--output_dir", help="生成されたPythonファイルの出力ディレクトリ", default="generated"
+    )
     parser.add_argument("-p", "--prompt", help="追加のプロンプト情報", default="")
     parser.add_argument("-c", "--compiler", help="コンパイラー（要件定義書のテンプレート）", default="")
     parser.add_argument("-f", "--formatter", help="コードフォーマッター", default="md_comment")
-    parser.add_argument("-cc", "--custom-compiler", help="自作コンパイラー（自作定義書生成文書）", default="")
+    parser.add_argument(
+        "-cc", "--custom-compiler", "--custom_compiler", help="自作コンパイラー（自作定義書生成文書）", default=""
+    )
+    parser.add_argument("-a", "--architect", help="architect（ディレクトリ構成を構築するコード生成文書）", default="")
     parser.add_argument(
         "-v", "--version", action="store_true", help="バージョン情報を表示"
     )  # 追加: バージョン情報表示オプション
@@ -76,6 +81,7 @@ def main() -> None:
     params.input = args.input
     params.prompt = args.prompt
     params.compiler = compiler_path  # compilerとcustom_compilerを集約(絶対パス)
+    params.architect = args.architect
     params.formatter = args.formatter
     params.language = args.language
     params.model_name = args.model_name
@@ -242,7 +248,7 @@ def process_markdown_file(params: ZoltraakParams) -> MagicInfo:
     output_dir_abs = os.path.abspath(params.output_dir)
 
     compiler_path = os.path.abspath(params.compiler)
-    architect_path = GrimoireUtil.get_valid_architect("architect_claude.md")
+    architect_path = GrimoireUtil.get_valid_architect(params.architect)
     formatter_path = GrimoireUtil.get_valid_formatter(params.formatter)
 
     canonical_name = params.canonical_name

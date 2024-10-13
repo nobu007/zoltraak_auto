@@ -122,10 +122,11 @@ class MarkdownToPythonConverter(BaseConverter):
                 log_head("prompt=%s", self.magic_info.prompt_input)
                 # TODO: 次処理に進むのプロンプトなし時だけなのか？全体に薄く適用するformatterみたいなケースは不要？
                 if file_info.source_hash and file_info.source_hash == embedded_hash:
-                    if not self.magic_info.prompt_input:
-                        # TODO: targetがpyなら別プロセスで実行の方が良い？
-                        # 現状はプロンプトが無い => ユーザ要求がtarget に全て反映済みなら次ステップに進む設計
-                        # targetのpastとの差分が一定未満なら次に進むでもいいかも。
+                    past_prompt_input = self.magic_workflow.load_prompt()
+                    if self.magic_info.prompt_input == past_prompt_input:
+                        log(
+                            f"prompt_inputの適用が完了しました。コード生成プロセスを開始します。{file_info.target_file_path}"
+                        )
                         SubprocessUtil.run(["python", file_info.target_file_path], check=False)
                         return file_info.target_file_path  # TODO: サブプロセスで作った別ファイルの情報は不要？
 
@@ -133,7 +134,6 @@ class MarkdownToPythonConverter(BaseConverter):
                     SubprocessUtil.run(
                         [
                             "zoltraak",
-                            "-n",
                             file_info.canonical_name,
                             "-p",
                             self.magic_info.prompt_input,
