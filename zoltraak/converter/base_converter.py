@@ -213,7 +213,7 @@ class BaseConverter:
         response = litellm.generate_response(
             model=settings.model_name_lite,
             prompt=prompt_match_rate,
-            max_tokens=1000,
+            max_tokens=settings.max_tokens_get_match_rate,
             temperature=0.0,
         )
         match_rate = response.strip()
@@ -272,7 +272,7 @@ class BaseConverter:
         response = litellm.generate_response(
             model=settings.model_name_lite,
             prompt=prompt_diff,
-            max_tokens=1000,
+            max_tokens=settings.max_tokens_propose_diff,
             temperature=0.0,
         )
         target_diff = response.strip()
@@ -323,7 +323,9 @@ class BaseConverter:
         """
 
         self.magic_info.prompt_apply = prompt_apply
-        modified_content = litellm.generate_response(settings.model_name, prompt_apply, 8000, 0.3)
+        modified_content = litellm.generate_response(
+            settings.model_name, prompt_apply, settings.max_tokens_apply_diff, 0.3
+        )
 
         # 修正後の内容をターゲットファイルに書き込む
         new_target_file_path = FileUtil.write_file(target_file_path, modified_content)

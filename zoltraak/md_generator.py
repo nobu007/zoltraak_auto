@@ -124,7 +124,7 @@ def generate_response(developer, model_name, prompt):  # noqa: ARG001
     Returns:
         str: APIから生成されたレスポンス
     """
-    return litellm.generate_response(model_name, prompt, 4000, 0.7)
+    return litellm.generate_response(model_name, prompt, settings.max_tokens_generate_md, 0.7)
 
 
 def create_prompt(goal_prompt, compiler_path=None, formatter_path=None, language=None):

@@ -20,6 +20,16 @@ model_name = os.getenv("MODEL_NAME", "gemini/gemini-1.5-flash-latest")
 model_name_lite = os.getenv("MODEL_NAME_LITE", model_name)  # 通常よりも簡単な処理用のllmモデル名
 model_name_smart = os.getenv("MODEL_NAME_SMART", model_name)  # 通常よりも不雑な処理用のllmモデル名
 
+# max_tokens
+max_tokens_create_file_name = 100
+max_tokens_generate_md = 4000
+max_tokens_generate_code = 12800
+max_tokens_generate_code_fix = 12800
+max_tokens_get_match_rate = 4000
+max_tokens_propose_diff = 4000
+max_tokens_apply_diff = 8000
+max_tokens_any = 4000  # その他の場合
+
 # folder
 zoltraak_dir = os.path.dirname(zoltraak.__file__)
 zoltraak_dir = os.path.abspath(zoltraak_dir)

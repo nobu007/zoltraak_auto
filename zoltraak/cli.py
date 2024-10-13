@@ -340,7 +340,9 @@ def generate_md_file_name(prompt):
     file_name_prompt += "ファイル名のみを1つだけアウトプットしてください。\n"
     file_name_prompt += "単一のファイル名以外は絶対に出力しないでください\n"
     # print("file_name_prompt:", file_name_prompt)
-    response = litellm.generate_response(settings.model_name_smart, file_name_prompt, 100, 0.7)
+    response = litellm.generate_response(
+        settings.model_name_smart, file_name_prompt, settings.max_tokens_create_file_name, 0.7
+    )
     file_name = response.strip()
 
     # 複数ファイル名が取れるケースがあるのでsplitして１つ目だけ取る

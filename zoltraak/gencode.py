@@ -214,7 +214,10 @@ class TargetCodeGenerator:
                     プログラムコードのみ記載してください。
                     """
                     code = litellm.generate_response(
-                        model=settings.model_name, prompt=prompt, max_tokens=14000, temperature=0.3
+                        model=settings.model_name,
+                        prompt=prompt,
+                        max_tokens=settings.max_tokens_generate_code_fix,
+                        temperature=0.3,
                     )
                     code = code.replace("```python", "").replace("```", "")
 

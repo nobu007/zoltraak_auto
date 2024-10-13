@@ -9,6 +9,7 @@ from rich.panel import Panel
 from rich.table import Table
 
 import zoltraak.llms.litellm_api as litellm
+from zoltraak import settings
 from zoltraak.schema.schema import MagicInfo
 from zoltraak.utils.subprocess_util import SubprocessUtil
 
@@ -227,4 +228,4 @@ def generate_response(model_name: str, prompt: str) -> str:
     """
     promptを指定してllmからのレスポンスを生成する関数
     """
-    return litellm.generate_response(model_name, prompt, 4000, 0.7)
+    return litellm.generate_response(model_name, prompt, settings.max_tokens_any, 0.7)
