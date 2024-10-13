@@ -1,4 +1,5 @@
 import os
+import re
 import shutil
 
 from zoltraak import settings
@@ -7,12 +8,6 @@ from zoltraak.utils.log_util import log, log_i
 
 class FileUtil:
     @staticmethod
-    # def read_file(file_path: str) -> str:
-    #     # ターゲットファイルの現在の内容を読み込む
-    #     if os.path.isfile(file_path):
-    #         with open(file_path, encoding="utf-8") as file:
-    #             return "\n".join(file.readlines())
-    #     return f"{file_path} を開けませんでした。"
     def read_file(file_path: str) -> str:
         if os.path.isfile(file_path):
             with open(file_path, encoding="utf-8") as file:
@@ -56,6 +51,22 @@ class FileUtil:
         # TODO: 何かグリモアに特化した前処理などを追加する
         FileUtil.write_file(file_path_abs, md_content)
         return file_path_abs
+
+    @staticmethod
+    def read_md_recursive(file_path: str) -> str:
+        """mdファイルを再帰的に読み込む"""
+        log("file_path=%s", file_path)
+        if os.path.isfile(file_path):
+            contents = FileUtil.read_file(file_path)
+            # contentsにxx.mdが含まれていたら再帰的に読み込む
+            md_links = re.findall(r"\[.*?\]\((.*?)\)", contents)
+            log("md_links=%s", md_links)
+            for md_link in md_links:
+                if md_link.endswith(".md"):
+                    linked_file_path = os.path.abspath(os.path.join(os.path.dirname(file_path), md_link))
+                    contents += f"\n\n{md_link}\n" + FileUtil.read_md_recursive(linked_file_path)
+            return contents
+        return ""
 
     @staticmethod
     def copy_file(src_file_path: str, dis_file_path: str) -> str:

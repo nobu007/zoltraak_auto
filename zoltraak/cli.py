@@ -131,7 +131,7 @@ def preprocess_input_prompt(params: ZoltraakParams) -> None:
     if params.prompt:
         # ただし、mdファイルが有効なら中身を展開する
         if params.prompt.endswith(".md") and FileUtil.has_content(params.prompt, 10):
-            params.prompt = "次の資料を参考にしてください。\n" + FileUtil.read_file(params.prompt)
+            params.prompt = "次の資料を参考にしてください。\n" + FileUtil.read_md_recursive(params.prompt)
         return
 
     # inputが有効、かつmdファイル以外ならpromptとして採用

@@ -219,6 +219,10 @@ class FileInfo(BaseModel):
         self.source_file_name = os.path.basename(source_file_path)
         self.target_file_name = os.path.basename(target_file_path)
 
+        # mkdir
+        os.makedirs(os.path.dirname(source_file_path), exist_ok=True)
+        os.makedirs(os.path.dirname(target_file_path), exist_ok=True)
+
         # past source and target
         self.update_source_target_past()
 
