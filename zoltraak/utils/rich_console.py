@@ -104,13 +104,14 @@ def display_magic_info_pre(magic_info: MagicInfo):
     """
     これから実行する魔法術式の情報を整形して表示します。
     """
-    table = prepare_table_common(magic_info.description)
+    table = prepare_table_common(f"MagicInfo(開始) {magic_info.magic_layer}")
 
+    table.add_row("術式概要 (description)", magic_info.description)
     table.add_row("起動術式 (プロンプトコンパイラ)", magic_info.grimoire_compiler)
     table.add_row("魔法術式 (要件定義書)", magic_info.file_info.target_file_path)
     table.add_row("錬成術式 (プロンプトフォーマッタ)", magic_info.grimoire_formatter)
     table.add_row("領域術式 (領域作成+コード展開)", magic_info.grimoire_architect)
-    table.add_row("言霊   (LLMモデル名) ", magic_info.model_name)
+    table.add_row("言霊　　 (LLMモデル名) ", magic_info.model_name)
 
     console_print_all(Panel(table, title="魔法術式情報(構築中)", border_style="green"))
 
@@ -119,7 +120,7 @@ def display_magic_info_post(magic_info: MagicInfo):
     """
     実行した魔法術式の結果を表示します。
     """
-    table = prepare_table_common("MagicInfo(結果)")
+    table = prepare_table_common(f"MagicInfo(終了) {magic_info.magic_layer}")
 
     table.add_row("完了術式", magic_info.current_grimoire_name)
     table.add_row("魔法術式 (要件定義書)", magic_info.file_info.target_file_path)
@@ -173,7 +174,7 @@ def display_magic_info_intermediate(magic_info: MagicInfo):
     """
     実行した領域術式の中間結果を整形して表示します。
     """
-    table = prepare_table_common("領域術式(途中経過)")
+    table = prepare_table_common(f"領域術式(途中経過) {magic_info.magic_layer}")
 
     table.add_row("絶対空間", magic_info.file_info.work_dir)
     table.add_row("領域名", magic_info.file_info.canonical_name)
@@ -188,7 +189,7 @@ def display_magic_info_final(magic_info: MagicInfo):
     """
     実行した領域術式の最終結果を整形して表示します。
     """
-    table = prepare_table_common("領域術式(結果)")
+    table = prepare_table_common(f"領域術式(最終結果) {magic_info.magic_layer}")
 
     table.add_row("絶対空間", magic_info.file_info.work_dir)
     table.add_row("領域名", magic_info.file_info.canonical_name)
@@ -215,9 +216,7 @@ def generate_response_with_spinner(magic_info: MagicInfo, prompt: str):
     """
     スピナーを表示しながらコマンドを実行し、結果を表示します。
     """
-    display_magic_info_pre(magic_info)
     result = run_function_with_spinner(magic_info, generate_response, magic_info.model_name, prompt)
-    display_magic_info_post(magic_info)
     if result is None:
         return "グリモアの展開に失敗しました"
 

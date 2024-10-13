@@ -5,9 +5,10 @@ from zoltraak.utils.file_util import FileUtil
 from zoltraak.utils.log_util import log, log_inout
 from zoltraak.utils.rich_console import (
     display_magic_info_final,
-    display_magic_info_full,
     display_magic_info_init,
     display_magic_info_intermediate,
+    display_magic_info_post,
+    display_magic_info_pre,
 )
 
 
@@ -35,7 +36,7 @@ class MagicWorkflow:
             log("check layer = " + str(layer))
             if layer in acceptable_layers and layer == self.magic_info.magic_layer:
                 log("convert layer = " + str(layer))
-                self.magic_info.file_info.final_output_file_path = convert_fn()
+                convert_fn()
                 display_magic_info_intermediate(self.magic_info)
                 log(f"display_magic_info_intermediate called({self.magic_info.magic_layer})")
 
@@ -47,13 +48,16 @@ class MagicWorkflow:
                 # 次のレイヤに進む
                 self.magic_info.magic_layer = layer.next()
                 log("end next = " + str(self.magic_info.magic_layer))
+
+        # ループの最後のoutput_file_pathをfinalとして設定して返す
+        self.magic_info.file_info.final_output_file_path = self.magic_info.file_info.output_file_path
         return self.magic_info.file_info.final_output_file_path
 
     @log_inout
     def pre_process(self):
         # プロセスを実行する前の共通処理
+        display_magic_info_pre(self.magic_info)
         self.workflow_history.append(self.magic_info.description)
-        display_magic_info_full(self.magic_info)
         log(f"display_magic_info_full called({self.magic_info.magic_layer})")
 
     @log_inout
@@ -64,6 +68,7 @@ class MagicWorkflow:
         self.file_info.output_file_path = output_file_path
         self.post_process()
         self.display_result()
+        display_magic_info_post(self.magic_info)
         return output_file_path
 
     @log_inout
@@ -139,7 +144,11 @@ class MagicWorkflow:
         if os.path.isfile(output_file_path_abs) and output_file_path_abs != target_file_path_abs:
             # target_file_pathをコピーで更新
             FileUtil.copy_file(output_file_path_abs, target_file_path_abs)
-            log("target_file_path にコピーを配置しました。 : %s", target_file_path_abs)
+            log(f"output_file_pathとtarget_file_pathが異なります。コピーを配置しました、{target_file_path_abs}")
+            self.file_info.target_file_path = output_file_path_abs
+            log(f"target_file_pathが更新されました。{target_file_path_abs} -> {output_file_path_abs}")
+        else:
+            log("output_file_pathコピー不要 %s", output_file_path_abs)
         return target_file_path_abs
 
     @log_inout
