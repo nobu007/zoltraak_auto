@@ -22,7 +22,7 @@ model_name_smart = os.getenv("MODEL_NAME_SMART", model_name)  # 通常よりも�
 
 # max_tokens
 max_tokens_create_file_name = 100
-max_tokens_generate_md = 4000
+max_tokens_generate_md = 10000
 max_tokens_generate_code = 12800
 max_tokens_generate_code_fix = 12800
 max_tokens_generate_error_reason = 1000

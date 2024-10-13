@@ -37,8 +37,6 @@ class MagicWorkflow:
             if layer in acceptable_layers and layer == self.magic_info.magic_layer:
                 log("convert layer = " + str(layer))
                 convert_fn()
-                display_magic_info_intermediate(self.magic_info)
-                log(f"display_magic_info_intermediate called({self.magic_info.magic_layer})")
 
                 # ZOLTRAAK_LEGACYモードの場合は１回で終了
                 if self.magic_info.magic_mode == MagicMode.ZOLTRAAK_LEGACY:
@@ -56,19 +54,19 @@ class MagicWorkflow:
     @log_inout
     def pre_process(self):
         # プロセスを実行する前の共通処理
+        log(f"pre_process called({self.magic_info.magic_layer})")
         display_magic_info_pre(self.magic_info)
         self.workflow_history.append(self.magic_info.description)
-        log(f"display_magic_info_full called({self.magic_info.magic_layer})")
 
     @log_inout
     def run(self, func: callable):
         # プロセスを実行する
         self.pre_process()
         output_file_path = func()
+        display_magic_info_intermediate(self.magic_info)
         self.file_info.output_file_path = output_file_path
         self.post_process()
         self.display_result()
-        display_magic_info_post(self.magic_info)
         return output_file_path
 
     @log_inout
@@ -76,8 +74,7 @@ class MagicWorkflow:
         # プロセスを実行した後の共通処理
         log("プロセス完了： ↓実行履歴↓\n%s", self.workflow_history)
         self.display_result()
-        display_magic_info_intermediate(self.magic_info)
-        log(f"display_magic_info_intermediate called({self.magic_info.magic_layer})")
+        display_magic_info_post(self.magic_info)
 
         # プロンプトを保存
         self.save_prompts()
@@ -88,10 +85,12 @@ class MagicWorkflow:
         # 過去のファイルを保存
         self.copy_past_files()
 
+        log(f"post_process called({self.magic_info.magic_layer})")
+
     @log_inout
     def display_result(self):
         # 結果を表示する
-        log("結果:")
+        log("結果: is_success=%s", self.magic_info.is_success)
         if self.magic_info.is_success:
             log(self.magic_info.success_message)
         else:
