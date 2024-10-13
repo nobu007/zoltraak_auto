@@ -25,6 +25,7 @@ max_tokens_create_file_name = 100
 max_tokens_generate_md = 4000
 max_tokens_generate_code = 12800
 max_tokens_generate_code_fix = 12800
+max_tokens_generate_error_reason = 1000
 max_tokens_get_match_rate = 4000
 max_tokens_propose_diff = 4000
 max_tokens_apply_diff = 8000

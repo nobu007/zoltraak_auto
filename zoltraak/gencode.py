@@ -14,6 +14,9 @@ class TargetCodeGenerator:
     def __init__(self, magic_info: MagicInfo):
         self.magic_info = magic_info
         self.file_info = magic_info.file_info
+        self.first_code = ""
+        self.last_code = ""
+        self.last_exception = None
 
     @log_inout
     def generate_target_code(self) -> str:
@@ -189,7 +192,26 @@ class TargetCodeGenerator:
         log(f"ターゲットファイルにハッシュ値を埋め込みました: {self.file_info.source_hash}")
 
     @log_inout
-    def try_execute_generated_code(self, code):
+    def try_execute_generated_code_one(self, code) -> bool:
+        """生成されたコードを実行するメソッド(汎用)
+
+        Args:
+            code (_type_): _description_
+        """
+        try:
+            self.last_code = code
+            exec(code)  # noqa: S102
+            log("コードの実行が成功しました。")
+        except Exception as e:  # noqa: BLE001
+            log("コードでエラーが発生しました。修正を試みます。")
+            log(f"\033[91mエラーメッセージ: {e!s}\033[0m")
+            self.last_exception = e
+            return False
+        self.last_exception = None
+        return True
+
+    @log_inout
+    def try_execute_generated_code(self, code) -> bool:
         """
         生成されたコードを実行するメソッド
         なぜ書き込んだファイルではなくコードで実行するのか？
@@ -197,87 +219,82 @@ class TargetCodeGenerator:
 
         コメント: 最終的に修正したファイルを再書き込みしている。
         """
-        while True:
-            try:
-                exec(code)  # noqa: S102
-                break
-            except Exception as e:  # noqa: BLE001
-                log("Pythonファイルの実行中にエラーが発生しました。")
-                log(f"\033[91mエラーメッセージ: {e!s}\033[0m")
-                log(f"エラーが発生したPythonファイルのパス: \033[33m{self.file_info.target_file_path}\033[0m")
+        max_try_count = 3
+        for i in range(max_try_count):
+            if self.try_execute_generated_code_one(code):
+                log(f"コードの修正が完了しました。try{i}")
+                return True
 
-                while True:
-                    prompt = f"""
-                    以下のPythonコードにエラーがあります。修正してください。
-                    コード: {code}
-                    エラーメッセージ: {e!s}
-                    プログラムコードのみ記載してください。
-                    """
-                    code = litellm.generate_response(
-                        model=settings.model_name,
-                        prompt=prompt,
-                        max_tokens=settings.max_tokens_generate_code_fix,
-                        temperature=0.3,
-                    )
-                    code = code.replace("```python", "").replace("```", "")
+            fix_code_prompt = f"""
+            以下のPythonコードにエラーがあります。修正してください。
+            コード: {code}
+            エラーメッセージ: {self.last_exception!s}
+            プログラムコードのみ記載してください。
+            """
 
-                    log("修正したコードを再実行します。")
-                    try:
-                        exec(code)  # noqa: S102
-                        log("修正したコードの再実行が成功しました。")
-                        break
-                    except Exception as e2:  # noqa: BLE001
-                        log("修正後のコードでもエラーが発生しました。再度修正を試みます。")
-                        log(f"\033[91m修正後のエラーメッセージ: {e2!s}\033[0m")
-                        log(code)
-                        e = e2
+            code = self.get_fixed_code(code, fix_code_prompt)
+            log(f"修正したコードを再実行します。try{i}")
+        log(f"{max_try_count}回トライしましたが、エラーが解消できませんでした。スマート推論を試みます。")
+        return self.try_execute_generated_code_smart(code)
 
-                with open(self.file_info.target_file_path, "w", encoding="utf-8") as target_file:
-                    target_file.write(code)
+    @log_inout
+    def try_execute_generated_code_smart(self, code) -> bool:
+        """エラー解消が難航したときに、エラーの原因を特定して修正するメソッド
+        TODO: smartなllmを使う＆プロンプト最適化
+        """
+        max_try_count = 3
+        for i in range(max_try_count):
+            error_reason = self.get_error_reason(code)
+            fix_code_prompt = f"""
+            以下のPythonコードにエラーがあります。修正してください。
+            コード: {code}
+            エラーメッセージ: {self.last_exception!s}
+            エラー原因と解決方法: {error_reason}
+            修正後のプログラムコードのみ記載してください。
+            """
+            code = self.get_fixed_code(code, fix_code_prompt)
+            log(f"修正したコードを再実行します(smart)。try{i}")
 
-            # except Exception as e:
-            #     print(f"Pythonファイルの実行中にエラーが発生しました。")
-            #     print(f"\033[91mエラーメッセージ: {str(e)}\033[0m")
-            #     print(f"エラーが発生したPythonファイルのパス: \033[33m{self.target_file_path}\033[0m")
+            if self.try_execute_generated_code_one(code):
+                return True
 
-            #     prompt = f"""
-            #     Pythonファイルの実行中に以下のエラーが発生しました。
-            #     ファイルの内容: {code}
-            #     エラーメッセージ: {str(e)}
-            #     考えられるエラーの原因と解決方法を教えてください。
-            #     """
-            #     response = generate_response(
-            #         model="claude-3-haiku-20240307",
-            #         prompt=prompt,
-            #         max_tokens=1000,
-            #         temperature=0.7
-            #     )
-            #     print(f"\033[33m{response}\033[0m")
-            #     print("")
+        log(
+            f"{max_try_count}回トライしましたが、エラーが解消できませんでした(smart)。コードを確認してください。 %s",
+            self.file_info.target_file_path,
+        )
+        return False
 
-            #     user_input = input("コードを再実行しますか？ (y/n): ")
-            #     if user_input.lower() != 'y':
-            #         break
-            #     else:
-            #         prompt = f"""
-            #         以下のPythonコードにエラーがあります。修正してください。
-            #         コード: {code}
-            #         エラーメッセージ: {str(e)}
-            #         プログラムコードのみ記載してください。
-            #         """
-            #         code = generate_response(
-            #             model="claude-3-haiku-20240307",
-            #             prompt=prompt,
-            #             max_tokens=4000,
-            #             temperature=0.3
-            #         )
-            #         code = code.replace("```python", "").replace("```", "")
+    @log_inout
+    def get_fixed_code(self, code: str, fix_code_prompt: str) -> str:
+        """コードエラーを解消する処理"""
+        code = litellm.generate_response(
+            model=settings.model_name,
+            prompt=fix_code_prompt,
+            max_tokens=settings.max_tokens_generate_code_fix,
+            temperature=0.3,
+        )
+        code = code.replace("```python", "").replace("```", "")
+        log("コードを修正しました。len(code)=%s", len(code))
+        return code
 
-            #     print("次のコードを実行してください:")
-            #     print(f"python {self.target_file_path}")
-            #     import pyperclip
-            #     pyperclip.copy(f"python {self.target_file_path}")
-            #     print("コードをクリップボードにコピーしました。")
+    @log_inout
+    def get_error_reason(self, code):
+        """エラー解消が難航したときに、エラーの原因を推定する"""
+        error_reason_prompt = f"""
+        以下のPythonコードにエラーがあります。
+        コード: {code}
+        エラーメッセージ: {self.last_exception!s}
+        考えられるエラーの原因と解決方法を教えてください。
+        プログラムコードのみ記載してください。
+        """
+        error_reason = litellm.generate_response(
+            model=settings.model_name,
+            prompt=error_reason_prompt,
+            max_tokens=settings.max_tokens_generate_error_reason,
+            temperature=0.3,
+        )
+        log("error_reason=%s", error_reason)
+        return error_reason
 
     def open_target_file_in_vscode(self):
         """
