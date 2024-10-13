@@ -122,12 +122,16 @@ def preprocess_input_canonical_name(params: ZoltraakParams) -> None:
 def preprocess_input_prompt(params: ZoltraakParams) -> None:
     # ---- promptの決定ロジック ----
     # 1. promptが引数で指定済みならそのまま採用
+    # 1.2. ただし、mdファイルが有効なら中身を展開する
     # 2. inputが有効、かつmdファイル以外ならpromptとして採用
     # 3. canonical_nameで指定されたmdの中身があれば、promptは空で確定
     # 4. promptは未定かつmdも空なのでエラー終了
 
     # promptが引数で指定済みならそのまま採用
     if params.prompt:
+        # ただし、mdファイルが有効なら中身を展開する
+        if params.prompt.endswith(".md") and FileUtil.has_content(params.prompt, 10):
+            params.prompt = "次の資料を参考にしてください。\n" + FileUtil.read_file(params.prompt)
         return
 
     # inputが有効、かつmdファイル以外ならpromptとして採用
