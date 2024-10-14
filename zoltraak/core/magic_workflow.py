@@ -113,7 +113,9 @@ class MagicWorkflow:
 
     @log_inout
     def get_prompt_file_path(self, target_file_path_rel: str, sub_string: str = "") -> None:
-        prompt_output_path = os.path.join(self.file_info.prompt_dir, target_file_path_rel + sub_string + ".prompt")
+        prompt_output_path = os.path.join(
+            self.file_info.prompt_dir, self.magic_info.magic_layer, target_file_path_rel + sub_string + ".prompt"
+        )
         return os.path.abspath(prompt_output_path)
 
     @log_inout
