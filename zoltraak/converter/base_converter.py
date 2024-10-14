@@ -286,6 +286,12 @@ class BaseConverter:
                   """)
         return generate_md_from_prompt(self.magic_info)
 
+    def __str__(self) -> str:
+        return f"BaseConverter({self.magic_info.magic_layer})"
+
+    def __repr__(self) -> str:
+        return self.__str__()
+
 
 if __name__ == "__main__":  # このスクリプトが直接実行された場合にのみ、以下のコードを実行します。
     magic_info_ = MagicInfo()

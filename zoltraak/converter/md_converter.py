@@ -71,6 +71,12 @@ class MarkdownToMarkdownConverter(BaseConverter):
         # step5: 変換処理
         return self.convert_one()
 
+    def __str__(self) -> str:
+        return f"MarkdownToMarkdownConverter({self.magic_info.description})"
+
+    def __repr__(self) -> str:
+        return self.__str__()
+
 
 if __name__ == "__main__":  # このスクリプトが直接実行された場合にのみ、以下のコードを実行します。
     magic_info_ = MagicInfo()

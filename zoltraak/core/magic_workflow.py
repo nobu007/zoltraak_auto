@@ -1,7 +1,7 @@
 import os
-from typing import TYPE_CHECKING
 
 from zoltraak import settings
+from zoltraak.converter.base_converter import BaseConverter
 from zoltraak.converter.converter import MarkdownToPythonConverter
 from zoltraak.converter.md_converter import MarkdownToMarkdownConverter
 from zoltraak.core.prompt_manager import PromptManager
@@ -18,9 +18,6 @@ from zoltraak.utils.rich_console import (
     display_magic_info_post,
     display_magic_info_pre,
 )
-
-if TYPE_CHECKING:
-    from zoltraak.converter.base_converter import BaseConverter
 
 
 class MagicWorkflow:
@@ -71,7 +68,6 @@ class MagicWorkflow:
                 # 次のレイヤにprompt_inputを再度渡さないようにモード変更
                 log(f"magic_mode set {self.magic_info.magic_mode} => {MagicMode.GRIMOIRE_ONLY}")
                 self.magic_info.magic_mode = MagicMode.GRIMOIRE_ONLY
-                log("end next = " + str(self.magic_info.magic_layer))
 
         # ループの最後のoutput_file_pathをfinalとして設定して返す
         self.magic_info.file_info.final_output_file_path = self.magic_info.file_info.output_file_path
@@ -84,9 +80,32 @@ class MagicWorkflow:
         for converter in self.converters:
             if layer in converter.acceptable_layers and layer == self.magic_info.magic_layer:
                 log(str(converter) + " convert layer = " + str(layer))
-                self.run(converter.convert)
+                self.run_converter(converter)
                 is_called = True
         return is_called
+
+    @log_inout
+    def run_converter(self, converter: BaseConverter) -> bool:
+        is_gen = False
+        if hasattr(converter, "prepare_generation") and callable(converter.prepare_generation):
+            # ジェネレータ
+            source_file_path_list = converter.prepare_generation()
+            for source_file_path in source_file_path_list:
+                if ".py" in source_file_path:
+                    target_file_path = source_file_path.replace(".py", ".md")
+                else:
+                    # TODO: README.mdをさらに何か加工する？
+                    target_file_path = source_file_path.replace(".md", ".py")
+                self.file_info.update_source_target(source_file_path, target_file_path)
+                self.file_info.update_hash()
+                log("run Generator target_file_path = %s", target_file_path)
+                self.run(converter.convert)
+            is_gen = True
+        else:
+            # コンバーター
+            log("run Converter target_file_path = %s", self.file_info.target_file_path)
+            self.run(converter.convert)
+        return is_gen
 
     @log_inout
     def run(self, func: callable):

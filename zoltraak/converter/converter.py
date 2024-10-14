@@ -174,3 +174,9 @@ class MarkdownToPythonConverter(BaseConverter):
             """
         )
         return generate_md_from_prompt_recursive(self.magic_info)
+
+    def __str__(self) -> str:
+        return f"MarkdownToPythonConverter({self.magic_info.magic_layer})"
+
+    def __repr__(self) -> str:
+        return self.__str__()
