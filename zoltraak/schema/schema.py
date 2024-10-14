@@ -31,12 +31,13 @@ class MagicMode(str, Enum):
 
 
 class MagicLayer(str, Enum):
-    LAYER_1_REQUEST_GEN = "layer_1_request_gen"  # レイヤ１： 生のprompt => ユーザ要求記述書
-    LAYER_2_REQUIREMENT_GEN = "layer_2_requirement_gen"  # レイヤ２： ユーザ要求記述書 => 要件定義書
-    LAYER_3_REQUIREMENT_GEN = "layer_3_requirement_gen"  # レイヤ３： 要件定義書 => コード
-    LAYER_4_CODE_GEN = "layer_4_code_gen"  # レイヤ４： 要件定義書 => コード
-    LAYER_5_CODE_GEN = "layer_5_code_gen"  # レイヤ５： 要件定義書 => コード
-    LAYER_6_CODE_GEN = "layer_6_code_gen"  # レイヤ６： 要件定義書 => コード
+    LAYER_1_REQUEST_GEN = "layer_1_request_gen"  # 生のprompt => ユーザ要求記述書
+    LAYER_2_REQUIREMENT_GEN = "layer_2_requirement_gen"  # 生のprompt => ファイル構造定義書
+    LAYER_3_REQUIREMENT_GEN = "layer_3_requirement_gen"  # ユーザ要求記述書 and ファイル構造定義書 => 要件定義書
+    LAYER_4_REQUIREMENT_GEN = "layer_4_requirement_gen"  # 要件定義書 => 要件定義書(requirements)
+    LAYER_5_CODE_GEN = "layer_5_code_gen"  # 要件定義書(requirements) => コード
+    LAYER_6_CODE_GEN = "layer_6_code_gen"  # 要件定義書(requirements) => コード(TODO)
+    LAYER_7_CODE_GEN = "layer_7_code_gen"  # 要件定義書(requirements) => コード(TODO)
 
     def __str__(self):
         return self.__repr__()
@@ -61,7 +62,7 @@ class MagicLayer(str, Enum):
     @staticmethod
     def get_description():
         description_list = [
-            f"グリモアの起動レイヤを指定します。\n例えば「{MagicLayer.LAYER_4_CODE_GEN}」でコード生成から実行します。"
+            f"グリモアの起動レイヤを指定します。\n例えば「{MagicLayer.LAYER_5_CODE_GEN}」でコード生成から実行します。"
         ]
         for i, layer in enumerate(MagicLayer):
             level = i + 1
@@ -107,7 +108,8 @@ class ZoltraakParams(BaseModel):
 DEFAULT_CANONICAL_NAME = "zoltraak.md"
 DEFAULT_COMPILER = "general_prompt.md"
 DEFAULT_PROMPT_FILE = "PROMPT.md"
-DEFAULT_PRE_MD_FILE = "REQUEST.md"
+DEFAULT_REQUEST_FILE = "REQUEST.md"
+DEFAULT_STRUCTURE_FILE = "STRUCTURE.md"
 DEFAULT_MD_FILE = "ARCHITECTURE.md"
 DEFAULT_PY_FILE = "ARCHITECTURE.py"
 
@@ -123,9 +125,13 @@ class FileInfo(BaseModel):
         default=os.path.abspath(DEFAULT_PROMPT_FILE),
         description="ユーザ要求を保存するファイル(絶対パス)",
     )
-    pre_md_file_path: str = Field(
-        default=os.path.abspath(DEFAULT_PRE_MD_FILE),
+    request_file_path: str = Field(
+        default=os.path.abspath(DEFAULT_REQUEST_FILE),
         description="ユーザ要求記述書のmdファイル(絶対パス)",
+    )
+    structure_file_path: str = Field(
+        default=os.path.abspath(DEFAULT_STRUCTURE_FILE),
+        description="ファイル構造定義書のファイル(絶対パス)",
     )
     md_file_path: str = Field(
         default=os.path.abspath(DEFAULT_MD_FILE),
@@ -143,12 +149,12 @@ class FileInfo(BaseModel):
     prompt_dir: str = Field(default="./prompt", description="利用したプロンプト離籍のルートディレクトリ")
 
     # 処理対象ファイル(convert source => targetに利用)
-    source_file_path: str = Field(default=DEFAULT_PRE_MD_FILE, description="ソースファイルパス(絶対パス)")
+    source_file_path: str = Field(default=DEFAULT_REQUEST_FILE, description="ソースファイルパス(絶対パス)")
     target_file_path: str = Field(default=DEFAULT_MD_FILE, description="処理対象のファイルパス(絶対パス)")
-    source_file_name: str = Field(default=DEFAULT_PRE_MD_FILE, description="ソースファイル名")
+    source_file_name: str = Field(default=DEFAULT_REQUEST_FILE, description="ソースファイル名")
     target_file_name: str = Field(default=DEFAULT_MD_FILE, description="処理対象のファイル名")
     past_source_file_path: str = Field(
-        default="./past/source/" + DEFAULT_PRE_MD_FILE, description="過去のソースファイル(絶対パス)"
+        default="./past/source/" + DEFAULT_REQUEST_FILE, description="過去のソースファイル(絶対パス)"
     )
     past_target_file_path: str = Field(
         default="./past/target/" + DEFAULT_MD_FILE, description="過去の出力先ファイル(絶対パス)"
@@ -185,15 +191,18 @@ class FileInfo(BaseModel):
 
     def update_canonical_name(self, canonical_name: str):
         self.prompt_file_path = "prompt_" + canonical_name
-        self.pre_md_file_path = "request_" + canonical_name
+        self.request_file_path = "request_" + canonical_name
+        self.structure_file_path = "structure_" + canonical_name
         self.md_file_path = canonical_name
         self.py_file_path = os.path.splitext(self.md_file_path)[0] + ".py"  # Markdownファイルの拡張子を.pyに変更
 
     def update_path_abs(self):
         if self.prompt_file_path:
             self.prompt_file_path = os.path.abspath(self.prompt_file_path)
-        if self.pre_md_file_path:
-            self.pre_md_file_path = os.path.abspath(self.pre_md_file_path)
+        if self.request_file_path:
+            self.request_file_path = os.path.abspath(self.request_file_path)
+        if self.structure_file_path:
+            self.structure_file_path = os.path.abspath(self.structure_file_path)
         if self.md_file_path:
             self.md_file_path = os.path.abspath(self.md_file_path)
         if self.py_file_path:

@@ -91,7 +91,8 @@ def display_magic_info_init(magic_info: MagicInfo):
 
     file_info = magic_info.file_info
     table.add_row("自然言語 (ユーザー入力.md)", file_info.prompt_file_path)
-    table.add_row("起動術式 (ユーザ要求記述書.md)", file_info.pre_md_file_path)
+    table.add_row("起動術式 (ユーザ要求記述書.md)", file_info.request_file_path)
+    table.add_row("構成術式 (ファイル構造定義書.md)", file_info.structure_file_path)
     table.add_row("魔法術式 (要件定義書.md)", file_info.md_file_path)
     table.add_row("古代魔導書 (高級言語プログラム)", file_info.py_file_path)
     table.add_row("制御方式(モード) ", magic_info.magic_mode)

@@ -56,6 +56,11 @@ class MagicWorkflow:
                 self.magic_info.magic_layer = layer.next()
                 log("end next = " + str(self.magic_info.magic_layer))
 
+                # 次のレイヤにprompt_inputを再度渡さないようにモード変更
+                log(f"magic_mode set {self.magic_info.magic_mode} => {MagicMode.GRIMOIRE_ONLY}")
+                self.magic_info.magic_mode = MagicMode.GRIMOIRE_ONLY
+                log("end next = " + str(self.magic_info.magic_layer))
+
         # ループの最後のoutput_file_pathをfinalとして設定して返す
         self.magic_info.file_info.final_output_file_path = self.magic_info.file_info.output_file_path
         return self.magic_info.file_info.final_output_file_path

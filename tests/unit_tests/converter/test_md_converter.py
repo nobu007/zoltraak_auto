@@ -37,7 +37,8 @@ class TestMarkdownToMarkdownConverter(TestBaseConverter):
         self.magic_info.magic_mode = MagicMode.PROMPT_ONLY
         self.magic_info.file_info = FileInfo(
             prompt_file_path="prompt.md",
-            pre_md_file_path="pre.md",
+            request_file_path="request.md",
+            structure_file_path="structure.md",
             md_file_path="output.md",
             py_file_path="script.py",
         )

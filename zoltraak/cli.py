@@ -65,7 +65,7 @@ def main() -> None:
         "-mle",
         "--magic_layer_end",
         type=str,
-        help=f"グリモアの終了レイヤを指定します。\n例えば「{MagicLayer.LAYER_4_CODE_GEN}」でコード生成が終わったら終了します。",
+        help=f"グリモアの終了レイヤを指定します。\n例えば「{MagicLayer.LAYER_5_CODE_GEN}」でコード生成が終わったら終了します。",
         default=str(MagicLayer.LAYER_6_CODE_GEN),
     )
     args = parser.parse_args()
@@ -284,6 +284,9 @@ def process_markdown_file(params: ZoltraakParams) -> MagicInfo:
     magic_info.error_message = ""  # 後で設定する
     magic_info.language = params.language
     magic_info.is_debug = False
+
+    # prompt_inputを保存する
+    FileUtil.write_file(magic_info.file_info.prompt_file_path, magic_info.prompt_input)
 
     magic_workflow = MagicWorkflow(magic_info)
 

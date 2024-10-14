@@ -19,7 +19,8 @@ class BaseConverter:
         MagicLayer
       MagicInfo.FileInfoに入出力ファイルが展開済み
         prompt_file_path
-        pre_md_file_path
+        request_file_path
+        structure_file_path
         md_file_path
         py_file_path
     """
@@ -100,18 +101,24 @@ class BaseConverter:
                 compiler_path = default_compiler_path
                 self.magic_info.prompt_input = FileUtil.read_grimoire(default_compiler_path)
 
-        # レイヤによる分岐
-        if self.magic_info.magic_layer == MagicLayer.LAYER_1_REQUEST_GEN:
-            # レイヤ１専用のプロンプトを使用
-            compiler_path = GrimoireUtil.get_valid_compiler("general_prompt.md")
-            log("レイヤ１専用のプロンプト: %s", compiler_path)
-
         # grimoire_compiler更新
         self.magic_info.grimoire_compiler = compiler_path
         log("grimoire_compilerを更新しました。 %s", self.magic_info.grimoire_compiler)
 
         # prompt_finalを更新
         prepare_prompt_final(self.magic_info)
+
+    @log_inout
+    def update_grimoire_and_prompt_by_layer(self):
+        # レイヤによる分岐
+        if self.magic_info.magic_layer == MagicLayer.LAYER_1_REQUEST_GEN:
+            # レイヤ1専用のプロンプトを使用
+            compiler_path = GrimoireUtil.get_valid_compiler("general_prompt.md")
+            log("レイヤ1専用のプロンプト: %s", compiler_path)
+        if self.magic_info.magic_layer == MagicLayer.LAYER_2_REQUIREMENT_GEN:
+            # レイヤ2専用のプロンプトを使用
+            compiler_path = GrimoireUtil.get_valid_compiler("structure_full.md")
+            log("レイヤ2専用のプロンプト: %s", compiler_path)
 
     @log_inout
     def handle_existing_target_file(self) -> str:
@@ -122,7 +129,7 @@ class BaseConverter:
         """
         file_info = self.magic_info.file_info
         if self.magic_workflow.prompt_manager.is_same_prompt(PromptEnum.FINAL):  # -- 前回と同じプロンプトの場合
-            log(f"{file_info.target_file_path}は既存のファイルです。スキップします。")
+            log(f"スキップ(既存＆input変更なし): {file_info.target_file_path}")
             return self.magic_info.file_info.target_file_path  # --- 処理をスキップし既存のターゲットファイルを返す
 
         log(f"{file_info.target_file_path}を更新します。")

@@ -13,7 +13,8 @@ class MarkdownToMarkdownConverter(BaseConverter):
         MagicLayer
       MagicInfo.FileInfoに入出力ファイルが展開済み
         prompt_file_path
-        pre_md_file_path
+        request_file_path
+        structure_file_path
         md_file_path
         py_file_path
 
@@ -23,13 +24,11 @@ class MarkdownToMarkdownConverter(BaseConverter):
 
     <LAYER_1>
       source => prompt_file_path
-      target => pre_md_file_path
+      target => request_file_path
     <LAYER_2>
-      source => pre_md_file_path
-      target => md_file_path
+      source => prompt_file_path
+      target => structure_file_path
     <LAYER_3(not active)>
-      source => md_file_path
-      target => py_file_path
     """
 
     def __init__(self, magic_workflow: MagicWorkflow):
@@ -42,7 +41,11 @@ class MarkdownToMarkdownConverter(BaseConverter):
         """convert処理をレイヤを進めながら繰り返す"""
 
         # MarkdownToMarkdownConverter loop
-        acceptable_layers = [MagicLayer.LAYER_1_REQUEST_GEN, MagicLayer.LAYER_2_REQUIREMENT_GEN]
+        acceptable_layers = [
+            MagicLayer.LAYER_1_REQUEST_GEN,
+            MagicLayer.LAYER_2_REQUIREMENT_GEN,
+            MagicLayer.LAYER_3_REQUIREMENT_GEN,
+        ]
         output_file_path = self.magic_workflow.run_loop(self.convert, acceptable_layers)
         log("output_file_path=%s", output_file_path)
 
@@ -63,15 +66,26 @@ class MarkdownToMarkdownConverter(BaseConverter):
 
         # step2: ユーザ要求記述書を作成
         if self.magic_info.magic_layer is MagicLayer.LAYER_1_REQUEST_GEN:
-            file_info.update_source_target(file_info.prompt_file_path, file_info.pre_md_file_path)
+            self.magic_info.grimoire_compiler = "general_prompt.md"
+            log("レイヤ1専用のプロンプト: %s", self.magic_info.grimoire_compiler)
+            file_info.update_source_target(file_info.prompt_file_path, file_info.request_file_path)
             file_info.update_hash()
 
-        # step3: 要件定義書を作成
+        # step3: ファイル構造定義書を作成
         if self.magic_info.magic_layer is MagicLayer.LAYER_2_REQUIREMENT_GEN:
-            file_info.update_source_target(file_info.pre_md_file_path, file_info.md_file_path)
+            self.magic_info.grimoire_compiler = "structure_full.md"
+            log("レイヤ2専用のプロンプト: %s", self.magic_info.grimoire_compiler)
+            file_info.update_source_target(file_info.prompt_file_path, file_info.structure_file_path)
             file_info.update_hash()
 
-        # step4: 変換処理
+        # step4: 要件定義書を作成
+        if self.magic_info.magic_layer is MagicLayer.LAYER_3_REQUIREMENT_GEN:
+            self.magic_info.grimoire_compiler = "dev_obj.md"
+            log("レイヤ3専用のプロンプト: %s", self.magic_info.grimoire_compiler)
+            file_info.update_source_target(file_info.request_file_path, file_info.md_file_path)
+            file_info.update_hash()
+
+        # step5: 変換処理
         return self.magic_workflow.run(self.convert_one)
 
 

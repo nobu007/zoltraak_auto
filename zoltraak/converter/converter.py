@@ -18,7 +18,8 @@ class MarkdownToPythonConverter(BaseConverter):
         MagicLayer
       MagicInfo.FileInfoに入出力ファイルが展開済み
         prompt_file_path
-        pre_md_file_path
+        request_file_path
+        structure_file_path
         md_file_path
         py_file_path
 
@@ -27,11 +28,7 @@ class MarkdownToPythonConverter(BaseConverter):
     この処理はsourceの要求をtarget(マークダウン or Pythonコード)に反映することである。
 
     <LAYER_0(not active)>
-      source => prompt_file_path
-      target => pre_md_file_path
     <LAYER_1(not active)>
-      source => pre_md_file_path
-      target => md_file_path
     <LAYER_2>
       source => md_file_path
       target => md_file_path
@@ -49,8 +46,8 @@ class MarkdownToPythonConverter(BaseConverter):
     def convert_loop(self) -> str:
         """convert処理をレイヤを進めながら繰り返す"""
         acceptable_layers = [
-            MagicLayer.LAYER_3_REQUIREMENT_GEN,
-            MagicLayer.LAYER_4_CODE_GEN,
+            MagicLayer.LAYER_5_CODE_GEN,
+            MagicLayer.LAYER_6_CODE_GEN,
         ]
         return self.magic_workflow.run_loop(self.convert, acceptable_layers)
 
@@ -66,14 +63,14 @@ class MarkdownToPythonConverter(BaseConverter):
         )
 
         # step2: 要件定義書を更新
-        if self.magic_info.magic_layer is MagicLayer.LAYER_3_REQUIREMENT_GEN:
+        if self.magic_info.magic_layer is MagicLayer.LAYER_4_REQUIREMENT_GEN:
             file_info.update_source_target(file_info.md_file_path, requirements_md_file_path)
             file_info.update_hash()
 
             return self.magic_workflow.run(self.convert_one_md_md)
 
         # step3: Pythonコードを作成
-        if self.magic_info.magic_layer is MagicLayer.LAYER_4_CODE_GEN:
+        if self.magic_info.magic_layer is MagicLayer.LAYER_5_CODE_GEN:
             file_info.update_source_target(requirements_md_file_path, file_info.py_file_path)
             file_info.update_hash()
 
@@ -88,7 +85,7 @@ class MarkdownToPythonConverter(BaseConverter):
         file_info = self.magic_info.file_info
         if FileUtil.has_content(file_info.target_file_path):  # -- マークダウンファイルのコンテンツが有効な場合
             if self.magic_workflow.prompt_manager.is_same_prompt():  # -- 前回と同じプロンプトの場合
-                log(f"{file_info.target_file_path}は既存のファイルです。スキップします。")
+                log(f"スキップ(既存＆input変更なし): {file_info.target_file_path}")
                 return file_info.target_file_path  # --- 処理をスキップし既存のターゲットファイルを返す
             log(
                 f"{file_info.target_file_path}は既存のファイルです。promptに従って変更を提案します。"
