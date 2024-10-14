@@ -46,6 +46,7 @@ class MarkdownToPythonConverter(BaseConverter):
     def convert_loop(self) -> str:
         """convert処理をレイヤを進めながら繰り返す"""
         acceptable_layers = [
+            MagicLayer.LAYER_4_REQUIREMENT_GEN,
             MagicLayer.LAYER_5_CODE_GEN,
             MagicLayer.LAYER_6_CODE_GEN,
         ]
@@ -90,7 +91,7 @@ class MarkdownToPythonConverter(BaseConverter):
                 f"{file_info.target_file_path}は既存のファイルです。promptに従って変更を提案します。"
             )  # --- ファイルが既存であることを示すメッセージを表示
             return self.update_target_file_propose_and_apply(
-                file_info.target_file_path, self.magic_info.prompt_input
+                file_info.target_file_path, self.magic_info.prompt_goal
             )  # --- プロンプトに従ってターゲットファイルの差分を提案
 
         # --- マークダウンファイルのコンテンツが無効な場合

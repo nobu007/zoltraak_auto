@@ -37,7 +37,9 @@ def main() -> None:
     parser.add_argument(
         "-cc", "--custom-compiler", "--custom_compiler", help="自作コンパイラー（自作定義書生成文書）", default=""
     )
-    parser.add_argument("-a", "--architect", help="architect（ディレクトリ構成を構築するコード生成文書）", default="")
+    parser.add_argument(
+        "-a", "--architect", help="architect（ディレクトリ構成を構築するコード生成文書）", default="architect_claude.md"
+    )
     parser.add_argument(
         "-v", "--version", action="store_true", help="バージョン情報を表示"
     )  # 追加: バージョン情報表示オプション

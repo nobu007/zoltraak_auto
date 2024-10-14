@@ -127,6 +127,9 @@ def display_magic_info_post(magic_info: MagicInfo):
     table.add_row("完了術式", magic_info.current_grimoire_name)
     table.add_row("魔法術式 (要件定義書)", magic_info.file_info.target_file_path)
     table.add_row("領域", magic_info.file_info.target_dir)
+    _add_row_relpath(table, "錬成器(compiler)", magic_info.grimoire_compiler, magic_info.file_info.work_dir)
+    _add_row_relpath(table, "起動式(architect)", magic_info.grimoire_architect, magic_info.file_info.work_dir)
+    _add_row_relpath(table, "調律石(formatter)", magic_info.grimoire_formatter, magic_info.file_info.work_dir)
 
     console_print_all(Panel(table, title=f"魔法術式情報({magic_info.magic_layer} 完了)", border_style="green"))
 
@@ -201,9 +204,9 @@ def display_magic_info_final(magic_info: MagicInfo):
     table.add_row("領域名", magic_info.file_info.canonical_name)
     _add_row_relpath(table, "領域情報", magic_info.file_info.target_dir, magic_info.file_info.work_dir)
     table.add_row("魔導書名", magic_info.current_grimoire_name)
-    _add_row_relpath(table, "錬成器", magic_info.grimoire_compiler, magic_info.file_info.work_dir)
-    _add_row_relpath(table, "起動式", magic_info.grimoire_architect, magic_info.file_info.work_dir)
-    _add_row_relpath(table, "調律石", magic_info.grimoire_formatter, magic_info.file_info.work_dir)
+    _add_row_relpath(table, "錬成器(compiler)", magic_info.grimoire_compiler, magic_info.file_info.work_dir)
+    _add_row_relpath(table, "起動式(architect)", magic_info.grimoire_architect, magic_info.file_info.work_dir)
+    _add_row_relpath(table, "調律石(formatter)", magic_info.grimoire_formatter, magic_info.file_info.work_dir)
     _add_row_relpath(table, "魔法術式 (錬成前)", magic_info.file_info.source_file_path, magic_info.file_info.work_dir)
     _add_row_relpath(table, "魔法術式 (錬成後)", magic_info.file_info.target_file_path, magic_info.file_info.work_dir)
 

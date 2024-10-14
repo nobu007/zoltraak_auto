@@ -1,12 +1,9 @@
 import os
-import re
 import sys
 import time
 
-import zoltraak.llms.litellm_api as litellm
-from zoltraak import settings
 from zoltraak.schema.schema import MagicInfo
-from zoltraak.utils.log_util import log, log_e
+from zoltraak.utils.log_util import log
 from zoltraak.utils.rich_console import generate_response_with_spinner
 
 
@@ -15,16 +12,8 @@ def generate_md_from_prompt_recursive(magic_info: MagicInfo) -> str:
     """
     promptから要件定義書（マークダウンファイル）を生成する関数
     """
-    compiler_path = magic_info.get_compiler_path()
-    formatter_path = magic_info.get_formatter_path()
-    language = magic_info.language
-
-    prompt_formatter = get_prompt_formatter(language, formatter_path)
-    prompt_final = create_prompt(magic_info.prompt_input, compiler_path, formatter_path, language)  # プロンプトを作成
-    magic_info.grimoire_formatter = prompt_formatter
     magic_info.description = "ステップ1. \033[31m起動術式\033[0mを用いて\033[32m魔法術式\033[0mを構築"
-    magic_info.prompt_final = prompt_final
-    response = generate_response_with_spinner(magic_info, prompt_final)
+    response = generate_response_with_spinner(magic_info, magic_info.prompt_final)
     md_content = response.strip()  # 生成された要件定義書の内容を取得し、前後の空白を削除
     output_file_path = save_md_content(
         md_content, file_info.target_file_path
@@ -75,127 +64,75 @@ def show_spinner(done, goal):
             time.sleep(0.1)  # -- 0.1秒のディレイを追加
 
 
-def generate_response(developer, model_name, prompt):  # noqa: ARG001
-    """
-    対応デベロッパーごとに分岐してレスポンスを生成する関数
+# def create_prompt(goal_prompt, compiler_path=None, formatter_path=None, language=None):
+#     """
+#     LLMへのプロンプトを作成する関数
 
-    現在対応しているデベロッパーとモデルは以下の通りです:
-    - Anthropic:
-      - claude-3-opus-20240229
-      - claude-3-sonnet-20240229
-      - claude-3-haiku-20240307
-    - Groq:
-      - llama3-8b-8192
-      - llama3-70b-8192
-      - llama2-70b-4096
-      - mixtral-8x7b-32768
-      - gemma-7b-it
+#     Args:
+#         goal_prompt (str): 要件定義書の生成に使用するプロンプト
+#         compiler_path (str): コンパイラのパス
+#         formatter_path (str): フォーマッタのパス
 
-    Args:
-        prompt (str): APIに送信するプロンプト
+#     Returns:
+#         str: 作成されたプロンプト
+#     """
+#     # prompt_file = "grimoires/compiler/dev_obj.md"  # デフォルトのプロンプトファイルのパスを指定
+#     # if compiler_path:  # コンパイラパスが指定されている場合
+#     # prompt_file = compiler_path  # - プロンプトファイルのパスをコンパイラパスに変更
 
-    Returns:
-        str: APIから生成されたレスポンス
-    """
-    return litellm.generate_response(model_name, prompt, settings.max_tokens_generate_md, 0.7)
+#     formatter = get_formatter(formatter_path, language)
 
+#     if compiler_path is None:
+#         # 検索関数の起動
+#         compiler_dir = settings.compiler_dir
+#         compiler_files = [file for file in os.listdir(compiler_dir) if file.endswith(".md")]
 
-def create_prompt(goal_prompt, compiler_path=None, formatter_path=None, language=None):
-    """
-    LLMへのプロンプトを作成する関数
+#         prompt = "以下のファイルから、goal_promptに最も適したものを選んでください。\n\n"
 
-    Args:
-        goal_prompt (str): 要件定義書の生成に使用するプロンプト
-        compiler_path (str): コンパイラのパス
-        formatter_path (str): フォーマッタのパス
+#         for file in compiler_files:
+#             file_path = os.path.join(compiler_dir, file)
+#             with open(file_path, encoding="utf-8") as f:
+#                 content = f.read().split("\n")[:3]
+#             prompt += f"## {file}\n```\n{' '.join(content)}\n```\n\n"
 
-    Returns:
-        str: 作成されたプロンプト
-    """
-    # prompt_file = "grimoires/compiler/dev_obj.md"  # デフォルトのプロンプトファイルのパスを指定
-    # if compiler_path:  # コンパイラパスが指定されている場合
-    # prompt_file = compiler_path  # - プロンプトファイルのパスをコンパイラパスに変更
+#         prompt += f"## goal_prompt\n\n```{goal_prompt}```\n\n"
+#         prompt += f"""まず、goal_promptを踏まえて、最初に取るべきステップを明示してください。
+#         そのステップやgoal_prompt自身と比較して、最も適切なファイルを上位5つ選び、それぞれの理由とともに説明してください。# noqa: E501
+#         また、それぞれの実行プロンプトを、zoltraak \"{goal_prompt}\" -c [ファイル名（拡張子なし）]で、code blockに入れて添付してください。"""  # noqa: E501
+#         prompt += prompt + formatter
+#     elif os.path.exists(compiler_path):  # プロンプトファイルが存在する場合
+#         with open(compiler_path, encoding="utf-8") as file:  # - プロンプトファイルを読み込みモードで開く
+#             prompt = file.read().format(
+#                 prompt=goal_prompt
+#             )  # -- プロンプトファイルの内容を読み込み、goal_promptを埋め込む
+#         prompt = prompt + formatter  # - プロンプトにフォーマッタを追加
+#     else:  # プロンプトファイルが存在しない場合
+#         log_e(f"プロンプトファイル {compiler_path} が見つかりません。")  # - エラーメッセージを表示
+#         os.system("pwd")  # noqa: S605, S607
+#         prompt = ""
 
-    formatter = get_formatter(formatter_path, language)
+#     if prompt != "" and language is not None:
+#         if not formatter_path.endswith("_lang.md"):
+#             try:
+#                 start_index = formatter.rindex("## Output Language")
+#                 prompt = (
+#                     formatter[start_index:]
+#                     + "\n- Follow the format defined in the format section. DO NOT output the section itself."
+#                     + prompt
+#                 )  # 言語指定の強調前出しでサンドイッチにしてみる。
+#             except ValueError:
+#                 # rindexが取れなかった場合の処理
+#                 prompt = (
+#                     "\n- Follow the format defined in the format section. DO NOT output the section itself." + prompt
+#                 )
 
-    if compiler_path is None:
-        # 検索関数の起動
-        compiler_dir = settings.compiler_dir
-        compiler_files = [file for file in os.listdir(compiler_dir) if file.endswith(".md")]
+#         elif re.match("(english|英語|en)", language.lower()):
+#             prompt = (
+#                 formatter + prompt
+#             )  # 特に英語指示が「デフォルト言語指示」と混同されやすく、効きがやたら悪いので英語の場合は挟み撃ちにする
 
-        prompt = "以下のファイルから、goal_promptに最も適したものを選んでください。\n\n"
-
-        for file in compiler_files:
-            file_path = os.path.join(compiler_dir, file)
-            with open(file_path, encoding="utf-8") as f:
-                content = f.read().split("\n")[:3]
-            prompt += f"## {file}\n```\n{' '.join(content)}\n```\n\n"
-
-        prompt += f"## goal_prompt\n\n```{goal_prompt}```\n\n"
-        prompt += f"""まず、goal_promptを踏まえて、最初に取るべきステップを明示してください。
-        そのステップやgoal_prompt自身と比較して、最も適切なファイルを上位5つ選び、それぞれの理由とともに説明してください。
-        また、それぞれの実行プロンプトを、zoltraak \"{goal_prompt}\" -c [ファイル名（拡張子なし）]で、code blockに入れて添付してください。"""  # noqa: E501
-        prompt += prompt + formatter
-    elif os.path.exists(compiler_path):  # プロンプトファイルが存在する場合
-        with open(compiler_path, encoding="utf-8") as file:  # - プロンプトファイルを読み込みモードで開く
-            prompt = file.read().format(
-                prompt=goal_prompt
-            )  # -- プロンプトファイルの内容を読み込み、goal_promptを埋め込む
-        prompt = prompt + formatter  # - プロンプトにフォーマッタを追加
-    else:  # プロンプトファイルが存在しない場合
-        log_e(f"プロンプトファイル {compiler_path} が見つかりません。")  # - エラーメッセージを表示
-        os.system("pwd")  # noqa: S605, S607
-        prompt = ""
-
-    if prompt != "" and language is not None:
-        if not formatter_path.endswith("_lang.md"):
-            try:
-                start_index = formatter.rindex("## Output Language")
-                prompt = (
-                    formatter[start_index:]
-                    + "\n- Follow the format defined in the format section. DO NOT output the section itself."
-                    + prompt
-                )  # 言語指定の強調前出しでサンドイッチにしてみる。
-            except ValueError:
-                # rindexが取れなかった場合の処理
-                prompt = (
-                    "\n- Follow the format defined in the format section. DO NOT output the section itself." + prompt
-                )
-
-        elif re.match("(english|英語|en)", language.lower()):
-            prompt = (
-                formatter + prompt
-            )  # 特に英語指示が「デフォルト言語指示」と混同されやすく、効きがやたら悪いので英語の場合は挟み撃ちにする
-
-    # print(prompt) # デバッグ用
-    return prompt
-
-
-def get_formatter(formatter_path, language=None):
-    """
-    フォーマッタを取得する関数
-
-    Args:
-        formatter_path (str): フォーマッタのパス
-
-    Returns:
-        str: フォーマッタの内容
-    """
-    if formatter_path is None:  # フォーマッタパスが指定されていない場合
-        formatter = ""  # - フォーマッタを空文字列に設定
-    elif os.path.exists(formatter_path):  # -- フォーマッタファイルが存在する場合
-        with open(formatter_path, encoding="utf-8") as file:  # --- フォーマッタファイルを読み込みモードで開く
-            formatter = file.read()  # ---- フォーマッタの内容を読み込む
-            if language is not None:
-                if formatter_path.endswith("_lang.md"):
-                    formatter = formatter.replace("{language}", language)
-                else:
-                    formatter += f"\n- You must output everything including code block and diagrams, according to the previous instructions, but make sure you write your response in {language}.\n\n## Output Language\n- You must generate your response using {language}, which is the language of the formatter just above this sentence."  # noqa: E501
-    else:  # -- フォーマッタファイルが存在しない場合
-        log_e(f"フォーマッタファイル {formatter_path} が見つかりません。")  # --- エラーメッセージを表示
-        formatter = ""  # --- フォーマッタを空文字列に設定
-
-    return formatter
+#     # print(prompt) # デバッグ用
+#     return prompt
 
 
 def save_md_content(md_content, target_file_path) -> str:
