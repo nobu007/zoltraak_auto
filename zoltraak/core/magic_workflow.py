@@ -4,7 +4,8 @@ from zoltraak import settings
 from zoltraak.core.prompt_manager import PromptManager
 from zoltraak.schema.schema import FileInfo, MagicInfo, MagicLayer, MagicMode
 from zoltraak.utils.file_util import FileUtil
-from zoltraak.utils.log_util import log, log_inout
+from zoltraak.utils.grimoires_util import GrimoireUtil
+from zoltraak.utils.log_util import log, log_inout, log_w
 from zoltraak.utils.rich_console import (
     display_magic_info_final,
     display_magic_info_full,
@@ -66,13 +67,6 @@ class MagicWorkflow:
         return self.magic_info.file_info.final_output_file_path
 
     @log_inout
-    def pre_process(self):
-        # プロセスを実行する前の共通処理
-        log(f"pre_process called({self.magic_info.magic_layer})")
-        display_magic_info_pre(self.magic_info)
-        self.workflow_history.append(self.magic_info.description)
-
-    @log_inout
     def run(self, func: callable):
         # プロセスを実行する
         self.pre_process()
@@ -82,6 +76,33 @@ class MagicWorkflow:
         self.post_process()
         self.display_result()
         return output_file_path
+
+    @log_inout
+    def pre_process(self):
+        # プロセスを実行する前の共通処理
+        log(f"pre_process called({self.magic_info.magic_layer})")
+        display_magic_info_pre(self.magic_info)
+        self.workflow_history.append(self.magic_info.description)
+
+        # ソースファイルをprompt_goalに詰め込み
+        prompt_goal = self.magic_info.prompt_input
+        source_file_path = self.file_info.source_file_path
+        if FileUtil.has_content(source_file_path):
+            source_content = FileUtil.read_file(source_file_path)
+            if prompt_goal.strip() != source_content.strip():
+                log(f"ソースファイル読込:  {self.file_info.source_file_path}")
+                self.magic_info.prompt_goal = self.magic_info.prompt_input
+                prompt_goal += f"\n\n<<追加指示>>\n{source_content}"
+        else:
+            # ソースファイルを保存(設計では初回のprompt_file_pathにだけ保存する)
+            log_w(f"ソースファイル更新(前レイヤ処理済？):  {source_file_path}")
+            FileUtil.write_file(source_file_path, self.magic_info.prompt_input)
+
+        # prompt_goalを更新
+        self.magic_info.prompt_goal = prompt_goal
+
+        # グリモアとプロンプトを更新
+        self.update_grimoire_and_prompt()
 
     @log_inout
     def post_process(self):
@@ -122,54 +143,48 @@ class MagicWorkflow:
         # フォルダを作成する
         pass
 
-    # @log_inout
-    # def get_prompt_file_path(self, target_file_path_rel: str, sub_string: str = "") -> None:
-    #     prompt_output_path = os.path.join(
-    #         self.file_info.prompt_dir, self.magic_info.magic_layer, target_file_path_rel + sub_string + ".prompt"
-    #     )
-    #     return os.path.abspath(prompt_output_path)
+    @log_inout
+    def update_grimoire_and_prompt(self):
+        # モードによる分岐
+        log(f"{self.magic_info.magic_mode}で変更を提案します。")
 
-    # @log_inout
-    # def save_prompts(self):
-    #     # work_dirからの相対パス取得
-    #     target_file_path_rel = os.path.relpath(self.file_info.target_file_path, self.file_info.work_dir)
+        # コンパイラのパスを取得
+        compiler_path = GrimoireUtil.get_valid_compiler(self.magic_info.grimoire_compiler)
+        default_compiler_path = GrimoireUtil.get_valid_compiler("general_prompt.md")
 
-    #     # promptの保存先パス取得
-    #     self.save_prompt(self.magic_info.prompt_input, target_file_path_rel, "_input")
-    #     self.save_prompt(self.magic_info.prompt_match_rate, target_file_path_rel, "_match_rate")
-    #     self.save_prompt(self.magic_info.prompt_diff_order, target_file_path_rel, "_diff_order")
-    #     self.save_prompt(self.magic_info.prompt_diff, target_file_path_rel, "_diff")
-    #     self.save_prompt(self.magic_info.prompt_apply, target_file_path_rel, "_apply")
-    #     self.save_prompt(self.magic_info.prompt_goal, target_file_path_rel, "_goal")
-    #     self.save_prompt(self.magic_info.prompt_final, target_file_path_rel, "_final")
+        if self.magic_info.magic_mode is MagicMode.GRIMOIRE_ONLY:
+            # グリモアのみ
+            if not os.path.isfile(compiler_path):
+                log("コンパイラが存在しないため、デフォルトのコンパイラを使用します。")
+                compiler_path = default_compiler_path
+            self.magic_info.prompt_input = ""
+        elif self.magic_info.magic_mode is MagicMode.GRIMOIRE_AND_PROMPT:
+            # グリモアまたはプロンプトどちらか TODO: 用語をコンパイラに統一したい
+            if not os.path.isfile(compiler_path):
+                compiler_path = ""
+                if not self.magic_info.prompt_input:
+                    log("コンパイラもプロンプトも未設定のため、一般的なプロンプトを使用します。")
+                    compiler_path = ""
+                    self.magic_info.prompt_input = FileUtil.read_grimoire(default_compiler_path)
+        elif self.magic_info.magic_mode is MagicMode.PROMPT_ONLY:
+            # プロンプトのみ
+            compiler_path = ""
+            if not self.magic_info.prompt_input:
+                log("プロンプトが未設定のため、一般的なプロンプトを使用します。")
+                self.magic_info.prompt_input = FileUtil.read_grimoire(default_compiler_path)
+        else:
+            # SEARCH_GRIMOIRE or ZOLTRAAK_LEGACY(ノーケア、別のところで処理すること！)
+            log("(SEARCH_GRIMOIRE)一般的なプロンプトを使用します。")
+            if not os.path.isfile(compiler_path):
+                compiler_path = default_compiler_path
+                self.magic_info.prompt_input = FileUtil.read_grimoire(default_compiler_path)
 
-    # @log_inout
-    # def save_prompt(self, prompt: str, target_file_path_rel: str, sub_string: str = "") -> None:
-    #     if prompt == "":
-    #         return
+        # grimoire_compiler更新
+        self.magic_info.grimoire_compiler = compiler_path
+        log("grimoire_compilerを更新しました。 %s", self.magic_info.grimoire_compiler)
 
-    #     prompt_output_path = self.get_prompt_file_path(target_file_path_rel, sub_string)
-
-    #     # フォルダがない場合は作成
-    #     os.makedirs(os.path.dirname(prompt_output_path), exist_ok=True)
-
-    #     # プロンプトを保存
-    #     FileUtil.write_file(prompt_output_path, prompt)
-    #     log("プロンプトを保存しました %s: %s", sub_string, prompt_output_path)
-
-    # @log_inout
-    # def load_prompt(self, sub_string: str = "_input") -> None:
-    #     # work_dirからの相対パス取得
-    #     target_file_path_rel = os.path.relpath(self.file_info.target_file_path, self.file_info.work_dir)
-    #     prompt_output_path = self.get_prompt_file_path(target_file_path_rel, sub_string)
-    #     return FileUtil.read_file(prompt_output_path)
-
-    # @log_inout
-    # def is_same_prompt(self, sub_string: str = "_input") -> None:
-    #     # work_dirからの相対パス取得
-    #     current_prompt = self.magic_info.prompt_input
-    #     past_prompt = self.load_prompt(sub_string)
-    #     return FileUtil.read_file(prompt_output_path)
+        # prompt_finalを更新
+        self.prompt_manager.prepare_prompt_final()
 
     @log_inout
     def copy_output_to_target(self) -> str:

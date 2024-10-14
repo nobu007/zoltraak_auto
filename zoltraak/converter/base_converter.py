@@ -4,10 +4,9 @@ import zoltraak.llms.litellm_api as litellm
 from zoltraak import settings
 from zoltraak.core.magic_workflow import MagicWorkflow
 from zoltraak.core.prompt_manager import PromptEnum
-from zoltraak.gen_markdown import generate_md_from_prompt, prepare_prompt_final
-from zoltraak.schema.schema import MagicLayer, MagicMode
+from zoltraak.gen_markdown import generate_md_from_prompt
+from zoltraak.schema.schema import MagicLayer
 from zoltraak.utils.file_util import FileUtil
-from zoltraak.utils.grimoires_util import GrimoireUtil
 from zoltraak.utils.log_util import log, log_e, log_inout
 
 
@@ -36,89 +35,18 @@ class BaseConverter:
 
     def convert(self) -> str:
         """生成処理"""
-        final_output_file_path = self.magic_workflow.run(self.convert_one)
-        self.magic_info.file_info.final_output_file_path = final_output_file_path
-        return final_output_file_path
+        return self.magic_workflow.run(self.convert_one)
 
     @log_inout
     def convert_one(self) -> str:
         """生成処理を１回実行する"""
         file_info = self.magic_info.file_info
-        self.update_grimoire_and_prompt()
-
-        # ソースファイルの有無による分岐
-        if FileUtil.has_content(file_info.source_file_path):  # -- マークダウンファイルが存在する場合
-            log(f"既存のソースファイル {file_info.source_file_path} が存在しました。")
-            self.magic_info.prompt_goal = self.magic_info.prompt_input
-            if file_info.source_file_path != file_info.target_file_path:
-                # ソースファイルとターゲットファイルが異なる場合のみ、ソースファイルの指示を追加
-                self.magic_info.prompt_goal += "\n\n<<追加指示>>\n"
-                self.magic_info.prompt_goal += FileUtil.read_file(file_info.source_file_path)
-        else:
-            # ソースファイルを保存(設計では初回のprompt_file_pathにだけ保存する)
-            log(f"既存のソースファイル {file_info.source_file_path} が無効なのでプロンプトを保存します。")
-            FileUtil.write_file(file_info.source_file_path, self.magic_info.prompt_input)
 
         # ターゲットファイルの有無による分岐
         if FileUtil.has_content(file_info.target_file_path):  # ターゲットファイルが存在する場合
             return self.handle_existing_target_file()  # - 既存のターゲットファイルを処理
         # ターゲットファイルが存在しない場合
         return self.handle_new_target_file()  # - 新しいターゲットファイルを処理
-
-    @log_inout
-    def update_grimoire_and_prompt(self):
-        # モードによる分岐
-        log(f"{self.magic_info.magic_mode}で変更を提案します。")
-
-        # コンパイラのパスを取得
-        compiler_path = GrimoireUtil.get_valid_compiler(self.magic_info.grimoire_compiler)
-        default_compiler_path = GrimoireUtil.get_valid_compiler("general_prompt.md")
-
-        if self.magic_info.magic_mode is MagicMode.GRIMOIRE_ONLY:
-            # グリモアのみ
-            if not os.path.isfile(compiler_path):
-                log("コンパイラが存在しないため、デフォルトのコンパイラを使用します。")
-                compiler_path = default_compiler_path
-            self.magic_info.prompt_input = ""
-        elif self.magic_info.magic_mode is MagicMode.GRIMOIRE_AND_PROMPT:
-            # グリモアまたはプロンプトどちらか TODO: 用語をコンパイラに統一したい
-            if not os.path.isfile(compiler_path):
-                compiler_path = ""
-                if not self.magic_info.prompt_input:
-                    log("コンパイラもプロンプトも未設定のため、一般的なプロンプトを使用します。")
-                    compiler_path = ""
-                    self.magic_info.prompt_input = FileUtil.read_grimoire(default_compiler_path)
-        elif self.magic_info.magic_mode is MagicMode.PROMPT_ONLY:
-            # プロンプトのみ
-            compiler_path = ""
-            if not self.magic_info.prompt_input:
-                log("プロンプトが未設定のため、一般的なプロンプトを使用します。")
-                self.magic_info.prompt_input = FileUtil.read_grimoire(default_compiler_path)
-        else:
-            # SEARCH_GRIMOIRE or ZOLTRAAK_LEGACY(ノーケア、別のところで処理すること！)
-            log("(SEARCH_GRIMOIRE)一般的なプロンプトを使用します。")
-            if not os.path.isfile(compiler_path):
-                compiler_path = default_compiler_path
-                self.magic_info.prompt_input = FileUtil.read_grimoire(default_compiler_path)
-
-        # grimoire_compiler更新
-        self.magic_info.grimoire_compiler = compiler_path
-        log("grimoire_compilerを更新しました。 %s", self.magic_info.grimoire_compiler)
-
-        # prompt_finalを更新
-        prepare_prompt_final(self.magic_info)
-
-    @log_inout
-    def update_grimoire_and_prompt_by_layer(self):
-        # レイヤによる分岐
-        if self.magic_info.magic_layer == MagicLayer.LAYER_1_REQUEST_GEN:
-            # レイヤ1専用のプロンプトを使用
-            compiler_path = GrimoireUtil.get_valid_compiler("general_prompt.md")
-            log("レイヤ1専用のプロンプト: %s", compiler_path)
-        if self.magic_info.magic_layer == MagicLayer.LAYER_2_REQUIREMENT_GEN:
-            # レイヤ2専用のプロンプトを使用
-            compiler_path = GrimoireUtil.get_valid_compiler("structure_full.md")
-            log("レイヤ2専用のプロンプト: %s", compiler_path)
 
     @log_inout
     def handle_existing_target_file(self) -> str:
@@ -365,6 +293,6 @@ class BaseConverter:
 
 
 if __name__ == "__main__":  # このスクリプトが直接実行された場合にのみ、以下のコードを実行します。
-    magic_workflow = MagicWorkflow()
-    converter = BaseConverter(magic_workflow)
+    magic_workflow_ = MagicWorkflow()
+    converter = BaseConverter(magic_workflow_)
     converter.convert()

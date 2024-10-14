@@ -62,7 +62,6 @@ class MarkdownToMarkdownConverter(BaseConverter):
 
         # step1: ファイル情報を更新
         file_info = self.magic_info.file_info
-        file_info.update_path_abs()
 
         # step2: ユーザ要求記述書を作成
         if self.magic_info.magic_layer is MagicLayer.LAYER_1_REQUEST_GEN:

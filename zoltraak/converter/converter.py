@@ -57,7 +57,6 @@ class MarkdownToPythonConverter(BaseConverter):
 
         # step1: ファイル情報を更新
         file_info = self.magic_info.file_info
-        file_info.update_path_abs()
         requirements_md_file_path = os.path.join(
             file_info.work_dir, "requirements", os.path.basename(file_info.md_file_path)
         )
