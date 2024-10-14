@@ -1,5 +1,6 @@
 import os
 
+from zoltraak.core.prompt_manager import PromptManager
 from zoltraak.schema.schema import FileInfo, MagicInfo, MagicLayer, MagicMode
 from zoltraak.utils.file_util import FileUtil
 from zoltraak.utils.log_util import log, log_inout
@@ -18,6 +19,7 @@ class MagicWorkflow:
             magic_info = MagicInfo()
         self.magic_info: MagicInfo = magic_info
         self.file_info: FileInfo = magic_info.file_info
+        self.prompt_manager: PromptManager = PromptManager(magic_info)
         self.workflow_history = []
         self.start_workflow()
 
@@ -82,7 +84,7 @@ class MagicWorkflow:
         display_magic_info_post(self.magic_info)
 
         # プロンプトを保存
-        self.save_prompts()
+        self.prompt_manager.save_prompts()
 
         # target_file_pathにコピーを配置
         self.copy_output_to_target()
@@ -111,47 +113,54 @@ class MagicWorkflow:
         # フォルダを作成する
         pass
 
-    @log_inout
-    def get_prompt_file_path(self, target_file_path_rel: str, sub_string: str = "") -> None:
-        prompt_output_path = os.path.join(
-            self.file_info.prompt_dir, self.magic_info.magic_layer, target_file_path_rel + sub_string + ".prompt"
-        )
-        return os.path.abspath(prompt_output_path)
+    # @log_inout
+    # def get_prompt_file_path(self, target_file_path_rel: str, sub_string: str = "") -> None:
+    #     prompt_output_path = os.path.join(
+    #         self.file_info.prompt_dir, self.magic_info.magic_layer, target_file_path_rel + sub_string + ".prompt"
+    #     )
+    #     return os.path.abspath(prompt_output_path)
 
-    @log_inout
-    def save_prompts(self):
-        # work_dirからの相対パス取得
-        target_file_path_rel = os.path.relpath(self.file_info.target_file_path, self.file_info.work_dir)
+    # @log_inout
+    # def save_prompts(self):
+    #     # work_dirからの相対パス取得
+    #     target_file_path_rel = os.path.relpath(self.file_info.target_file_path, self.file_info.work_dir)
 
-        # promptの保存先パス取得
-        self.save_prompt(self.magic_info.prompt_input, target_file_path_rel, "_input")
-        self.save_prompt(self.magic_info.prompt_match_rate, target_file_path_rel, "_match_rate")
-        self.save_prompt(self.magic_info.prompt_diff_order, target_file_path_rel, "_diff_order")
-        self.save_prompt(self.magic_info.prompt_diff, target_file_path_rel, "_diff")
-        self.save_prompt(self.magic_info.prompt_apply, target_file_path_rel, "_apply")
-        self.save_prompt(self.magic_info.prompt_goal, target_file_path_rel, "_goal")
-        self.save_prompt(self.magic_info.prompt_final, target_file_path_rel, "_final")
+    #     # promptの保存先パス取得
+    #     self.save_prompt(self.magic_info.prompt_input, target_file_path_rel, "_input")
+    #     self.save_prompt(self.magic_info.prompt_match_rate, target_file_path_rel, "_match_rate")
+    #     self.save_prompt(self.magic_info.prompt_diff_order, target_file_path_rel, "_diff_order")
+    #     self.save_prompt(self.magic_info.prompt_diff, target_file_path_rel, "_diff")
+    #     self.save_prompt(self.magic_info.prompt_apply, target_file_path_rel, "_apply")
+    #     self.save_prompt(self.magic_info.prompt_goal, target_file_path_rel, "_goal")
+    #     self.save_prompt(self.magic_info.prompt_final, target_file_path_rel, "_final")
 
-    @log_inout
-    def save_prompt(self, prompt: str, target_file_path_rel: str, sub_string: str = "") -> None:
-        if prompt == "":
-            return
+    # @log_inout
+    # def save_prompt(self, prompt: str, target_file_path_rel: str, sub_string: str = "") -> None:
+    #     if prompt == "":
+    #         return
 
-        prompt_output_path = self.get_prompt_file_path(target_file_path_rel, sub_string)
+    #     prompt_output_path = self.get_prompt_file_path(target_file_path_rel, sub_string)
 
-        # フォルダがない場合は作成
-        os.makedirs(os.path.dirname(prompt_output_path), exist_ok=True)
+    #     # フォルダがない場合は作成
+    #     os.makedirs(os.path.dirname(prompt_output_path), exist_ok=True)
 
-        # プロンプトを保存
-        FileUtil.write_file(prompt_output_path, prompt)
-        log("プロンプトを保存しました %s: %s", sub_string, prompt_output_path)
+    #     # プロンプトを保存
+    #     FileUtil.write_file(prompt_output_path, prompt)
+    #     log("プロンプトを保存しました %s: %s", sub_string, prompt_output_path)
 
-    @log_inout
-    def load_prompt(self, sub_string: str = "_input") -> None:
-        # work_dirからの相対パス取得
-        target_file_path_rel = os.path.relpath(self.file_info.target_file_path, self.file_info.work_dir)
-        prompt_output_path = self.get_prompt_file_path(target_file_path_rel, sub_string)
-        return FileUtil.read_file(prompt_output_path)
+    # @log_inout
+    # def load_prompt(self, sub_string: str = "_input") -> None:
+    #     # work_dirからの相対パス取得
+    #     target_file_path_rel = os.path.relpath(self.file_info.target_file_path, self.file_info.work_dir)
+    #     prompt_output_path = self.get_prompt_file_path(target_file_path_rel, sub_string)
+    #     return FileUtil.read_file(prompt_output_path)
+
+    # @log_inout
+    # def is_same_prompt(self, sub_string: str = "_input") -> None:
+    #     # work_dirからの相対パス取得
+    #     current_prompt = self.magic_info.prompt_input
+    #     past_prompt = self.load_prompt(sub_string)
+    #     return FileUtil.read_file(prompt_output_path)
 
     @log_inout
     def copy_output_to_target(self) -> str:

@@ -87,18 +87,16 @@ class MarkdownToPythonConverter(BaseConverter):
 
         file_info = self.magic_info.file_info
         if FileUtil.has_content(file_info.target_file_path):  # -- マークダウンファイルのコンテンツが有効な場合
-            past_prompt_input = self.magic_workflow.load_prompt()
-            if self.magic_info.prompt_input != past_prompt_input:
-                log(
-                    f"{file_info.target_file_path}は既存のファイルです。promptに従って変更を提案します。"
-                )  # --- ファイルが既存であることを示すメッセージを表示
-                return self.update_target_file_propose_and_apply(
-                    file_info.target_file_path, self.magic_info.prompt_input
-                )  # --- プロンプトに従ってターゲットファイルの差分を提案
-
-            # 前回と同じプロンプトの場合
-            log(f"{file_info.target_file_path}は既存のファイルです。スキップします。")
-            return file_info.target_file_path  # --- 処理をスキップし既存のターゲットファイルを返す
+            if self.magic_workflow.prompt_manager.is_same_prompt():  # -- 前回と同じプロンプトの場合
+                # 前回と同じプロンプトの場合
+                log(f"{file_info.target_file_path}は既存のファイルです。スキップします。")
+                return file_info.target_file_path  # --- 処理をスキップし既存のターゲットファイルを返す
+            log(
+                f"{file_info.target_file_path}は既存のファイルです。promptに従って変更を提案します。"
+            )  # --- ファイルが既存であることを示すメッセージを表示
+            return self.update_target_file_propose_and_apply(
+                file_info.target_file_path, self.magic_info.prompt_input
+            )  # --- プロンプトに従ってターゲットファイルの差分を提案
 
         # --- マークダウンファイルのコンテンツが無効な場合
         return self.handle_new_target_file_md()  # --- 新しいターゲットファイルを処理
@@ -122,8 +120,7 @@ class MarkdownToPythonConverter(BaseConverter):
                 log_head("prompt=%s", self.magic_info.prompt_input)
                 # TODO: 次処理に進むのプロンプトなし時だけなのか？全体に薄く適用するformatterみたいなケースは不要？
                 if file_info.source_hash and file_info.source_hash == embedded_hash:
-                    past_prompt_input = self.magic_workflow.load_prompt()
-                    if self.magic_info.prompt_input == past_prompt_input:
+                    if self.magic_workflow.prompt_manager.is_same_prompt():  # -- 前回と同じプロンプトの場合
                         log(
                             f"prompt_inputの適用が完了しました。コード生成プロセスを開始します。{file_info.target_file_path}"
                         )
