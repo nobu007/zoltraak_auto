@@ -6,9 +6,6 @@ import sys
 import zoltraak
 import zoltraak.llms.litellm_api as litellm
 from zoltraak import settings
-from zoltraak.converter.base_converter import BaseConverter
-from zoltraak.converter.converter import MarkdownToPythonConverter
-from zoltraak.converter.md_converter import MarkdownToMarkdownConverter
 from zoltraak.core.magic_workflow import MagicWorkflow
 from zoltraak.schema.schema import MagicInfo, MagicLayer, MagicMode, ZoltraakParams
 from zoltraak.utils.file_util import FileUtil
@@ -68,7 +65,7 @@ def main() -> None:
         "--magic_layer_end",
         type=str,
         help=f"グリモアの終了レイヤを指定します。\n例えば「{MagicLayer.LAYER_5_CODE_GEN}」でコード生成が終わったら終了します。",
-        default=str(MagicLayer.LAYER_6_CODE_GEN),
+        default=str(MagicLayer.LAYER_5_CODE_GEN),
     )
     args = parser.parse_args()
     if args.version:  # バージョン情報表示オプションが指定された場合
@@ -292,25 +289,9 @@ def process_markdown_file(params: ZoltraakParams) -> MagicInfo:
 
     magic_workflow = MagicWorkflow(magic_info)
 
-    converter = create_converter(magic_workflow)
-    new_file_path = magic_workflow.run(converter.convert_loop)
-    magic_info.file_info.final_output_file_path = new_file_path
+    new_file_path = magic_workflow.run_loop()
+    log("new_file_path: %s", new_file_path)
     return magic_info
-
-
-# TO_MARKDOWN_CONVERTER を使うレイヤの一覧
-TO_MARKDOWN_CONVERTER_LAYER_LIST = [MagicLayer.LAYER_1_REQUEST_GEN, MagicLayer.LAYER_2_REQUIREMENT_GEN]
-
-
-def create_converter(magic_workflow: MagicWorkflow) -> BaseConverter:
-    log("magic_info.magic_layer=%s", magic_workflow.magic_info.magic_layer)
-    if magic_workflow.magic_info.magic_layer in TO_MARKDOWN_CONVERTER_LAYER_LIST:
-        # マークダウンに変換するコンバータを使う
-        log("MarkdownToMarkdownConverter")
-        return MarkdownToMarkdownConverter(magic_workflow)
-    # pythonに変換するコンバータを使う
-    log("MarkdownToPythonConverter")
-    return MarkdownToPythonConverter(magic_workflow)
 
 
 def get_custom_compiler_path(custom_compiler):

@@ -1,7 +1,11 @@
 import os
+from typing import TYPE_CHECKING
 
 from zoltraak import settings
+from zoltraak.converter.converter import MarkdownToPythonConverter
+from zoltraak.converter.md_converter import MarkdownToMarkdownConverter
 from zoltraak.core.prompt_manager import PromptManager
+from zoltraak.generator.gencodebase import CodeBaseGenerator
 from zoltraak.schema.schema import FileInfo, MagicInfo, MagicLayer, MagicMode
 from zoltraak.utils.file_util import FileUtil
 from zoltraak.utils.grimoires_util import GrimoireUtil
@@ -15,6 +19,9 @@ from zoltraak.utils.rich_console import (
     display_magic_info_pre,
 )
 
+if TYPE_CHECKING:
+    from zoltraak.converter.base_converter import BaseConverter
+
 
 class MagicWorkflow:
     def __init__(self, magic_info: MagicInfo = None):
@@ -23,8 +30,15 @@ class MagicWorkflow:
         self.magic_info: MagicInfo = magic_info
         self.file_info: FileInfo = magic_info.file_info
         self.prompt_manager: PromptManager = PromptManager(magic_info)
+        self.converters: list[BaseConverter] = []
         self.workflow_history = []
-        self.start_workflow()
+        self.create_converters(self.magic_info, self.prompt_manager)
+
+    @log_inout
+    def create_converters(self, magic_info: MagicInfo, prompt_manager: PromptManager) -> None:
+        self.converters.append(MarkdownToMarkdownConverter(magic_info, prompt_manager))
+        self.converters.append(MarkdownToPythonConverter(magic_info, prompt_manager))
+        self.converters.append(CodeBaseGenerator(magic_info, prompt_manager))
 
     @log_inout
     def start_workflow(self):
@@ -35,14 +49,11 @@ class MagicWorkflow:
         self.file_info.update_work_dir()
 
     @log_inout
-    def run_loop(self, convert_fn: callable, acceptable_layers: list[MagicLayer]) -> str:
+    def run_loop(self) -> str:
         """run処理をレイヤを進めながら繰り返す"""
+        self.start_workflow()
         for layer in MagicLayer:
-            log("check layer = " + str(layer))
-            if layer in acceptable_layers and layer == self.magic_info.magic_layer:
-                log("convert layer = " + str(layer))
-                convert_fn()
-
+            if self.run_converters(layer):
                 # ZOLTRAAK_LEGACYモードの場合は１回で終了
                 if self.magic_info.magic_mode == MagicMode.ZOLTRAAK_LEGACY:
                     log("ZOLTRAAK_LEGACYモードにより、convert処理を終了します")
@@ -65,6 +76,17 @@ class MagicWorkflow:
         # ループの最後のoutput_file_pathをfinalとして設定して返す
         self.magic_info.file_info.final_output_file_path = self.magic_info.file_info.output_file_path
         return self.magic_info.file_info.final_output_file_path
+
+    @log_inout
+    def run_converters(self, layer: MagicLayer) -> bool:
+        log("check layer = " + str(layer))
+        is_called = False
+        for converter in self.converters:
+            if layer in converter.acceptable_layers and layer == self.magic_info.magic_layer:
+                log(str(converter) + " convert layer = " + str(layer))
+                self.run(converter.convert)
+                is_called = True
+        return is_called
 
     @log_inout
     def run(self, func: callable):

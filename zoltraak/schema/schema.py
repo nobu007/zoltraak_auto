@@ -36,8 +36,8 @@ class MagicLayer(str, Enum):
     LAYER_3_REQUIREMENT_GEN = "layer_3_requirement_gen"  # ユーザ要求記述書 and ファイル構造定義書 => 要件定義書
     LAYER_4_REQUIREMENT_GEN = "layer_4_requirement_gen"  # 要件定義書 => 要件定義書(requirements)
     LAYER_5_CODE_GEN = "layer_5_code_gen"  # 要件定義書(requirements) => コード
-    LAYER_6_CODE_GEN = "layer_6_code_gen"  # 要件定義書(requirements) => コード(TODO)
-    LAYER_7_CODE_GEN = "layer_7_code_gen"  # 要件定義書(requirements) => コード(TODO)
+    LAYER_6_CODEBASE_GEN = "layer_6_codebase_gen"  # コード => コードベース
+    LAYER_7_REQUIREMENT_GEN = "layer_7_requirement_gen"  # コードベース => 要件定義書
 
     def __str__(self):
         return self.__repr__()
@@ -287,7 +287,7 @@ class MagicInfo(BaseModel):
     # コア情報
     magic_mode: MagicMode = Field(default=MagicMode.PROMPT_ONLY, description="実行モード")
     magic_layer: MagicLayer = Field(default=MagicLayer.LAYER_1_REQUEST_GEN, description="グリモアの実行中レイヤ")
-    magic_layer_end: MagicLayer = Field(default=MagicLayer.LAYER_6_CODE_GEN, description="グリモアの終了レイヤ")
+    magic_layer_end: MagicLayer = Field(default=MagicLayer.LAYER_5_CODE_GEN, description="グリモアの終了レイヤ")
     model_name: str = Field(default=settings.model_name, description="使用するLLMモデルの名前")
     prompt_input: str = Field(
         default="""

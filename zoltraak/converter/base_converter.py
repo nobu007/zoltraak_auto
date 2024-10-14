@@ -2,10 +2,9 @@ import os
 
 import zoltraak.llms.litellm_api as litellm
 from zoltraak import settings
-from zoltraak.core.magic_workflow import MagicWorkflow
-from zoltraak.core.prompt_manager import PromptEnum
+from zoltraak.core.prompt_manager import PromptEnum, PromptManager
 from zoltraak.gen_markdown import generate_md_from_prompt
-from zoltraak.schema.schema import MagicLayer
+from zoltraak.schema.schema import MagicInfo
 from zoltraak.utils.file_util import FileUtil
 from zoltraak.utils.log_util import log, log_e, log_inout
 
@@ -24,18 +23,14 @@ class BaseConverter:
         py_file_path
     """
 
-    def __init__(self, magic_workflow: MagicWorkflow):
-        self.magic_workflow = magic_workflow
-        self.magic_info = magic_workflow.magic_info
-
-    def convert_loop(self) -> str:
-        """ダミー"""
-        acceptable_layers = [MagicLayer.LAYER_1_REQUEST_GEN]
-        return self.magic_workflow.run_loop(self.convert, acceptable_layers)
+    def __init__(self, magic_info: MagicInfo, prompt_manager: PromptManager):
+        self.magic_info = magic_info
+        self.prompt_manager = prompt_manager
+        self.acceptable_layers = []
 
     def convert(self) -> str:
         """生成処理"""
-        return self.magic_workflow.run(self.convert_one)
+        return self.convert_one()
 
     @log_inout
     def convert_one(self) -> str:
@@ -56,7 +51,7 @@ class BaseConverter:
             str: 処理結果のファイルパス
         """
         file_info = self.magic_info.file_info
-        if self.magic_workflow.prompt_manager.is_same_prompt(PromptEnum.FINAL):  # -- 前回と同じプロンプトの場合
+        if self.prompt_manager.is_same_prompt(PromptEnum.FINAL):  # -- 前回と同じプロンプトの場合
             log(f"スキップ(既存＆input変更なし): {file_info.target_file_path}")
             return self.magic_info.file_info.target_file_path  # --- 処理をスキップし既存のターゲットファイルを返す
 
@@ -293,6 +288,7 @@ class BaseConverter:
 
 
 if __name__ == "__main__":  # このスクリプトが直接実行された場合にのみ、以下のコードを実行します。
-    magic_workflow_ = MagicWorkflow()
-    converter = BaseConverter(magic_workflow_)
+    magic_info_ = MagicInfo()
+    prompt_manager_ = PromptManager()
+    converter = BaseConverter(magic_info_, prompt_manager_)
     converter.convert()

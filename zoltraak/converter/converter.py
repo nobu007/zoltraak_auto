@@ -1,10 +1,10 @@
 import os
 
 from zoltraak.converter.base_converter import BaseConverter
-from zoltraak.core.magic_workflow import MagicWorkflow
+from zoltraak.core.prompt_manager import PromptManager
 from zoltraak.gencode import TargetCodeGenerator
 from zoltraak.md_generator import generate_md_from_prompt_recursive
-from zoltraak.schema.schema import MagicLayer
+from zoltraak.schema.schema import MagicInfo, MagicLayer
 from zoltraak.utils.file_util import FileUtil
 from zoltraak.utils.log_util import log, log_head, log_inout, log_w
 from zoltraak.utils.subprocess_util import SubprocessUtil
@@ -37,20 +37,14 @@ class MarkdownToPythonConverter(BaseConverter):
       target => py_file_path
     """
 
-    def __init__(self, magic_workflow: MagicWorkflow):
-        super().__init__(magic_workflow)
-        self.magic_workflow = magic_workflow
-        self.magic_info = magic_workflow.magic_info
-
-    @log_inout
-    def convert_loop(self) -> str:
-        """convert処理をレイヤを進めながら繰り返す"""
-        acceptable_layers = [
+    def __init__(self, magic_info: MagicInfo, prompt_manager: PromptManager):
+        super().__init__(magic_info, prompt_manager)
+        self.magic_info = magic_info
+        self.prompt_manager = prompt_manager
+        self.acceptable_layers = [
             MagicLayer.LAYER_4_REQUIREMENT_GEN,
             MagicLayer.LAYER_5_CODE_GEN,
-            MagicLayer.LAYER_6_CODE_GEN,
         ]
-        return self.magic_workflow.run_loop(self.convert, acceptable_layers)
 
     @log_inout
     def convert(self) -> str:
@@ -67,16 +61,12 @@ class MarkdownToPythonConverter(BaseConverter):
             file_info.update_source_target(file_info.md_file_path, requirements_md_file_path)
             file_info.update_hash()
 
-            return self.magic_workflow.run(self.convert_one_md_md)
-
         # step3: Pythonコードを作成
         if self.magic_info.magic_layer is MagicLayer.LAYER_5_CODE_GEN:
             file_info.update_source_target(requirements_md_file_path, file_info.py_file_path)
             file_info.update_hash()
 
-            return self.magic_workflow.run(self.convert_one_md_py)
-
-        return ""
+        return self.convert_one_md_md()
 
     @log_inout
     def convert_one_md_md(self) -> str:
@@ -84,7 +74,7 @@ class MarkdownToPythonConverter(BaseConverter):
 
         file_info = self.magic_info.file_info
         if FileUtil.has_content(file_info.target_file_path):  # -- マークダウンファイルのコンテンツが有効な場合
-            if self.magic_workflow.prompt_manager.is_same_prompt():  # -- 前回と同じプロンプトの場合
+            if self.prompt_manager.is_same_prompt():  # -- 前回と同じプロンプトの場合
                 log(f"スキップ(既存＆input変更なし): {file_info.target_file_path}")
                 return file_info.target_file_path  # --- 処理をスキップし既存のターゲットファイルを返す
             log(
@@ -116,7 +106,7 @@ class MarkdownToPythonConverter(BaseConverter):
                 log_head("prompt=%s", self.magic_info.prompt_input)
                 # TODO: 次処理に進むのプロンプトなし時だけなのか？全体に薄く適用するformatterみたいなケースは不要？
                 if file_info.source_hash and file_info.source_hash == embedded_hash:
-                    if self.magic_workflow.prompt_manager.is_same_prompt():  # -- 前回と同じプロンプトの場合
+                    if self.prompt_manager.is_same_prompt():  # -- 前回と同じプロンプトの場合
                         log(
                             f"prompt_inputの適用が完了しました。コード生成プロセスを開始します。{file_info.target_file_path}"
                         )
