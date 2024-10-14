@@ -27,11 +27,11 @@ def prepare_prompt_final(magic_info: MagicInfo) -> str:
     return prompt_final
 
 
-def generate_md_from_prompt(prompt_final: str, magic_info: MagicInfo) -> str:
+def generate_md_from_prompt(magic_info: MagicInfo) -> str:
     """
     prompt_finalから任意のマークダウンファイルを生成する関数
     """
-    response = generate_response_with_spinner(magic_info, prompt_final)
+    response = generate_response_with_spinner(magic_info, magic_info.prompt_final)
     target_file_path = magic_info.file_info.target_file_path
     md_content = response.strip()  # 生成された要件定義書の内容を取得し、前後の空白を削除
     return save_md_content(md_content, target_file_path)  # 生成された要件定義書の内容をファイルに保存
@@ -127,5 +127,5 @@ def save_md_content(md_content, target_file_path) -> str:
 if __name__ == "__main__":  # このスクリプトが直接実行された場合にのみ、以下のコードを実行します。
     magic_info_ = MagicInfo()
     magic_info_.file_info.update()
-    prompt_final_ = prepare_prompt_final(magic_info_)
-    generate_md_from_prompt(prompt_final_, magic_info_)
+    prepare_prompt_final(magic_info_)
+    generate_md_from_prompt(magic_info_)

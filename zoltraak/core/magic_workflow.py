@@ -1,11 +1,13 @@
 import os
 
+from zoltraak import settings
 from zoltraak.core.prompt_manager import PromptManager
 from zoltraak.schema.schema import FileInfo, MagicInfo, MagicLayer, MagicMode
 from zoltraak.utils.file_util import FileUtil
 from zoltraak.utils.log_util import log, log_inout
 from zoltraak.utils.rich_console import (
     display_magic_info_final,
+    display_magic_info_full,
     display_magic_info_init,
     display_magic_info_intermediate,
     display_magic_info_post,
@@ -97,6 +99,8 @@ class MagicWorkflow:
     @log_inout
     def display_result(self):
         # 結果を表示する
+        if settings.is_debug:
+            display_magic_info_full(self.magic_info)
         log("結果: is_success=%s", self.magic_info.is_success)
         if self.magic_info.is_success:
             log(self.magic_info.success_message)

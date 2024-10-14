@@ -185,7 +185,7 @@ class FileInfo(BaseModel):
 
     def update_canonical_name(self, canonical_name: str):
         self.prompt_file_path = "prompt_" + canonical_name
-        self.pre_md_file_path = "pre_" + canonical_name
+        self.pre_md_file_path = "request_" + canonical_name
         self.md_file_path = canonical_name
         self.py_file_path = os.path.splitext(self.md_file_path)[0] + ".py"  # Markdownファイルの拡張子を.pyに変更
 

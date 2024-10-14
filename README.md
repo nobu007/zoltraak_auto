@@ -4,8 +4,6 @@
 <p>
 Zoltraakは本格的な魔法時代の始まりを象徴する強大な創造魔法の名です。
 
-
-
 これまでの未体系であった呪文からの術の発動を、魔法の文法体系に昇華しより高速かつ広範囲な術式展開と強大な魔法の発動を可能とするシステムです。
 
 これは近い未来、一般魔法になるものです。
@@ -14,7 +12,7 @@ Zoltraakは本格的な魔法時代の始まりを象徴する強大な創造魔
 
 ![撃て。](assets/images/cast_zoltraak.png)
 
-* Zoltraakの名はフリーレンの一般攻撃魔法Zoltraakから付けさせて頂いております。
+- Zoltraak の名はフリーレンの一般攻撃魔法 Zoltraak から付けさせて頂いております。
 
 </p>
 <a href="https://twitter.com/ai_syacho" alt="Twitter Follow">
@@ -28,17 +26,18 @@ Zoltraakは本格的な魔法時代の始まりを象徴する強大な創造魔
 <a href="https://github.com/dai-motoki/zoltraak" alt="GitHub issues by-label">
 <img src="https://img.shields.io/github/issues/XiaogangHe/InVEST-Cities-in-Nature" /></a> -->
 
-
 ## 最新リリース
+
 0.1.27: ファイル執筆作成自動化
 
 ![](assets/videos/zoltraak0.1.27_high_quality.gif)
 
-
 ## 貢献者
 
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
+
 [![All Contributors](https://img.shields.io/badge/all_contributors-17-orange.svg?style=flat-square)](#contributors-)
+
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 
 <!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
