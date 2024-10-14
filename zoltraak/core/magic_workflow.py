@@ -101,7 +101,7 @@ class MagicWorkflow:
         # prompt_goalを更新
         self.magic_info.prompt_goal = prompt_goal
 
-        # グリモアとプロンプトを更新
+        # グリモアとプロンプトを更新(prompt_finalも更新)
         self.update_grimoire_and_prompt()
 
     @log_inout

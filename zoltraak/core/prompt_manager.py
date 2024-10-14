@@ -100,7 +100,7 @@ class PromptManager:
         language = magic_info.language
 
         prompt_final = self.create_prompt(
-            magic_info.prompt_input, compiler_path, formatter_path, language
+            magic_info.prompt_goal, compiler_path, formatter_path, language
         )  # プロンプトを作成
         log("prompt_final=\n%s\n...\n%s", prompt_final[:50], prompt_final[-5:])
         magic_info.prompt_final = prompt_final
