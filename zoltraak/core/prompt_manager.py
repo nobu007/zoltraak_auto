@@ -39,7 +39,7 @@ class PromptManager:
         self.file_info: FileInfo = magic_info.file_info
 
     @log_inout
-    def save_prompts(self):
+    def save_prompts(self) -> None:
         # work_dirからの相対パス取得
         target_file_path_rel = os.path.relpath(self.file_info.target_file_path, self.file_info.work_dir)
 
@@ -63,17 +63,22 @@ class PromptManager:
         log("プロンプトを保存しました %s: %s", prompt_enum, prompt_output_path)
 
     @log_inout
-    def load_prompt(self, prompt_enum: PromptEnum = PromptEnum.INPUT) -> None:
+    def load_prompt(self, prompt_enum: PromptEnum = PromptEnum.INPUT) -> str:
         # work_dirからの相対パス取得
         target_file_path_rel = os.path.relpath(self.file_info.target_file_path, self.file_info.work_dir)
         prompt_output_path = prompt_enum.get_prompt_file_path(target_file_path_rel, self.magic_info)
         return FileUtil.read_file(prompt_output_path)
 
     @log_inout
-    def is_same_prompt(self, prompt_enum: PromptEnum = PromptEnum.INPUT) -> None:
+    def is_same_prompt(self, prompt_enum: PromptEnum = PromptEnum.INPUT) -> bool:
         # work_dirからの相対パス取得
         current_prompt = prompt_enum.get_current_prompt(self.magic_info)
+        current_prompt = current_prompt.strip()
         past_prompt = self.load_prompt(prompt_enum)
+        past_prompt = past_prompt.strip()
+
+        log("current_prompt(末尾100文字)=\n%s", current_prompt[-100:])
+        log("past_prompt(末尾100文字)=\n%s", past_prompt[-100:])
         return current_prompt == past_prompt
 
     def __str__(self) -> str:

@@ -3,7 +3,8 @@ import os
 import zoltraak.llms.litellm_api as litellm
 from zoltraak import settings
 from zoltraak.core.magic_workflow import MagicWorkflow
-from zoltraak.gen_markdown import generate_md_from_prompt
+from zoltraak.core.prompt_manager import PromptEnum
+from zoltraak.gen_markdown import generate_md_from_prompt, prepare_prompt_final
 from zoltraak.schema.schema import MagicLayer, MagicMode
 from zoltraak.utils.file_util import FileUtil
 from zoltraak.utils.grimoires_util import GrimoireUtil
@@ -109,6 +110,9 @@ class BaseConverter:
         self.magic_info.grimoire_compiler = compiler_path
         log("grimoire_compilerを更新しました。 %s", self.magic_info.grimoire_compiler)
 
+        # prompt_finalを更新
+        prepare_prompt_final(self.magic_info)
+
     @log_inout
     def handle_existing_target_file(self) -> str:
         """ターゲットファイルが存在する場合の処理
@@ -117,6 +121,10 @@ class BaseConverter:
             str: 処理結果のファイルパス
         """
         file_info = self.magic_info.file_info
+        if self.magic_workflow.prompt_manager.is_same_prompt(PromptEnum.FINAL):  # -- 前回と同じプロンプトの場合
+            log(f"{file_info.target_file_path}は既存のファイルです。スキップします。")
+            return self.magic_info.file_info.target_file_path  # --- 処理をスキップし既存のターゲットファイルを返す
+
         log(f"{file_info.target_file_path}を更新します。")
         if os.path.exists(file_info.past_source_file_path):
             log(f"{file_info.source_file_path}の差分から更新リクエストを生成中・・・")

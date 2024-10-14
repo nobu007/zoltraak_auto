@@ -166,6 +166,10 @@ def display_info_full(any_info: BaseModel, title: str = "詳細", table_title: s
     table = prepare_table_common(table_title)
 
     for key, value in any_info.model_dump().items():
+        if "prompt" in key:
+            # プロンプトは長くなることがあるので、100文字までに制限
+            table.add_row(key, str(value[:100]))
+            continue
         table.add_row(key, str(value))
 
     console_print_all(Panel(table, title=title, border_style="white"))

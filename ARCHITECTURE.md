@@ -43,6 +43,11 @@ Zoltraak のコアは source⇒target の変換ロジックにある。
 #### 前提(コンバータ)
 
 - canonical_name とレイヤで一意に決まる source ファイルがある(source_org と仮称)
+- 変換に影響するインプット(これらが一致すればスキップできる)
+  - canonical_name(=source_org)
+  - プロンプト(ユーザ要求 or ユーザ要求記述書)
+  - コンテキスト(プロンプトに含める設計)
+  - グリモア(compiler, formatter)
 
 #### ロジック(コンバータ)
 

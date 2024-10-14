@@ -88,7 +88,6 @@ class MarkdownToPythonConverter(BaseConverter):
         file_info = self.magic_info.file_info
         if FileUtil.has_content(file_info.target_file_path):  # -- マークダウンファイルのコンテンツが有効な場合
             if self.magic_workflow.prompt_manager.is_same_prompt():  # -- 前回と同じプロンプトの場合
-                # 前回と同じプロンプトの場合
                 log(f"{file_info.target_file_path}は既存のファイルです。スキップします。")
                 return file_info.target_file_path  # --- 処理をスキップし既存のターゲットファイルを返す
             log(

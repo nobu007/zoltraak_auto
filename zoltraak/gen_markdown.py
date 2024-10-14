@@ -6,27 +6,35 @@ from zoltraak.utils.log_util import log, log_e
 from zoltraak.utils.rich_console import MagicInfo, generate_response_with_spinner
 
 
-def generate_md_from_prompt(magic_info: MagicInfo) -> str:
-    file_info = magic_info.file_info
+def prepare_prompt_final(magic_info: MagicInfo) -> str:
     """
-    promptから任意のマークダウンファイルを生成する関数
+    prompt_finalから任意のマークダウンファイルを生成する関数
     利用するグリモアはMagicInfoに展開済みの前提
 
-    設計：
-        利用するグリモアとプロンプトは上位処理で設定済みなので、
-        ここではプロンプトを作成し、それを利用してマークダウンファイルを生成する。
-        プロンプトにはsourceとtargetのファイルコンテンツ情報も反映済みである。
-
+    設計： 下記を全て反映したプロンプトを作成する
+    - canonical_name(=source_org)
+    - プロンプト(ユーザ要求 or ユーザ要求記述書)
+    - コンテキスト(プロンプトに含める設計)
+    - グリモア(compiler, formatter)
     """
     compiler_path = magic_info.get_compiler_path()
     formatter_path = magic_info.get_formatter_path()
     language = magic_info.language
 
     prompt_final = create_prompt(magic_info.prompt_input, compiler_path, formatter_path, language)  # プロンプトを作成
+    log("prompt_final=\n%s\n...\n%s", prompt_final[:50], prompt_final[-5:])
     magic_info.prompt_final = prompt_final
+    return prompt_final
+
+
+def generate_md_from_prompt(prompt_final: str, magic_info: MagicInfo) -> str:
+    """
+    prompt_finalから任意のマークダウンファイルを生成する関数
+    """
     response = generate_response_with_spinner(magic_info, prompt_final)
+    target_file_path = magic_info.file_info.target_file_path
     md_content = response.strip()  # 生成された要件定義書の内容を取得し、前後の空白を削除
-    return save_md_content(md_content, file_info.target_file_path)  # 生成された要件定義書の内容をファイルに保存
+    return save_md_content(md_content, target_file_path)  # 生成された要件定義書の内容をファイルに保存
 
 
 def create_prompt(goal_prompt: str, compiler_path: str, formatter_path: str, language: str):
@@ -119,4 +127,5 @@ def save_md_content(md_content, target_file_path) -> str:
 if __name__ == "__main__":  # このスクリプトが直接実行された場合にのみ、以下のコードを実行します。
     magic_info_ = MagicInfo()
     magic_info_.file_info.update()
-    generate_md_from_prompt(magic_info_)
+    prompt_final_ = prepare_prompt_final(magic_info_)
+    generate_md_from_prompt(prompt_final_, magic_info_)
