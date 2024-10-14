@@ -60,7 +60,9 @@ class MagicLayer(str, Enum):
 
     @staticmethod
     def get_description():
-        description_list = ["グリモアの起動レイヤを指定します。\n例えば「」でコード生成から実行します。"]
+        description_list = [
+            f"グリモアの起動レイヤを指定します。\n例えば「{MagicLayer.LAYER_4_CODE_GEN}」でコード生成から実行します。"
+        ]
         for i, layer in enumerate(MagicLayer):
             level = i + 1
             description_list.append(f"  {level}: " + layer.__repr__())
@@ -91,6 +93,7 @@ class ZoltraakParams(BaseModel):
     canonical_name: str = Field(default="zoltraak.md", description="正規名称(最初のinputのMarkdownファイル名: xx.md）")
     magic_mode: str = Field(default="", description="グリモアの利用方法")
     magic_layer: str = Field(default="", description="グリモアの起動レイヤ")
+    magic_layer_end: str = Field(default="", description="グリモアの終了レイヤ")
 
     def get_zoltraak_command(self):
         cmd = f"zoltraak {self.input}"
@@ -274,7 +277,8 @@ class FileInfo(BaseModel):
 class MagicInfo(BaseModel):
     # コア情報
     magic_mode: MagicMode = Field(default=MagicMode.PROMPT_ONLY, description="実行モード")
-    magic_layer: MagicLayer = Field(default=MagicLayer.LAYER_1_REQUEST_GEN, description="実行モード")
+    magic_layer: MagicLayer = Field(default=MagicLayer.LAYER_1_REQUEST_GEN, description="グリモアの実行中レイヤ")
+    magic_layer_end: MagicLayer = Field(default=MagicLayer.LAYER_6_CODE_GEN, description="グリモアの終了レイヤ")
     model_name: str = Field(default=settings.model_name, description="使用するLLMモデルの名前")
     prompt_input: str = Field(
         default="""

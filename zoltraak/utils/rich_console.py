@@ -95,7 +95,8 @@ def display_magic_info_init(magic_info: MagicInfo):
     table.add_row("魔法術式 (要件定義書.md)", file_info.md_file_path)
     table.add_row("古代魔導書 (高級言語プログラム)", file_info.py_file_path)
     table.add_row("制御方式(モード) ", magic_info.magic_mode)
-    table.add_row("術式階層(レイヤ) ", magic_info.magic_layer)
+    table.add_row("開始術式階層(レイヤ) ", magic_info.magic_layer)
+    table.add_row("終了術式階層(レイヤ) ", magic_info.magic_layer_end)
 
     console_print_all(Panel(table, title="魔法術式情報(構築中)", border_style="green"))
 

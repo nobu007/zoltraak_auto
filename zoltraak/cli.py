@@ -61,6 +61,13 @@ def main() -> None:
         help=MagicLayer.get_description(),
         default=str(MagicLayer.LAYER_3_REQUIREMENT_GEN),
     )
+    parser.add_argument(
+        "-mle",
+        "--magic_layer_end",
+        type=str,
+        help=f"グリモアの終了レイヤを指定します。\n例えば「{MagicLayer.LAYER_4_CODE_GEN}」でコード生成が終わったら終了します。",
+        default=str(MagicLayer.LAYER_6_CODE_GEN),
+    )
     args = parser.parse_args()
     if args.version:  # バージョン情報表示オプションが指定された場合
         show_version_and_exit()  # - バージョン情報を表示して終了
@@ -88,6 +95,7 @@ def main() -> None:
     params.canonical_name = args.canonical_name
     params.magic_mode = args.magic_mode
     params.magic_layer = args.magic_layer
+    params.magic_layer_end = args.magic_layer_end
     preprocess_input(params)
     display_info_full(params, title="ZoltraakParams")
     main_exec(params)
@@ -257,6 +265,7 @@ def process_markdown_file(params: ZoltraakParams) -> MagicInfo:
     magic_info = MagicInfo()
     magic_info.magic_mode = params.magic_mode
     magic_info.magic_layer = MagicLayer.new(params.magic_layer)
+    magic_info.magic_layer_end = MagicLayer.new(params.magic_layer_end)
     magic_info.model_name = settings.model_name
     magic_info.prompt_input = params.prompt
     magic_info.current_grimoire_name = canonical_name

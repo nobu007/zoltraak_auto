@@ -43,6 +43,11 @@ class MagicWorkflow:
                     log("ZOLTRAAK_LEGACYモードにより、convert処理を終了します")
                     break
 
+                # magic_layer_endで終了
+                if self.magic_info.magic_layer == self.magic_info.magic_layer_end:
+                    log("MAGIC_LAYER_ENDに到達したので、CONVERT処理を終了します")
+                    break
+
                 # 次のレイヤに進む
                 self.magic_info.magic_layer = layer.next()
                 log("end next = " + str(self.magic_info.magic_layer))
