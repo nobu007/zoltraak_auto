@@ -103,7 +103,7 @@ class MarkdownToPythonConverter(BaseConverter):
         return self.handle_new_target_file_py()
 
     @log_inout
-    def handle_existing_target_file_py(self) -> str:
+    def handle_existing_target_file_py(self) -> str:  # noqa: PLR0911
         file_info = self.magic_info.file_info
         with open(file_info.target_file_path, encoding="utf-8") as target_file:
             lines = target_file.readlines()
@@ -118,7 +118,11 @@ class MarkdownToPythonConverter(BaseConverter):
                         log(
                             f"prompt_inputの適用が完了しました。コード生成プロセスを開始します。{file_info.target_file_path}"
                         )
+                        if self.is_same_target_as_past():
+                            log("過去のターゲットファイルと同一のためコード生成をスキップします。")
+                            return file_info.target_file_path
                         SubprocessUtil.run(["python", file_info.target_file_path], check=False)
+                        log("コード生成プロセスが完了しました。")
                         return file_info.target_file_path  # TODO: サブプロセスで作った別ファイルの情報は不要？
 
                     # プロンプトがある場合はプロンプトを再適用してtargetを更新

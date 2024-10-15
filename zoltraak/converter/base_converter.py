@@ -291,6 +291,28 @@ class BaseConverter:
                   """)
         return generate_md_from_prompt(self.magic_info)
 
+    def is_same_source_as_past(self) -> bool:
+        file_info = self.magic_info.file_info
+        current_source_content = FileUtil.read_file(file_info.source_file_path)
+        current_source_content = current_source_content.strip()
+        past_source_content = FileUtil.read_file(file_info.past_source_file_path)
+        past_source_content = past_source_content.strip()
+
+        log("current_source_content(末尾100文字)=\n%s", current_source_content[-100:])
+        log("past_source_content(末尾100文字)   =\n%s", past_source_content[-100:])
+        return current_source_content == past_source_content
+
+    def is_same_target_as_past(self) -> bool:
+        file_info = self.magic_info.file_info
+        current_target_content = FileUtil.read_file(file_info.target_file_path)
+        current_target_content = current_target_content.strip()
+        past_target_content = FileUtil.read_file(file_info.past_target_file_path)
+        past_target_content = past_target_content.strip()
+
+        log("current_target_content(末尾100文字)=\n%s", current_target_content[-100:])
+        log("past_target_content(末尾100文字)   =\n%s", past_target_content[-100:])
+        return current_target_content == past_target_content
+
     def __str__(self) -> str:
         return f"{self.name}({self.magic_info.magic_layer})"
 
