@@ -4,7 +4,7 @@ import zoltraak.llms.litellm_api as litellm
 from zoltraak import settings
 from zoltraak.core.prompt_manager import PromptEnum, PromptManager
 from zoltraak.gen_markdown import generate_md_from_prompt
-from zoltraak.schema.schema import MagicInfo, SourceTargetSet
+from zoltraak.schema.schema import MagicInfo, MagicLayer, SourceTargetSet
 from zoltraak.utils.file_util import FileUtil
 from zoltraak.utils.log_util import log, log_e, log_inout
 
@@ -58,6 +58,11 @@ class BaseConverter:
         file_info = self.magic_info.file_info
         if self.prompt_manager.is_same_prompt(PromptEnum.FINAL):  # -- 前回と同じプロンプトの場合
             log(f"スキップ(既存＆input変更なし): {file_info.target_file_path}")
+            return file_info.target_file_path  # --- 処理をスキップし既存のターゲットファイルを返す
+
+        if self.magic_info.magic_layer == MagicLayer.LAYER_6_CODEBASE_GEN and self.is_same_source_as_past():
+            # -- 前回と同じソースの場合
+            log(f"スキップ(ソース変更なし): {file_info.target_file_path}")
             return file_info.target_file_path  # --- 処理をスキップし既存のターゲットファイルを返す
 
         log(f"{file_info.target_file_path}を更新します。")
