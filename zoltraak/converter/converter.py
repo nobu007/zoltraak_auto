@@ -45,10 +45,11 @@ class MarkdownToPythonConverter(BaseConverter):
             MagicLayer.LAYER_4_REQUIREMENT_GEN,
             MagicLayer.LAYER_5_CODE_GEN,
         ]
+        self.name = "MarkdownToPythonConverter"
 
     @log_inout
-    def convert(self) -> str:
-        """要件定義書(md_file) => Pythonコード"""
+    def prepare(self) -> None:
+        """prompt + ユーザ要求記述書(pre_md_file) => 要件定義書(md_file)"""
 
         # step1: ファイル情報を更新
         file_info = self.magic_info.file_info
@@ -66,6 +67,11 @@ class MarkdownToPythonConverter(BaseConverter):
             file_info.update_source_target(requirements_md_file_path, file_info.py_file_path)
             file_info.update_hash()
 
+    @log_inout
+    def convert(self) -> str:
+        """要件定義書(md_file) => Pythonコード"""
+
+        # step4: 変換処理
         return self.convert_one_md_md()
 
     @log_inout
@@ -174,9 +180,3 @@ class MarkdownToPythonConverter(BaseConverter):
             """
         )
         return generate_md_from_prompt_recursive(self.magic_info)
-
-    def __str__(self) -> str:
-        return f"MarkdownToPythonConverter({self.magic_info.magic_layer})"
-
-    def __repr__(self) -> str:
-        return self.__str__()

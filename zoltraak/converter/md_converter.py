@@ -36,12 +36,13 @@ class MarkdownToMarkdownConverter(BaseConverter):
         self.prompt_manager = prompt_manager
         self.acceptable_layers = [
             MagicLayer.LAYER_1_REQUEST_GEN,
-            MagicLayer.LAYER_2_REQUIREMENT_GEN,
+            MagicLayer.LAYER_2_STRUCTURE_GEN,
             MagicLayer.LAYER_3_REQUIREMENT_GEN,
         ]
+        self.name = "MarkdownToMarkdownConverter"
 
     @log_inout
-    def convert(self) -> str:
+    def prepare(self) -> None:
         """prompt + ユーザ要求記述書(pre_md_file) => 要件定義書(md_file)"""
 
         # step1: ファイル情報を更新
@@ -55,7 +56,7 @@ class MarkdownToMarkdownConverter(BaseConverter):
             file_info.update_hash()
 
         # step3: ファイル構造定義書を作成
-        if self.magic_info.magic_layer is MagicLayer.LAYER_2_REQUIREMENT_GEN:
+        if self.magic_info.magic_layer is MagicLayer.LAYER_2_STRUCTURE_GEN:
             self.magic_info.grimoire_compiler = "structure_full.md"
             log("レイヤ2専用のプロンプト: %s", self.magic_info.grimoire_compiler)
             file_info.update_source_target(file_info.prompt_file_path, file_info.structure_file_path)
@@ -68,14 +69,12 @@ class MarkdownToMarkdownConverter(BaseConverter):
             file_info.update_source_target(file_info.request_file_path, file_info.md_file_path)
             file_info.update_hash()
 
+    @log_inout
+    def convert(self) -> str:
+        """prompt + ユーザ要求記述書(pre_md_file) => 要件定義書(md_file)"""
+
         # step5: 変換処理
         return self.convert_one()
-
-    def __str__(self) -> str:
-        return f"MarkdownToMarkdownConverter({self.magic_info.description})"
-
-    def __repr__(self) -> str:
-        return self.__str__()
 
 
 if __name__ == "__main__":  # このスクリプトが直接実行された場合にのみ、以下のコードを実行します。

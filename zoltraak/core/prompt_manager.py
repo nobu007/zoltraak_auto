@@ -85,7 +85,7 @@ class PromptManager:
     @log_inout
     def prepare_prompt_final(self) -> str:
         """
-        prompt_finalから任意のマークダウンファイルを生成する関数
+        prompt_finalを生成してMagicInfoに反映する関数
         利用するグリモアはMagicInfoに展開済みの前提
 
         設計： 下記を全て反映したプロンプトを作成する
@@ -109,7 +109,7 @@ class PromptManager:
     @log_inout
     def create_prompt(self, goal_prompt: str, compiler_path: str, formatter_path: str, language: str):
         """
-        LLMへのプロンプトを作成する関数
+        LLMへの最終的なプロンプト(prompt_final)を生成を作成する関数
 
         Returns:
             str: 作成されたプロンプト
@@ -121,11 +121,11 @@ class PromptManager:
             prompt_final = FileUtil.read_grimoire(compiler_path, goal_prompt, language)
             prompt_final += "\n\n"
         if os.path.exists(formatter_path):
-            prompt_final = self.modify_prompt(prompt_final, formatter_path, language)
+            prompt_final = self.apply_fomatter(prompt_final, formatter_path, language)
         return prompt_final
 
     @log_inout
-    def modify_prompt(self, final_prompt: str, formatter_path: str, language: str):
+    def apply_fomatter(self, final_prompt: str, formatter_path: str, language: str):
         modified_prompt = final_prompt
         if formatter_path != "" and language is not None:
             formatter_prompt = self.get_formatter_prompt(formatter_path, language)
@@ -158,7 +158,7 @@ class PromptManager:
     @log_inout
     def get_formatter_prompt(self, formatter_path: str, language: str | None = None):
         """
-        フォーマッタを取得する関数
+        フォーマッタのプロンプトを取得する関数
 
         Args:
             formatter_path (str): フォーマッタのパス

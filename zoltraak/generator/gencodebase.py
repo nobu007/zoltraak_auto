@@ -23,6 +23,7 @@ class CodeBaseGenerator(BaseConverter):
             MagicLayer.LAYER_6_CODEBASE_GEN,
             MagicLayer.LAYER_7_REQUIREMENT_GEN,
         ]
+        self.name = "CodeBaseGenerator"
         self.source_file_path_list = []
 
     @log_inout

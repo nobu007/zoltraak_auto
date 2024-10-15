@@ -32,7 +32,7 @@ class MagicMode(str, Enum):
 
 class MagicLayer(str, Enum):
     LAYER_1_REQUEST_GEN = "layer_1_request_gen"  # 生のprompt => ユーザ要求記述書
-    LAYER_2_REQUIREMENT_GEN = "layer_2_requirement_gen"  # 生のprompt => ファイル構造定義書
+    LAYER_2_STRUCTURE_GEN = "layer_2_structure_gen"  # 生のprompt => ファイル構造定義書
     LAYER_3_REQUIREMENT_GEN = "layer_3_requirement_gen"  # ユーザ要求記述書 and ファイル構造定義書 => 要件定義書
     LAYER_4_REQUIREMENT_GEN = "layer_4_requirement_gen"  # 要件定義書 => 要件定義書(requirements)
     LAYER_5_CODE_GEN = "layer_5_code_gen"  # 要件定義書(requirements) => コード
@@ -77,7 +77,7 @@ class MagicLayer(str, Enum):
                 # レイヤが見つかったケース
                 return layer
         # レイヤが見つからなかったケースのデフォルト値
-        return MagicLayer.LAYER_2_REQUIREMENT_GEN
+        return MagicLayer.LAYER_4_REQUIREMENT_GEN
 
 
 class ZoltraakParams(BaseModel):

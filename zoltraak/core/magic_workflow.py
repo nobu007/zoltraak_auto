@@ -80,6 +80,7 @@ class MagicWorkflow:
         for converter in self.converters:
             if layer in converter.acceptable_layers and layer == self.magic_info.magic_layer:
                 log(str(converter) + " convert layer = " + str(layer))
+                converter.prepare()
                 self.run_converter(converter)
                 is_called = True
         return is_called
@@ -187,7 +188,7 @@ class MagicWorkflow:
     @log_inout
     def update_grimoire_and_prompt(self):
         # モードによる分岐
-        log(f"{self.magic_info.magic_mode}で変更を提案します。")
+        log(f"{self.magic_info.magic_mode}で変更中。現状: %s", self.magic_info.grimoire_compiler)
 
         # コンパイラのパスを取得
         compiler_path = GrimoireUtil.get_valid_compiler(self.magic_info.grimoire_compiler)

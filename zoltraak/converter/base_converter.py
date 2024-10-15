@@ -27,6 +27,10 @@ class BaseConverter:
         self.magic_info = magic_info
         self.prompt_manager = prompt_manager
         self.acceptable_layers = []
+        self.name = "BaseConverter"
+
+    def prepare(self) -> None:
+        pass
 
     def convert(self) -> str:
         """生成処理"""
@@ -281,13 +285,13 @@ class BaseConverter:
     def handle_new_target_file(self):
         file_info = self.magic_info.file_info
         log(f"""
-要件定義書執筆中: {file_info.target_file_path}は新しいファイルです。少々お時間をいただきます。
+新ファイル生成中: {file_info.target_file_path}は新しいファイルです。少々お時間をいただきます。
 {file_info.source_file_path} -> {file_info.target_file_path}
                   """)
         return generate_md_from_prompt(self.magic_info)
 
     def __str__(self) -> str:
-        return f"BaseConverter({self.magic_info.magic_layer})"
+        return f"{self.name}({self.magic_info.magic_layer})"
 
     def __repr__(self) -> str:
         return self.__str__()
