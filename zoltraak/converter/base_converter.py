@@ -57,7 +57,7 @@ class BaseConverter:
         file_info = self.magic_info.file_info
         if self.prompt_manager.is_same_prompt(PromptEnum.FINAL):  # -- 前回と同じプロンプトの場合
             log(f"スキップ(既存＆input変更なし): {file_info.target_file_path}")
-            return self.magic_info.file_info.target_file_path  # --- 処理をスキップし既存のターゲットファイルを返す
+            return file_info.target_file_path  # --- 処理をスキップし既存のターゲットファイルを返す
 
         log(f"{file_info.target_file_path}を更新します。")
         if os.path.exists(file_info.past_source_file_path):

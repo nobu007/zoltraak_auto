@@ -48,7 +48,7 @@ class CodeBaseGenerator(BaseConverter):
 
     def convert(self) -> str:
         """コード => コードベース"""
-        self.convert_one()
+        return self.convert_one()
 
     @log_inout
     def convert_one(self) -> str:

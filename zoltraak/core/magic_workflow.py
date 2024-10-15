@@ -113,6 +113,7 @@ class MagicWorkflow:
         # プロセスを実行する
         self.pre_process()
         output_file_path = func()
+        log("output_file_path= %s", output_file_path)
         display_magic_info_intermediate(self.magic_info)
         self.file_info.output_file_path = output_file_path
         self.post_process()
