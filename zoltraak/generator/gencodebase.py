@@ -37,10 +37,12 @@ class CodeBaseGenerator(BaseConverter):
         structure_file_content = FileUtil.read_file(structure_file_path)
 
         for file_path_rel in structure_file_content.split("\n"):
-            log("file_path_rel=%s", file_path_rel)
-            file_path = os.path.abspath(os.path.join(file_info.target_dir, file_path_rel))
-            if os.path.isfile(file_path):
-                self.source_file_path_list.append(file_path)
+            log("file_path_rel= %s", file_path_rel)
+            source_file_path = os.path.abspath(os.path.join(file_info.target_dir, file_path_rel))
+            log("source_file_path= %s", source_file_path)
+            if os.path.isfile(source_file_path):
+                log("source_file_path append")
+                self.source_file_path_list.append(source_file_path)
 
         return self.source_file_path_list
 

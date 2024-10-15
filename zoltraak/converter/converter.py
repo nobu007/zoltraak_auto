@@ -72,7 +72,9 @@ class MarkdownToPythonConverter(BaseConverter):
         """要件定義書(md_file) => Pythonコード"""
 
         # step4: 変換処理
-        return self.convert_one_md_md()
+        if self.magic_info.magic_layer is MagicLayer.LAYER_4_REQUIREMENT_GEN:
+            return self.convert_one_md_md()
+        return self.convert_one_md_py()
 
     @log_inout
     def convert_one_md_md(self) -> str:
