@@ -2,7 +2,7 @@ import os
 
 from zoltraak.converter.base_converter import BaseConverter
 from zoltraak.core.prompt_manager import PromptManager
-from zoltraak.schema.schema import MagicInfo, MagicLayer
+from zoltraak.schema.schema import MagicInfo, MagicLayer, SourceTargetSet
 from zoltraak.utils.file_util import FileUtil
 from zoltraak.utils.log_util import log, log_inout
 
@@ -24,10 +24,9 @@ class CodeBaseGenerator(BaseConverter):
             MagicLayer.LAYER_7_REQUIREMENT_GEN,
         ]
         self.name = "CodeBaseGenerator"
-        self.source_file_path_list = []
 
     @log_inout
-    def prepare_generation(self):
+    def prepare_generation(self) -> list[SourceTargetSet]:
         """
         ターゲットコードベース生成の準備を行うメソッド
         """
@@ -41,10 +40,24 @@ class CodeBaseGenerator(BaseConverter):
             source_file_path = os.path.abspath(os.path.join(file_info.target_dir, file_path_rel))
             log("source_file_path= %s", source_file_path)
             if os.path.isfile(source_file_path):
-                log("source_file_path append")
-                self.source_file_path_list.append(source_file_path)
+                # target_file_path
+                target_file_path = os.path.splitext(source_file_path)[0] + ".md"  # .mdに変更
+                if target_file_path == source_file_path:
+                    target_file_path += ".md"  # もともと.mdだった場合は.md.mdになる
+                log("source_file_path append target_file_path= %s", target_file_path)
 
-        return self.source_file_path_list
+                source_target_set = SourceTargetSet(
+                    source_file_path=source_file_path, target_file_path=target_file_path
+                )
+                self.source_target_set_list.append(source_target_set)
+
+        # step2: グリモア更新
+        self.magic_info.grimoire_compiler = "dev_obj_file.md"
+
+        # step3: プロンプト更新
+        self.magic_info.prompt_input = ""
+
+        return self.source_target_set_list
 
     def convert(self) -> str:
         """コード => コードベース"""

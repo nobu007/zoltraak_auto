@@ -4,7 +4,7 @@ import zoltraak.llms.litellm_api as litellm
 from zoltraak import settings
 from zoltraak.core.prompt_manager import PromptEnum, PromptManager
 from zoltraak.gen_markdown import generate_md_from_prompt
-from zoltraak.schema.schema import MagicInfo
+from zoltraak.schema.schema import MagicInfo, SourceTargetSet
 from zoltraak.utils.file_util import FileUtil
 from zoltraak.utils.log_util import log, log_e, log_inout
 
@@ -28,6 +28,7 @@ class BaseConverter:
         self.prompt_manager = prompt_manager
         self.acceptable_layers = []
         self.name = "BaseConverter"
+        self.source_target_set_list: list[SourceTargetSet] = []
 
     def prepare(self) -> None:
         pass

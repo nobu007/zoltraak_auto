@@ -9,6 +9,11 @@ from pydantic import BaseModel, Field
 from zoltraak import settings
 
 
+class SourceTargetSet(BaseModel):
+    source_file_path: str = Field(default="", description="source_file_path")
+    target_file_path: str = Field(default="", description="target_file_path")
+
+
 class MagicMode(str, Enum):
     GRIMOIRE_ONLY = "grimoire_only"  # プロンプト指定なしでグリモアのみ指定
     GRIMOIRE_AND_PROMPT = "grimoire_and_prompt"  # グリモア＋プロンプト

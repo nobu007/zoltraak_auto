@@ -90,16 +90,13 @@ class MagicWorkflow:
         is_gen = False
         if hasattr(converter, "prepare_generation") and callable(converter.prepare_generation):
             # ジェネレータ
-            source_file_path_list = converter.prepare_generation()
-            for source_file_path in source_file_path_list:
-                if ".py" in source_file_path:
-                    target_file_path = source_file_path.replace(".py", ".md")
-                else:
-                    # TODO: README.mdをさらに何か加工する？
-                    target_file_path = source_file_path.replace(".md", ".py")
-                self.file_info.update_source_target(source_file_path, target_file_path)
+            source_target_set_list = converter.prepare_generation()
+            for source_target_set in source_target_set_list:
+                self.file_info.update_source_target(
+                    source_target_set.source_file_path, source_target_set.target_file_path
+                )
                 self.file_info.update_hash()
-                log("run Generator target_file_path = %s", target_file_path)
+                log("run Generator source_target_set = %s", source_target_set)
                 self.run(converter.convert)
             is_gen = True
         else:
