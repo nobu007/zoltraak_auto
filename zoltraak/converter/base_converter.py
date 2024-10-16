@@ -55,12 +55,17 @@ class BaseConverter:
         Returns:
             str: 処理結果のファイルパス
         """
+        source_skip_magic_layer_list = [
+            MagicLayer.LAYER_6_CODEBASE_GEN,
+            MagicLayer.LAYER_7_REQUIREMENT_GEN,
+            MagicLayer.LAYER_8_CLEAN_UP,
+        ]
         file_info = self.magic_info.file_info
         if self.prompt_manager.is_same_prompt(PromptEnum.FINAL):  # -- 前回と同じプロンプトの場合
             log(f"スキップ(既存＆input変更なし): {file_info.target_file_path}")
             return file_info.target_file_path  # --- 処理をスキップし既存のターゲットファイルを返す
 
-        if self.magic_info.magic_layer == MagicLayer.LAYER_6_CODEBASE_GEN and self.is_same_source_as_past():
+        if self.magic_info.magic_layer in source_skip_magic_layer_list:
             # -- 前回と同じソースの場合
             log(f"スキップ(ソース変更なし): {file_info.target_file_path}")
             return file_info.target_file_path  # --- 処理をスキップし既存のターゲットファイルを返す

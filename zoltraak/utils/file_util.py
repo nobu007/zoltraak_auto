@@ -1,4 +1,5 @@
 import os
+import pathlib
 import re
 import shutil
 
@@ -79,6 +80,30 @@ class FileUtil:
         return ""
 
     @staticmethod
+    def read_structure_file_content(structure_file_path: str, target_dir: str) -> list[str]:
+        """
+        構造ファイルの内容を読み込み、絶対ファイルパスのリストを返します。
+
+        引数:
+            structure_file_path (str): 相対ファイルパスを含む構造ファイルのパス。
+            target_dir (str): 相対ファイルパスを解決するためのターゲットディレクトリ。
+
+        戻り値:
+            list[str]: ターゲットディレクトリに存在する絶対ファイルパスのリスト。
+        """
+        structure_file_content = FileUtil.read_file(structure_file_path)
+        file_path_list = []
+        for file_path_rel in structure_file_content.split("\n"):
+            log("check file_path_rel= %s", file_path_rel)
+            file_path = os.path.abspath(os.path.join(target_dir, file_path_rel))
+            if os.path.isfile(file_path):
+                file_path_list.append(file_path)
+                log("append file_path= %s", file_path)
+            else:
+                log("not exist= %s", file_path)
+        return file_path_list
+
+    @staticmethod
     def copy_file(src_file_path: str, dis_file_path: str) -> str:
         return shutil.copy(src_file_path, dis_file_path)
 
@@ -97,3 +122,23 @@ class FileUtil:
             log_i("=" * 80)
             log_i("%s content=%s", file_path, file_content)
             log_i("=" * 80)
+
+    @staticmethod
+    def find_files(root_path: str, ext: str = ".py") -> list[str]:
+        """Find files in the root_path
+
+        Args:
+            root_path (str): root path to find files
+
+        Returns:
+            list[str]: list of file paths
+        """
+        file_paths = []
+        if os.path.isdir(root_path):  # noqa: PTH112
+            for path in pathlib.Path(root_path).glob(f"**/*{ext}"):
+                if path.is_file():
+                    log(path)
+                    file_paths.append(str(path.resolve()))
+            return file_paths
+
+        return file_paths

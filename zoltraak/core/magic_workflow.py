@@ -5,6 +5,7 @@ from zoltraak.converter.base_converter import BaseConverter
 from zoltraak.converter.converter import MarkdownToPythonConverter
 from zoltraak.converter.md_converter import MarkdownToMarkdownConverter
 from zoltraak.core.prompt_manager import PromptManager
+from zoltraak.generator.file_remover import FileRemover
 from zoltraak.generator.gencodebase import CodeBaseGenerator
 from zoltraak.schema.schema import FileInfo, MagicInfo, MagicLayer, MagicMode
 from zoltraak.utils.file_util import FileUtil
@@ -36,6 +37,7 @@ class MagicWorkflow:
         self.converters.append(MarkdownToMarkdownConverter(magic_info, prompt_manager))
         self.converters.append(MarkdownToPythonConverter(magic_info, prompt_manager))
         self.converters.append(CodeBaseGenerator(magic_info, prompt_manager))
+        self.converters.append(FileRemover(magic_info, prompt_manager))
 
     @log_inout
     def start_workflow(self):

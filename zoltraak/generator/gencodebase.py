@@ -32,19 +32,16 @@ class CodeBaseGenerator(BaseConverter):
         """
         # step1: ファイル情報を更新
         file_info = self.magic_info.file_info
-        structure_file_path = file_info.structure_file_path
-        structure_file_content = FileUtil.read_file(structure_file_path)
+        code_file_path_list = FileUtil.read_structure_file_content(file_info.structure_file_path, file_info.target_dir)
 
-        for code_file_path_rel in structure_file_content.split("\n"):
-            log("code_file_path_rel= %s", code_file_path_rel)
-            code_file_path = os.path.abspath(os.path.join(file_info.target_dir, code_file_path_rel))
-            log("code_file_path= %s", code_file_path)
+        for code_file_path in code_file_path_list:
             if os.path.isfile(code_file_path):
                 source_target_set = self.prepare_generation_code_file(code_file_path)
                 self.source_target_set_list.append(source_target_set)
                 log("append source_target_set= %s", source_target_set)
 
         # step2: グリモア更新
+        # 変更なし
 
         # step3: プロンプト更新
         self.magic_info.prompt_input = ""
