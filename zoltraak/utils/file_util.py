@@ -38,11 +38,21 @@ class FileUtil:
             return f"ファイルの書き込みに失敗しました: {e}"
 
     @staticmethod
-    def read_grimoire(file_path: str, prompt: str = "", language: str = "") -> str:
-        # グリモアをpromptとlanguageをreplaceして読み込む
+    def read_grimoire(
+        file_path: str,
+        prompt: str = "",
+        language: str = "",
+        requirements_content: str = "",
+        source_content: str = "",
+        target_content: str = "",
+    ) -> str:
+        # グリモアをpromptとlanguageとcontextをreplaceして読み込む
         content = FileUtil.read_file(file_path)
         content = content.replace("{prompt}", prompt)
         content = content.replace("{language}", language)
+        content = content.replace("{requirements_content}", requirements_content)
+        content = content.replace("{source_content}", source_content)
+        content = content.replace("{target_content}", target_content)
         log(f"read_grimoire content[:100]:\n {content[:100]}")
         return content
 

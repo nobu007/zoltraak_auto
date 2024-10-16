@@ -35,29 +35,41 @@ class CodeBaseGenerator(BaseConverter):
         structure_file_path = file_info.structure_file_path
         structure_file_content = FileUtil.read_file(structure_file_path)
 
-        for file_path_rel in structure_file_content.split("\n"):
-            log("file_path_rel= %s", file_path_rel)
-            source_file_path = os.path.abspath(os.path.join(file_info.target_dir, file_path_rel))
-            log("source_file_path= %s", source_file_path)
-            if os.path.isfile(source_file_path):
-                # target_file_path
-                target_file_path = os.path.splitext(source_file_path)[0] + ".md"  # .mdに変更
-                if target_file_path == source_file_path:
-                    target_file_path += ".md"  # もともと.mdだった場合は.md.mdになる
-                log("source_file_path append target_file_path= %s", target_file_path)
-
-                source_target_set = SourceTargetSet(
-                    source_file_path=source_file_path, target_file_path=target_file_path
-                )
+        for code_file_path_rel in structure_file_content.split("\n"):
+            log("code_file_path_rel= %s", code_file_path_rel)
+            code_file_path = os.path.abspath(os.path.join(file_info.target_dir, code_file_path_rel))
+            log("code_file_path= %s", code_file_path)
+            if os.path.isfile(code_file_path):
+                source_target_set = self.prepare_generation_code_file(code_file_path)
                 self.source_target_set_list.append(source_target_set)
+                log("append source_target_set= %s", source_target_set)
 
         # step2: グリモア更新
-        self.magic_info.grimoire_compiler = "dev_obj_file.md"
 
         # step3: プロンプト更新
         self.magic_info.prompt_input = ""
 
         return self.source_target_set_list
+
+    @log_inout
+    def prepare_generation_code_file(self, code_file_path: str) -> SourceTargetSet:
+        # target_file_path(生成済の個々のソースファイルに対応する詳細設計書)
+        cade_base_file_path = os.path.splitext(code_file_path)[0] + ".md"  # .mdに変更
+        if cade_base_file_path == code_file_path:
+            cade_base_file_path += ".md"  # もともと.mdだった場合は.md.mdになる
+
+        if self.magic_info.magic_layer is MagicLayer.LAYER_6_CODEBASE_GEN:
+            # ソースファイル => 詳細設計書
+            source_file_path = code_file_path
+            target_file_path = cade_base_file_path
+            self.magic_info.grimoire_compiler = "dev_obj_file.md"
+        else:
+            # MagicLayer.LAYER_7_REQUIREMENT_GEN
+            # 詳細設計書 => 要件定義書
+            source_file_path = cade_base_file_path
+            target_file_path = self.magic_info.file_info.md_file_path
+            self.magic_info.grimoire_compiler = "dev_obj_modify.md"
+        return SourceTargetSet(source_file_path=source_file_path, target_file_path=target_file_path)
 
     def convert(self) -> str:
         """コード => コードベース"""

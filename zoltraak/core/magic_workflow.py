@@ -132,7 +132,7 @@ class MagicWorkflow:
             if prompt_goal.strip() != source_content.strip():
                 log(f"ソースファイル読込:  {self.file_info.source_file_path}")
                 self.magic_info.prompt_goal = self.magic_info.prompt_input
-                prompt_goal += f"\n\n<<追加指示>>\n{source_content}"
+                prompt_goal += f"\n\n<<追加情報>>\n{source_content}"
         else:
             # ソースファイルを保存(設計では初回のprompt_file_pathにだけ保存する)
             log_w(f"ソースファイル更新(前レイヤ処理済？):  {source_file_path}")
@@ -185,6 +185,9 @@ class MagicWorkflow:
 
     @log_inout
     def update_grimoire_and_prompt(self):
+        """MagicModeによって起動時のprompt_inputとグリモアを変更する。
+        ちなみにsource_file_pathで指定されたインプットファイルはpre_process()で詰め込む(重要)。
+        """
         # モードによる分岐
         log(f"{self.magic_info.magic_mode}で変更中。現状: %s", self.magic_info.grimoire_compiler)
 
