@@ -55,7 +55,25 @@ Zoltraak のコアは source⇒target の変換ロジックにある。
 2. プロンプトやコンテキストなどを詰め込んだ source ファイルを生成する
 3. 初回は source ファイルを最終的なプロンプトにして target ファイルを生成する
 4. 2 回目以降は source ファイルの差分を target ファイルに適用する
-5. source ファイルの差分が無ければスキップする(全ての前回プロンプトを残す前提)
+5. 入力に差分が無ければスキップする
+   1. (案 1) 変換元コンテンツに差分がなければスキップする(現状)
+   2. (案 2) 最終プロンプトに差分がなければスキップする(理想？))
+
+#### 処理の流れ(コンバータ)
+
+最重要なのはプロンプト構築ロジック。
+
+```mermaid
+flowchart TD
+    A[ユーザー入力（prompt_input）] --> X[コンパイラ（compiler）]
+    B[ユーザ要求記述書（requirements_content）] --> X
+    C[変換元コンテンツ（source_content）] --> X
+    X --> X2[ゴールプロンプト（prompt_goal）]
+    X2 --> Y[最終プロンプト（prompt_final）]
+    D[フォーマッタ（formatter_prompt）] --> Y
+    E[言語（language）日本語/英語] --> Y
+    Y --> Z[変換後コンテンツ（target_content）]
+```
 
 ### ジェネレータ
 
