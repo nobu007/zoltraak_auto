@@ -7,9 +7,9 @@ import pytest
 
 from tests.unit_tests.helper import BaseTestCase
 from zoltraak.cli import main
+from zoltraak.core.magic_workflow import MagicWorkflow
 from zoltraak.llms.litellm_api import generate_response
 from zoltraak.md_generator import generate_md_from_prompt_recursive
-from zoltraak.utils.rich_console import MagicInfo
 from zoltraak.utils.subprocess_util import SubprocessUtil
 
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
@@ -161,7 +161,7 @@ class TestZoltraakCommand(BaseTestCase):  # TestZoltraakCommand クラスを定�
         self.assertIn("│ dev_obj.md", result.stdout)  # 標準出力に指定の文字列が含まれていることを確認します。
 
 
-class TestCompilerFunctionality(unittest.TestCase):  # クラス名をTestCompilerFunctionalityに変更
+class TestCompilerFunctionality(BaseTestCase):  # クラス名をTestCompilerFunctionalityに変更
     """
     各コンパイラの機能をテストするクラス
 
@@ -176,6 +176,16 @@ class TestCompilerFunctionality(unittest.TestCase):  # クラス名をTestCompil
     各テストメソッドでは、コンパイラのパス、ゴールプロンプト、期待される出力ファイルのパスを指定し、
     run_compiler_testメソッドを呼び出してコンパイラの機能をテストします。
     """
+
+    def setUp(self):
+        # TODO: 生成物をちゃんとチェックするならコメントアウトしてモックを無効化する必要あり
+        super().setUp()
+
+        self.magic_workflow = MagicWorkflow()
+        self.magic_info = self.magic_workflow.magic_info
+        self.magic_info.file_info.update_source_target("pre.md", "output.md")
+        self.magic_info.update()
+        self.prompt_manager = self.magic_workflow.prompt_manager
 
     def test_biz_consult_copy_compiler(self):
         """
@@ -289,17 +299,21 @@ class TestCompilerFunctionality(unittest.TestCase):  # クラス名をTestCompil
         """
         指定されたコンパイラパスとプロンプトを使用してテストを実行する
         """
-        # generate_md_from_prompt関数を呼び出し、追加の引数を渡す
-        magic_info = MagicInfo()
-        magic_info.grimoire_compiler = f"{setting_dir}/compiler/{compiler_path}"
-        magic_info.grimoire_formatter = f"{setting_dir}/formatter/None.md"
-        magic_info.prompt_input = goal_prompt
-        magic_info.file_info.target_file_path = expected_md_path
-        generate_md_from_prompt_recursive(magic_info)
 
-        expected_md_path = (
-            "requirements/" + expected_md_path
-        )  # 期待されるMDファイルのパスをrequirementsディレクトリ内に設定
+        # generate_md_from_prompt関数を呼び出し、追加の引数を渡す
+        self.magic_info.grimoire_compiler = f"{setting_dir}/compiler/{compiler_path}"
+        self.magic_info.grimoire_formatter = f"{setting_dir}/formatter/None.md"
+        self.magic_info.prompt_goal = goal_prompt
+        self.magic_info.file_info.target_file_path = expected_md_path
+
+        # 出力先をクリア
+        if os.path.isfile(expected_md_path):
+            os.remove(expected_md_path)
+
+        # テストを実行
+        self.prompt_manager.prepare_prompt_final()
+        generate_md_from_prompt_recursive(self.magic_info)
+
         self.check_generated_md_content(expected_md_path, compiler_path)  # 生成されたMDファイルの内容をチェックする
         self.move_generated_md_to_gomi(expected_md_path)  # 生成されたMDファイルをgomiディレクトリに移動する
 
