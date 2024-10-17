@@ -122,6 +122,17 @@ class PromptManager:
             prompt_final += "\n\n"
         if os.path.exists(formatter_path):
             prompt_final = self.apply_fomatter(prompt_final, formatter_path, language)
+
+        # destiny_content
+        destiny_content = FileUtil.read_file(self.file_info.destiny_file_path)
+        prompt_final = (
+            "#### 前提コンテキスト(この内容は重要ではないですが、緩く全体的な判断に活用してください) ####\n"
+            + destiny_content
+            + "#### 前提コンテキスト終了 ####\n\n"
+            + prompt_final
+        )
+        log("len(prompt_final)=%d", len(prompt_final))
+
         return prompt_final
 
     @log_inout

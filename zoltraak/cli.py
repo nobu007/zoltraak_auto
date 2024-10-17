@@ -67,6 +67,13 @@ def main() -> None:
         help=f"グリモアの終了レイヤを指定します。\n例えば「{MagicLayer.LAYER_5_CODE_GEN}」でコード生成が終わったら終了します。",
         default=str(MagicLayer.LAYER_5_CODE_GEN),
     )
+    parser.add_argument(
+        "-ei",
+        "--eternal_intent",
+        type=str,
+        help="全レイヤで共通不変の永続的な作業指示です。新規の生成処理のプロンプト冒頭に例外なく適用されます。最小設定推奨。",
+        default="",
+    )
     args = parser.parse_args()
     if args.version:  # バージョン情報表示オプションが指定された場合
         show_version_and_exit()  # - バージョン情報を表示して終了
@@ -95,6 +102,7 @@ def main() -> None:
     params.magic_mode = args.magic_mode
     params.magic_layer = args.magic_layer
     params.magic_layer_end = args.magic_layer_end
+    params.eternal_intent = args.eternal_intent
     preprocess_input(params)
     display_info_full(params, title="ZoltraakParams")
     main_exec(params)
@@ -286,6 +294,15 @@ def process_markdown_file(params: ZoltraakParams) -> MagicInfo:
 
     # prompt_inputを保存する
     FileUtil.write_file(magic_info.file_info.prompt_file_path, magic_info.prompt_input)
+
+    # eternal_intentをdestiny_contentとして保存する
+    if params.eternal_intent:
+        # パラメータで指定があれば強制的に上書き
+        FileUtil.write_file(magic_info.file_info.destiny_file_path, params.eternal_intent)
+    elif not os.path.isfile(magic_info.file_info.destiny_file_path):
+        # ファイルが存在しない場合は空ファイルを作成
+        with open(magic_info.file_info.destiny_file_path, "w", encoding="utf-8") as f:
+            f.write("")
 
     magic_workflow = MagicWorkflow(magic_info)
 

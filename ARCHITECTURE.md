@@ -70,6 +70,7 @@ flowchart TD
     C[変換元コンテンツ（source_content）] --> X
     X --> X2[ゴールプロンプト（prompt_goal）]
     X2 --> Y[最終プロンプト（prompt_final）]
+    X3[エターナルインテント（destiny_content）] --> Y
     D[フォーマッタ（formatter_prompt）] --> Y
     E[言語（language）日本語/英語] --> Y
     Y --> Z[変換後コンテンツ（target_content）]

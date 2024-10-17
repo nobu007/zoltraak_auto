@@ -101,6 +101,7 @@ class ZoltraakParams(BaseModel):
     magic_mode: str = Field(default="", description="グリモアの利用方法")
     magic_layer: str = Field(default="", description="グリモアの起動レイヤ")
     magic_layer_end: str = Field(default="", description="グリモアの終了レイヤ")
+    eternal_intent: str = Field(default="", description="全レイヤで共通不変の永続的な作業指示")
 
     def get_zoltraak_command(self):
         cmd = f"zoltraak {self.input}"
@@ -113,6 +114,7 @@ class ZoltraakParams(BaseModel):
 
 DEFAULT_CANONICAL_NAME = "zoltraak.md"
 DEFAULT_COMPILER = "general_prompt.md"
+DEFAULT_DESTINY_FILE = "DESTINY.md"
 DEFAULT_PROMPT_FILE = "PROMPT.md"
 DEFAULT_REQUEST_FILE = "REQUEST.md"
 DEFAULT_STRUCTURE_FILE = "STRUCTURE.md"
@@ -127,6 +129,10 @@ class FileInfo(BaseModel):
     )
 
     # Input/Outputファイル
+    destiny_file_path: str = Field(
+        default=os.path.abspath(DEFAULT_DESTINY_FILE),
+        description="不変のユーザ要求(別名: eternal_intent)を保存するファイル (絶対パス)",
+    )
     prompt_file_path: str = Field(
         default=os.path.abspath(DEFAULT_PROMPT_FILE),
         description="ユーザ要求を保存するファイル(絶対パス)",
@@ -196,6 +202,7 @@ class FileInfo(BaseModel):
         self.update_hash()
 
     def update_canonical_name(self, canonical_name: str):
+        self.destiny_file_path = "destiny_" + canonical_name
         self.prompt_file_path = "prompt_" + canonical_name
         self.request_file_path = "request_" + canonical_name
         self.structure_file_path = "structure_" + canonical_name
@@ -203,6 +210,8 @@ class FileInfo(BaseModel):
         self.py_file_path = os.path.splitext(self.md_file_path)[0] + ".py"  # Markdownファイルの拡張子を.pyに変更
 
     def update_path_abs(self):
+        if self.destiny_file_path:
+            self.destiny_file_path = os.path.abspath(self.destiny_file_path)
         if self.prompt_file_path:
             self.prompt_file_path = os.path.abspath(self.prompt_file_path)
         if self.request_file_path:
