@@ -20,9 +20,11 @@ jobs:                                                                         # 
       matrix:
         python-version: ["3.10", "3.11"]                                      # 複数のPythonバージョンでテストを実行
     steps:                                                                    # - ステップの定義
-      - uses: actions/checkout@v2                                             # -- リポジトリのチェックアウト（v2）
+      - uses: actions/checkout@v4                                             # -- リポジトリのチェックアウト（v4）
+        with:                                                                 # --- オプション
+          submodules: recursive                                               # ---- サブモジュールを再帰的に使用
       - name: Set up Python ${{ matrix.python-version }}                      # -- 指定したバージョンのPythonをセットアップ
-        uses: actions/setup-python@v2                                         # --- Python環境のセットアップ（v2）
+        uses: actions/setup-python@v4                                         # --- Python環境のセットアップ（v4）
         with:                                                                 # --- オプション
           python-version: ${{ matrix.python-version }}                        # ---- マトリクスで指定したPythonバージョンを使用
       - name: Install Poetry
@@ -32,7 +34,7 @@ jobs:                                                                         # 
       - name: Install dependencies
         run: poetry install --with test,lint                                  # pyproject.tomlに基づいて依存関係をインストール
       - name: Set SPLIT_NUM
-        run: echo "SPLIT_NUM=10" >> $GITHUB_ENV                                # pytestを何分割して実行するか(4なら4分割してランダムで1つを実行)
+        run: echo "SPLIT_NUM=10" >> $GITHUB_ENV                               # pytestを何分割して実行するか(4なら4分割してランダムで1つを実行)
       - name: Generate random index (1 to SPLIT_NUM)
         run: |
           echo "random_index=$(shuf -i 1-$(($SPLIT_NUM)) -n 1)" >> $GITHUB_ENV
@@ -70,15 +72,15 @@ jobs:                                                                         # 
       - name: Set up Python                                                   # -- Pythonのセットアップ
         uses: actions/setup-python@v2                                         # --- Python環境のセットアップ（v2）
         with:                                                                 # --- オプション
-          python-version: 3.10                                                 # ---- Python 3.8を使用
+          python-version: 3.10                                                # ---- Python 3.10を使用
       - name: Install dependencies                                            # -- 依存関係のインストール
         run: |                                                                # --- 以下のコマンドを実行
           python -m pip install --upgrade pip                                 # ---- pipのアップグレード
           pip install -e .[dev,test,lint]                                     # ---- 現在のディレクトリを編集可能モードでインストール
       - name: Update version and upload to PyPI                               # -- バージョンの更新とPyPIへのアップロード
         env:                                                                  # --- 環境変数の設定
-          PYPI_USERNAME: ${{ secrets.PYPI_USERNAME }}                        # ---- PyPIユーザー名（シークレットから取得）
-          PYPI_PASSWORD: ${{ secrets.PYPI_PASSWORD }}                        # ---- PyPIパスワード（シークレットから取得）
+          PYPI_USERNAME: ${{ secrets.PYPI_USERNAME }}                         # ---- PyPIユーザー名（シークレットから取得）
+          PYPI_PASSWORD: ${{ secrets.PYPI_PASSWORD }}                         # ---- PyPIパスワード（シークレットから取得）
         run: |                                                                # --- 以下のコマンドを実行
           chmod +x update_and_upload.sh                                       # ---- update_and_upload.shに実行権限を付与
           ./update_and_upload.sh                                              # ---- update_and_upload.shを実行
