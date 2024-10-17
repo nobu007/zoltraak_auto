@@ -3,6 +3,7 @@ from unittest.mock import patch
 
 from tests.unit_tests.converter.test_base_converter import TestBaseConverter
 from zoltraak.converter.md_converter import MarkdownToMarkdownConverter
+from zoltraak.core.magic_workflow import MagicWorkflow
 from zoltraak.schema.schema import FileInfo, MagicLayer, MagicMode
 from zoltraak.utils.file_util import FileUtil
 
@@ -33,6 +34,8 @@ class TestMarkdownToMarkdownConverter(TestBaseConverter):
     def setUp(self):
         super().setUp()
 
+        self.magic_workflow = MagicWorkflow()
+        self.magic_info = self.magic_workflow.magic_info
         self.magic_info.magic_layer = MagicLayer.LAYER_1_REQUEST_GEN
         self.magic_info.magic_mode = MagicMode.PROMPT_ONLY
         self.magic_info.file_info = FileInfo(
@@ -44,14 +47,15 @@ class TestMarkdownToMarkdownConverter(TestBaseConverter):
         )
         self.magic_info.file_info.update_source_target("pre.md", "output.md")
         self.magic_info.update()
-        self.md_converter = MarkdownToMarkdownConverter(self.magic_workflow)
+        self.prompt_manager = self.magic_workflow.prompt_manager
+        self.md_converter = MarkdownToMarkdownConverter(self.magic_info, self.prompt_manager)
 
     def tearDown(self):
         super().tearDown()
         print("tearDown")
 
     def test_update_grimoire_and_prompt(self):
-        self.md_converter.update_grimoire_and_prompt()
+        self.magic_workflow.update_grimoire_and_prompt()
         self.assertIn(PROMPT_KEYWORD, self.md_converter.magic_info.prompt_input)
         self.check_mock_call_count_llm_generate_response(0)
 

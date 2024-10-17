@@ -37,10 +37,11 @@ class TestBaseConverter(BaseTestCase):
 
         self.set_up_files()
         self.magic_workflow = MagicWorkflow()
-        self.magic_workflow.magic_info.file_info.update_source_target("pre.md", "output.md")
-        self.magic_workflow.magic_info.update()
         self.magic_info = self.magic_workflow.magic_info
-        self.base_converter = BaseConverter(self.magic_workflow)
+        self.magic_info.file_info.update_source_target("pre.md", "output.md")
+        self.magic_info.update()
+        self.prompt_manager = self.magic_workflow.prompt_manager
+        self.base_converter = BaseConverter(self.magic_info, self.prompt_manager)
         self.set_mock_return_value(ALL_MOCK_HANDLE_EXISTING_TARGET_FILE)
         self.set_mock_return_value(ALL_MOCK_UPDATE_TARGET_FILE_PROPOSE_AND_APPLY)
         self.set_mock_return_value(ALL_MOCK_UPDATE_TARGET_FILE_FROM_SOURCE_DIFF)

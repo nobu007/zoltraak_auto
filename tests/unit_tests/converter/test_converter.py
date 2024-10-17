@@ -4,6 +4,7 @@ from unittest.mock import patch
 
 from tests.unit_tests.converter.test_base_converter import TestBaseConverter
 from zoltraak.converter.converter import MarkdownToPythonConverter
+from zoltraak.core.magic_workflow import MagicWorkflow
 from zoltraak.schema.schema import FileInfo, MagicLayer, MagicMode
 from zoltraak.utils.file_util import FileUtil
 
@@ -33,6 +34,8 @@ class TestMarkdownToPythonConverter(TestBaseConverter):
         super().setUp()
 
         self.set_up_files()
+        self.magic_workflow = MagicWorkflow()
+        self.magic_info = self.magic_workflow.magic_info
         self.magic_info.magic_layer = MagicLayer.LAYER_5_CODE_GEN
         self.magic_info.magic_mode = MagicMode.PROMPT_ONLY
         self.magic_info.file_info = FileInfo(
@@ -44,7 +47,8 @@ class TestMarkdownToPythonConverter(TestBaseConverter):
         )
         self.magic_info.file_info.update_source_target("pre.md", "output.md")
         self.magic_info.update()
-        self.converter = MarkdownToPythonConverter(self.magic_workflow)
+        self.prompt_manager = self.magic_workflow.prompt_manager
+        self.converter = MarkdownToPythonConverter(self.magic_info, self.prompt_manager)
 
     def set_up_files(self):
         # テスト全体で使用するファイルのセットアップ
@@ -63,7 +67,7 @@ class TestMarkdownToPythonConverter(TestBaseConverter):
         print("tearDown")
 
     def test_update_grimoire_and_prompt(self):
-        self.converter.update_grimoire_and_prompt()
+        self.magic_workflow.update_grimoire_and_prompt()
         self.assertIn("", self.magic_info.grimoire_compiler)
         self.assertIn(PROMPT_KEYWORD, self.converter.magic_info.prompt_input)
         self.check_mock_call_count_llm_generate_response(0)
@@ -77,7 +81,7 @@ class TestMarkdownToPythonConverter(TestBaseConverter):
     def test_handle_new_target_file(self):
         self.magic_info.prompt_input = ""
         result = self.converter.handle_new_target_file()
-        self.assertEqual(result, "requirements/output.md")
+        self.assertEqual(result, os.path.abspath("output.md"))
         self.check_mock_call_count_llm_generate_response(1)
 
     def test_apply_diff_to_target_file(self):
