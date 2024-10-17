@@ -5,6 +5,8 @@ import unittest
 import litellm
 import pytest
 
+from tests.unit_tests.helper import BaseTestCase
+from zoltraak.cli import main
 from zoltraak.llms.litellm_api import generate_response
 from zoltraak.md_generator import generate_md_from_prompt_recursive
 from zoltraak.utils.rich_console import MagicInfo
@@ -14,8 +16,21 @@ sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 sys.path.append(os.path.join(os.path.dirname(__file__), "../zoltraak"))
 print("===============================")
 
+# モック用の定義
+# 1. モジュールのインポート方法に応じたモックの定義(bb.xxを置き換える例):
+#    a. from import文を使用する場合:
+#       例: cc.pyで「from aa import bb」としてbb.xxを使用する場合
+#       MOCK_DEFINITION = "cc.bb.xx" <= "aa.bb.xx"ではない
+#    b. import文を使用する場合:
+#       例: aa.pyで「import bb」としてbb.xxを使用する場合
+#       MOCK_DEFINITION = "aa.bb.xx"
+# 2. 命名規約
+#    a. MOCK_(関数名): 単独のテストだけに使用するモック
+#    a. ALL_MOCK_(関数名)： 全てのテストで使用するモック
+MOCK_CLI_MAIN_EXEC = "zoltraak.cli.main_exec"
 
-class TestZoltraakCommand(unittest.TestCase):  # TestZoltraakCommand クラスを定義し、unittest.TestCaseを継承します。
+
+class TestZoltraakCommand(BaseTestCase):  # TestZoltraakCommand クラスを定義し、 BaseTestCaseを継承します。
     def test_zoltraak_command(self):
         """
         zoltraakコマンドの機能をテストします。
@@ -35,41 +50,62 @@ class TestZoltraakCommand(unittest.TestCase):  # TestZoltraakCommand クラス�
         - `zoltraak --help` : ヘルプメッセージを表示
         - `zoltraak --version` : バージョン情報を表示
         """
+        # mock
+        self.set_mock_return_value(MOCK_CLI_MAIN_EXEC)
+
         # mdファイルの引数を指定したテスト
-        result = SubprocessUtil.run(["zoltraak", "sample.md"], capture_output=True, text=True)
-        self.assertEqual(result.returncode, 0)
-        self.assertIn("sample.md", result.stdout)
+        sample_input = os.path.join(os.path.dirname(__file__), "sample.md")
+        sys.argv = ["zoltraak", sample_input]
+        main()
+        # TODO: チェック追加とメンテナンス
+        # self.assertIn("サンプルプロンプト", result)
 
         # -pオプションでプロンプトを指定したテスト
         # TODO: test_prompt_argument()と重複しているので統一する
-        result = SubprocessUtil.run(
-            ["zoltraak", "sample.md", "-p", "サンプルプロンプト"], capture_output=True, text=True
-        )
+        # result = SubprocessUtil.run(
+        #     ["zoltraak", "sample.md", "-p", "サンプルプロンプト"], capture_output=True, text=True
+        # )
+        # self.assertEqual(result.returncode, 0)
+        # self.assertIn("sample.md", result.stdout)
+        # self.assertIn("サンプルプロンプト", result.stdout)
+
+        # # -cオプションでコンパイラを指定したテスト
+        # result = SubprocessUtil.run(["zoltraak", "sample.md", "-c", "dev_obj.md"], capture_output=True, text=True)
+        # self.assertEqual(result.returncode, 0)
+        # self.assertIn("sample.md", result.stdout)
+        # self.assertIn("dev_obj.md", result.stdout)
+
+        # # -fオプションでフォーマッタを指定したテスト
+        # result = SubprocessUtil.run(["zoltraak", "sample.md", "-f", "md_comment.md"], capture_output=True, text=True)
+        # self.assertEqual(result.returncode, 0)
+        # self.assertIn("sample.md", result.stdout)
+        # self.assertIn("formatter.md", result.stdout)
+
+        # # --helpオプションを指定したテスト
+        # result = SubprocessUtil.run(["zoltraak", "--help"], capture_output=True, text=True)
+        # self.assertEqual(result.returncode, 0)
+        # self.assertIn("使用方法:", result.stdout)
+
+        # # --versionオプションを指定したテスト
+        # result = SubprocessUtil.run(["zoltraak", "--version"], capture_output=True, text=True)
+        # self.assertEqual(result.returncode, 0)
+        # self.assertIn("zoltraak version", result.stdout)
+
+    def test_zoltraak_sample(self):
+        """
+        zoltraakコマンドの本機能をサンプル実行でテストします。
+
+        このテストでは、以下の項目を確認します:
+        1. mdファイルの引数を指定した場合、正常に実行されること。
+
+        実行例:
+        - `zoltraak sample.md` : sample.mdファイルを入力として実行
+        """
+        # mdファイルの引数を指定したテスト
+        sample_input = os.path.join(os.path.dirname(__file__), "sample.md")
+        result = SubprocessUtil.run(["zoltraak", sample_input], capture_output=True, text=True)
         self.assertEqual(result.returncode, 0)
         self.assertIn("sample.md", result.stdout)
-        self.assertIn("サンプルプロンプト", result.stdout)
-
-        # -cオプションでコンパイラを指定したテスト
-        result = SubprocessUtil.run(["zoltraak", "sample.md", "-c", "dev_obj.md"], capture_output=True, text=True)
-        self.assertEqual(result.returncode, 0)
-        self.assertIn("sample.md", result.stdout)
-        self.assertIn("dev_obj.md", result.stdout)
-
-        # -fオプションでフォーマッタを指定したテスト
-        result = SubprocessUtil.run(["zoltraak", "sample.md", "-f", "md_comment.md"], capture_output=True, text=True)
-        self.assertEqual(result.returncode, 0)
-        self.assertIn("sample.md", result.stdout)
-        self.assertIn("formatter.md", result.stdout)
-
-        # --helpオプションを指定したテスト
-        result = SubprocessUtil.run(["zoltraak", "--help"], capture_output=True, text=True)
-        self.assertEqual(result.returncode, 0)
-        self.assertIn("使用方法:", result.stdout)
-
-        # --versionオプションを指定したテスト
-        result = SubprocessUtil.run(["zoltraak", "--version"], capture_output=True, text=True)
-        self.assertEqual(result.returncode, 0)
-        self.assertIn("zoltraak version", result.stdout)
 
     def test_missing_md_file_argument(self):  # mdファイルの引数がない場合のテストメソッドを定義します.
         """

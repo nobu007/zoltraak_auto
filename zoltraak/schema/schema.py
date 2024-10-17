@@ -105,7 +105,7 @@ class ZoltraakParams(BaseModel):
     def get_zoltraak_command(self):
         cmd = f"zoltraak {self.input}"
         for field, value in self:
-            if value and value != "input":
+            if value and field != "input":
                 cmd += f" --{field} {value}"
         print("get_zoltraak_command cmd=", cmd)
         return cmd
