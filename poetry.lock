@@ -795,6 +795,19 @@ files = [
 ]
 
 [[package]]
+name = "instant-prompt-box"
+version = "0.0.0"
+description = "InstantPromptBox"
+optional = false
+python-versions = ">=3.10,<3.13"
+files = []
+develop = false
+
+[package.source]
+type = "directory"
+url = "InstantPromptBox"
+
+[[package]]
 name = "jinja2"
 version = "3.1.4"
 description = "A very fast and expressive template engine."
@@ -1854,7 +1867,7 @@ files = [
 [package.dependencies]
 Pillow = [
     {version = ">=9.3.0", markers = "python_version == \"3.11\""},
-    {version = ">=9.2.0", markers = "python_version == \"3.10\" or python_version == \"3.9\""},
+    {version = ">=9.2.0", markers = "python_version == \"3.10\""},
 ]
 
 [[package]]
@@ -1906,7 +1919,6 @@ files = [
 ]
 
 [package.dependencies]
-importlib-metadata = {version = ">=3.6.0", markers = "python_version < \"3.10\""}
 pytest = "*"
 
 [[package]]
@@ -2767,5 +2779,5 @@ type = ["pytest-mypy"]
 
 [metadata]
 lock-version = "2.0"
-python-versions = ">=3.9,<3.13"
-content-hash = "17033085b5fe6d19f5df6120438e292db3b33538f0c505ea00a789e0b734d7be"
+python-versions = ">=3.10,<3.13"
+content-hash = "313b4d892491210d5eb788d021703e9ae0f37fb4daf56214d78b31d2fb91a5c0"
