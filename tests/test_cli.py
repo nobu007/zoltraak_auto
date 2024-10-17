@@ -5,7 +5,8 @@ import unittest
 import litellm
 import pytest
 
-from zoltraak.md_generator import generate_md_from_prompt_recursive, generate_response
+from zoltraak.llms.litellm_api import generate_response
+from zoltraak.md_generator import generate_md_from_prompt_recursive
 from zoltraak.utils.rich_console import MagicInfo
 from zoltraak.utils.subprocess_util import SubprocessUtil
 
@@ -301,7 +302,7 @@ class TestGenerateResponse(unittest.TestCase):
         prompt = "これはテストプロンプトです。"
 
         for model_name in anthropic_models:
-            response = generate_response("anthropic", model_name, prompt)
+            response = generate_response(model_name, prompt)
             print(f"{model_name}からの応答: {response}")  # 応答内容を出力
             self.assertIsInstance(response, str, f"{model_name}からの応答が文字列ではありません")
             self.assertGreater(len(response), 0, f"{model_name}からの応答が空です")
@@ -321,7 +322,7 @@ class TestGenerateResponse(unittest.TestCase):
         prompt = "これはテストプロンプトです。"
 
         for model_name in groq_models:
-            response = generate_response("groq", model_name, prompt)
+            response = generate_response(model_name, prompt)
             print(f"{model_name}からの応答: {response}")  # 応答内容を出力
             self.assertIsInstance(response, str, f"{model_name}からの応答が文字列ではありません")
             self.assertGreater(len(response), 0, f"{model_name}からの応答が空です")

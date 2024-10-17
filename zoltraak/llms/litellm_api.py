@@ -37,7 +37,7 @@ DEFAULT_MODEL_GEMINI = "gemini/gemini-1.5-flash-latest"
 DEFAULT_MODEL_CLAUDE = "claude-3-5-sonnet-20240620"
 
 
-def generate_response(model, prompt, max_tokens, temperature):
+def generate_response(model: str, prompt: str, max_tokens: int = 4000, temperature: float = 0.0) -> str:
     """
     LiteLLM APIを使用してプロンプトに対する応答を生成する関数。
 
