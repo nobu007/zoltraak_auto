@@ -23,6 +23,8 @@ class BaseConverter:
         py_file_path
     """
 
+    DEF_MAX_PROMPT_SIZE_FOR_DIFF = 5000  # 大きすぎるdiffは破綻しがちなので制限
+
     def __init__(self, magic_info: MagicInfo, prompt_manager: PromptManager):
         self.magic_info = magic_info
         self.prompt_manager = prompt_manager
@@ -130,6 +132,12 @@ class BaseConverter:
             # 差分がない場合はスキップ
             log("source_diff_textが空のため、target_fileを更新しません。")
             return file_info.target_file_path
+
+        # プロンプトサイズ制限
+        if len(prompt_diff_order) > BaseConverter.DEF_MAX_PROMPT_SIZE_FOR_DIFF:
+            log("prompt_diff_orderが大きすぎるため、target_fileを更新しません。")
+            return self.handle_new_target_file()
+
         self.magic_info.prompt_diff_order = prompt_diff_order
 
         return self.update_target_file_propose_and_apply(file_info.target_file_path, prompt_diff_order)

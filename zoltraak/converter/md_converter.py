@@ -27,7 +27,10 @@ class MarkdownToMarkdownConverter(BaseConverter):
     <LAYER_2>
       source => prompt_file_path
       target => structure_file_path
-    <LAYER_3(not active)>
+    <LAYER_3>
+      source => request_file_path
+      target => md_file_path
+    <LAYER_4(not active)>
     """
 
     def __init__(self, magic_info: MagicInfo, prompt_manager: PromptManager):

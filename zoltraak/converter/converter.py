@@ -1,7 +1,7 @@
 import os
 
 from zoltraak.converter.base_converter import BaseConverter
-from zoltraak.core.prompt_manager import PromptManager
+from zoltraak.core.prompt_manager import PromptEnum, PromptManager
 from zoltraak.gencode import TargetCodeGenerator
 from zoltraak.md_generator import generate_md_from_prompt_recursive
 from zoltraak.schema.schema import MagicInfo, MagicLayer
@@ -27,13 +27,14 @@ class MarkdownToPythonConverter(BaseConverter):
     どのレイヤーでもsourceのマークダウンにはtargetへの要求が書かれている。
     この処理はsourceの要求をtarget(マークダウン or Pythonコード)に反映することである。
 
-    <LAYER_0(not active)>
     <LAYER_1(not active)>
-    <LAYER_2>
+    <LAYER_2(not active)>
+    <LAYER_3(not active)>
+    <LAYER_4>
       source => md_file_path
-      target => md_file_path
-    <LAYER_3>
-      source => md_file_path
+      target => requirements/md_file_path
+    <LAYER_5>
+      source => requirements/md_file_path
       target => py_file_path
     """
 
@@ -83,15 +84,13 @@ class MarkdownToPythonConverter(BaseConverter):
 
         file_info = self.magic_info.file_info
         if FileUtil.has_content(file_info.target_file_path):  # -- マークダウンファイルのコンテンツが有効な場合
-            if self.prompt_manager.is_same_prompt():  # -- 前回と同じプロンプトの場合
+            if self.prompt_manager.is_same_prompt(PromptEnum.INPUT):  # -- 前回と同じプロンプトの場合
                 log(f"スキップ(既存＆input変更なし): {file_info.target_file_path}")
                 return file_info.target_file_path  # --- 処理をスキップし既存のターゲットファイルを返す
             log(
                 f"{file_info.target_file_path}は既存のファイルです。promptに従って変更を提案します。"
             )  # --- ファイルが既存であることを示すメッセージを表示
-            return self.update_target_file_propose_and_apply(
-                file_info.target_file_path, self.magic_info.prompt_goal
-            )  # --- プロンプトに従ってターゲットファイルの差分を提案
+            return self.handle_existing_target_file()
 
         # --- マークダウンファイルのコンテンツが無効な場合
         return self.handle_new_target_file_md()  # --- 新しいターゲットファイルを処理
