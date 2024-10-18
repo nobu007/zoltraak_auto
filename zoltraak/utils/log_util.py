@@ -153,10 +153,35 @@ def log_d(msg: str, *args, **kwargs):
     logger.debug(msg, *args, **kwargs)
 
 
-def log_head(title: str, msg: str, *args, **kwargs):
+def log_head(title: str, msg: str, diff_n: int = 100):
     if settings.is_debug:
-        msg_with_title = f"{title}(冒頭100字): {msg[:100]}"
-        logger.info(msg_with_title, *args, **kwargs)
+        separator_part = "\n" + "=" * 120 + "\n"
+        title_part = f"{title}(冒頭{diff_n}字)" + separator_part
+        msg_part = msg[:diff_n] + separator_part
+        all_info = title_part + msg_part
+        logger.info(all_info)
+
+
+def log_head_diff(title: str, content1: str, content2: str, diff_n: int = 100):
+    if settings.is_debug:
+        separator_part = "\n" + "=" * 120 + "\n"
+        title_part = f"{title}(冒頭{diff_n}字 差分)" + separator_part
+        content1_part = content1[:diff_n] + separator_part
+        diff_part = "  ---  ↓↓ 差分 ↓↓ ---  " + separator_part
+        content2_part = content2[:diff_n] + separator_part
+        all_info = title_part + content1_part + diff_part + content2_part
+        logger.info(all_info)
+
+
+def log_change(title: str, content1: str, content2: str):
+    if settings.is_debug:
+        separator_part = "\n" + "=" * 120 + "\n"
+        title_part = f"{title}\n"
+        content1_part = content1
+        change_part = "\n  ---  ↓↓ ↓↓ ↓↓ ↓↓ ---  \n"
+        content2_part = content2 + separator_part
+        all_info = title_part + content1_part + change_part + content2_part
+        logger.info(all_info)
 
 
 def show_fully_qualified_name(obj: Any) -> str:

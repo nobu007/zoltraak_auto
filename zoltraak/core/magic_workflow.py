@@ -10,7 +10,7 @@ from zoltraak.generator.gencodebase import CodeBaseGenerator
 from zoltraak.schema.schema import FileInfo, MagicInfo, MagicLayer, MagicMode
 from zoltraak.utils.file_util import FileUtil
 from zoltraak.utils.grimoires_util import GrimoireUtil
-from zoltraak.utils.log_util import log, log_inout, log_w
+from zoltraak.utils.log_util import log, log_change, log_head_diff, log_inout, log_w
 from zoltraak.utils.rich_console import (
     display_magic_info_final,
     display_magic_info_full,
@@ -197,36 +197,41 @@ class MagicWorkflow:
         compiler_path = GrimoireUtil.get_valid_compiler(self.magic_info.grimoire_compiler)
         default_compiler_path = GrimoireUtil.get_valid_compiler("general_prompt.md")
 
+        prompt_input_new = self.magic_info.prompt_input
+        compiler_path_new = compiler_path
         if self.magic_info.magic_mode is MagicMode.GRIMOIRE_ONLY:
             # グリモアのみ
             if not os.path.isfile(compiler_path):
                 log("コンパイラが存在しないため、デフォルトのコンパイラを使用します。")
-                compiler_path = default_compiler_path
-            self.magic_info.prompt_input = ""
+                compiler_path_new = default_compiler_path
+            prompt_input_new = ""
         elif self.magic_info.magic_mode is MagicMode.GRIMOIRE_AND_PROMPT:
             # グリモアまたはプロンプトどちらか TODO: 用語をコンパイラに統一したい
             if not os.path.isfile(compiler_path):
-                compiler_path = ""
+                compiler_path_new = ""
                 if not self.magic_info.prompt_input:
                     log("コンパイラもプロンプトも未設定のため、一般的なプロンプトを使用します。")
-                    compiler_path = ""
-                    self.magic_info.prompt_input = FileUtil.read_grimoire(default_compiler_path)
+                    prompt_input_new = FileUtil.read_grimoire(default_compiler_path)
         elif self.magic_info.magic_mode is MagicMode.PROMPT_ONLY:
             # プロンプトのみ
-            compiler_path = ""
+            compiler_path_new = ""
             if not self.magic_info.prompt_input:
                 log("プロンプトが未設定のため、一般的なプロンプトを使用します。")
-                self.magic_info.prompt_input = FileUtil.read_grimoire(default_compiler_path)
+                prompt_input_new = FileUtil.read_grimoire(default_compiler_path)
         else:
             # SEARCH_GRIMOIRE or ZOLTRAAK_LEGACY(ノーケア、別のところで処理すること！)
             log("(SEARCH_GRIMOIRE)一般的なプロンプトを使用します。")
             if not os.path.isfile(compiler_path):
-                compiler_path = default_compiler_path
-                self.magic_info.prompt_input = FileUtil.read_grimoire(default_compiler_path)
+                compiler_path_new = default_compiler_path
+                prompt_input_new = FileUtil.read_grimoire(default_compiler_path)
+
+        # prompt_inputを更新
+        log_head_diff("prompt_input更新", self.magic_info.prompt_input, prompt_input_new)
+        self.magic_info.prompt_input = prompt_input_new
 
         # grimoire_compiler更新
-        self.magic_info.grimoire_compiler = compiler_path
-        log("grimoire_compilerを更新しました。 %s", self.magic_info.grimoire_compiler)
+        log_change("grimoire_compiler更新", self.magic_info.grimoire_compiler, compiler_path_new)
+        self.magic_info.grimoire_compiler = compiler_path_new
 
         # prompt_finalを更新
         self.prompt_manager.prepare_prompt_final()

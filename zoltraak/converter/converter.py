@@ -111,7 +111,7 @@ class MarkdownToPythonConverter(BaseConverter):
                 embedded_hash = lines[-1].split("# HASH: ")[1].strip()
                 log("embedded_hash=%s", embedded_hash)
                 log("source_hash  =%s", file_info.source_hash)
-                log_head("prompt=%s", self.magic_info.prompt_input)
+                log_head("prompt_input=%s", self.magic_info.prompt_input)
                 # TODO: 次処理に進むのプロンプトなし時だけなのか？全体に薄く適用するformatterみたいなケースは不要？
                 if file_info.source_hash and file_info.source_hash == embedded_hash:
                     if self.prompt_manager.is_same_prompt():  # -- 前回と同じプロンプトの場合

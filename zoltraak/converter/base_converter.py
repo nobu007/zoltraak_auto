@@ -6,7 +6,7 @@ from zoltraak.core.prompt_manager import PromptEnum, PromptManager
 from zoltraak.gen_markdown import generate_md_from_prompt
 from zoltraak.schema.schema import MagicInfo, MagicLayer, SourceTargetSet
 from zoltraak.utils.file_util import FileUtil
-from zoltraak.utils.log_util import log, log_e, log_inout
+from zoltraak.utils.log_util import log, log_change, log_e, log_head, log_inout
 
 
 class BaseConverter:
@@ -101,7 +101,7 @@ class BaseConverter:
 
         source_diff = difflib.unified_diff(old_source_lines, new_source_lines, lineterm="", n=0)
         source_diff_text = "".join(source_diff)
-        log(f"source_diff_text={source_diff_text}")
+        log_head("ソースファイルの差分", source_diff_text, 300)
 
         # source差分比率を計算
         source_diff_ratio = 1.0
@@ -244,8 +244,7 @@ class BaseConverter:
         )
         target_diff = response.strip()
         # ターゲットファイルの差分を表示
-        log("ターゲットファイルの差分(冒頭100字):")
-        log(target_diff[:100])
+        log_head("ターゲットファイルの差分", target_diff)
 
         # ユーザーに適用方法を尋ねる
         log("差分をどのように適用しますか?")
@@ -303,10 +302,11 @@ class BaseConverter:
     @log_inout
     def handle_new_target_file(self):
         file_info = self.magic_info.file_info
-        log(f"""
-新ファイル生成中: {file_info.target_file_path}は新しいファイルです。少々お時間をいただきます。
-{file_info.source_file_path} -> {file_info.target_file_path}
-                  """)
+        log_change(
+            f"新ファイル生成中:\n{file_info.target_file_path}は新しいファイルです。少々お時間をいただきます。",
+            file_info.source_file_path,
+            file_info.target_file_path,
+        )
         return generate_md_from_prompt(self.magic_info)
 
     def is_same_source_as_past(self) -> bool:
