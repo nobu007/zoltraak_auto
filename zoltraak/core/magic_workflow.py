@@ -100,6 +100,10 @@ class MagicWorkflow:
                 self.file_info.update_hash()
                 log(self.get_log(f"run Generator source_target_set = {source_target_set}"))
                 self.run(converter.convert)
+            # forが一回も回らなかった場合
+            log("source_target_set_list empty")
+            self.workflow_history.append(self.magic_info.magic_layer + "(source_target_set_list empty)")
+
             is_gen = True
         else:
             # コンバーター

@@ -60,12 +60,17 @@ class CodeBaseGenerator(BaseConverter):
             source_file_path = code_file_path
             target_file_path = cade_base_file_path
             self.magic_info.grimoire_compiler = "dev_obj_file.md"
-        else:
+        elif self.magic_info.magic_layer is MagicLayer.LAYER_7_REQUIREMENT_GEN:
             # MagicLayer.LAYER_7_REQUIREMENT_GEN
             # 詳細設計書 => 要件定義書
             source_file_path = cade_base_file_path
             target_file_path = self.magic_info.file_info.md_file_path
             self.magic_info.grimoire_compiler = "dev_obj_modify.md"
+        else:
+            # 呼ばれないはず
+            source_file_path = ""
+            target_file_path = ""
+
         return SourceTargetSet(source_file_path=source_file_path, target_file_path=target_file_path)
 
     def convert(self) -> str:
