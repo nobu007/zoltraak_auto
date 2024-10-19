@@ -8,8 +8,8 @@ import pytest
 from tests.unit_tests.helper import BaseTestCase
 from zoltraak.cli import main
 from zoltraak.core.magic_workflow import MagicWorkflow
+from zoltraak.gen_markdown import generate_md_from_prompt
 from zoltraak.llms.litellm_api import generate_response
-from zoltraak.md_generator import generate_md_from_prompt_recursive
 from zoltraak.utils.subprocess_util import SubprocessUtil
 
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
@@ -300,7 +300,7 @@ class TestCompilerFunctionality(BaseTestCase):  # クラス名をTestCompilerFun
         指定されたコンパイラパスとプロンプトを使用してテストを実行する
         """
 
-        # generate_md_from_prompt関数を呼び出し、追加の引数を渡す
+        # generate_md_from_prompt 関数を呼び出し、追加の引数を渡す
         self.magic_info.grimoire_compiler = f"{setting_dir}/compiler/{compiler_path}"
         self.magic_info.grimoire_formatter = f"{setting_dir}/formatter/None.md"
         self.magic_info.prompt_goal = goal_prompt
@@ -312,7 +312,7 @@ class TestCompilerFunctionality(BaseTestCase):  # クラス名をTestCompilerFun
 
         # テストを実行
         self.prompt_manager.prepare_prompt_final()
-        generate_md_from_prompt_recursive(self.magic_info)
+        generate_md_from_prompt(self.magic_info)
 
         self.check_generated_md_content(expected_md_path, compiler_path)  # 生成されたMDファイルの内容をチェックする
         self.move_generated_md_to_gomi(expected_md_path)  # 生成されたMDファイルをgomiディレクトリに移動する

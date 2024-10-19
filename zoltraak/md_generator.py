@@ -2,25 +2,7 @@ import os
 import sys
 import time
 
-from zoltraak.schema.schema import MagicInfo
 from zoltraak.utils.log_util import log
-from zoltraak.utils.rich_console import generate_response_with_spinner
-
-
-def generate_md_from_prompt_recursive(magic_info: MagicInfo) -> str:
-    file_info = magic_info.file_info
-    """
-    promptから要件定義書（マークダウンファイル）を生成する関数
-    """
-    magic_info.description = "ステップ1. \033[31m起動術式\033[0mを用いて\033[32m魔法術式\033[0mを構築"
-    response = generate_response_with_spinner(magic_info, magic_info.prompt_final)
-    md_content = response.strip()  # 生成された要件定義書の内容を取得し、前後の空白を削除
-    output_file_path = save_md_content(
-        md_content, file_info.target_file_path
-    )  # 生成された要件定義書の内容をファイルに保存
-
-    print_generation_result(output_file_path)  # 生成結果を出力
-    return output_file_path
 
 
 def get_prompt_formatter(language: str, formatter_path: str):

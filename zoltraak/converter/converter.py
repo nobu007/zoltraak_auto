@@ -2,8 +2,8 @@ import os
 
 from zoltraak.converter.base_converter import BaseConverter
 from zoltraak.core.prompt_manager import PromptEnum, PromptManager
+from zoltraak.gen_markdown import generate_md_from_prompt
 from zoltraak.gencode import TargetCodeGenerator
-from zoltraak.md_generator import generate_md_from_prompt_recursive
 from zoltraak.schema.schema import MagicInfo, MagicLayer
 from zoltraak.utils.file_util import FileUtil
 from zoltraak.utils.log_util import log, log_head, log_inout, log_w
@@ -74,27 +74,9 @@ class MarkdownToPythonConverter(BaseConverter):
 
         # step4: 変換処理
         if self.magic_info.magic_layer is MagicLayer.LAYER_4_REQUIREMENT_GEN:
-            return self.convert_one_md_md()
+            return self.convert_one()
         # MagicLayer.LAYER_5_CODE_GEN
         return self.convert_one_md_py()
-
-    @log_inout
-    def convert_one_md_md(self) -> str:
-        """要件定義書(md_file) => 要件定義書(md_file)の１ファイルを変換する"""
-
-        file_info = self.magic_info.file_info
-        if FileUtil.has_content(file_info.target_file_path):  # -- マークダウンファイルのコンテンツが有効な場合
-            if self.prompt_manager.is_same_prompt(PromptEnum.INPUT):  # -- 前回と同じプロンプトの場合
-                log(f"スキップ(既存＆input変更なし): {file_info.target_file_path}")
-                self.magic_info.history_info += " ->スキップ(既存＆input変更なしmd)"
-                return file_info.target_file_path  # --- 処理をスキップし既存のターゲットファイルを返す
-            log(
-                f"{file_info.target_file_path}は既存のファイルです。promptに従って変更を提案します。"
-            )  # --- ファイルが既存であることを示すメッセージを表示
-            return self.handle_existing_target_file()
-
-        # --- マークダウンファイルのコンテンツが無効な場合
-        return self.handle_new_target_file_md()  # --- 新しいターゲットファイルを処理
 
     @log_inout
     def convert_one_md_py(self) -> str:
@@ -115,7 +97,7 @@ class MarkdownToPythonConverter(BaseConverter):
                 log_head("prompt_input=%s", self.magic_info.prompt_input)
                 # TODO: 次処理に進むのプロンプトなし時だけなのか？全体に薄く適用するformatterみたいなケースは不要？
                 if file_info.source_hash and file_info.source_hash == embedded_hash:
-                    if self.prompt_manager.is_same_prompt():  # -- 前回と同じプロンプトの場合
+                    if self.prompt_manager.is_same_prompt(PromptEnum.INPUT):  # -- 前回と同じプロンプトの場合
                         log(
                             f"prompt_inputの適用が完了しました。コード生成プロセスを開始します。{file_info.target_file_path}"
                         )
@@ -187,4 +169,4 @@ class MarkdownToPythonConverter(BaseConverter):
             """
         )
         self.magic_info.history_info += " ->要件定義(requirements)新規作成"
-        return generate_md_from_prompt_recursive(self.magic_info)
+        return generate_md_from_prompt(self.magic_info)
