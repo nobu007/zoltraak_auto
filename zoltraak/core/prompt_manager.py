@@ -3,6 +3,7 @@ import re
 from enum import Enum
 
 from zoltraak.schema.schema import FileInfo, MagicInfo
+from zoltraak.utils.diff_util import DiffUtil
 from zoltraak.utils.file_util import FileUtil
 from zoltraak.utils.log_util import log, log_e, log_inout
 
@@ -79,13 +80,24 @@ class PromptManager:
     def is_same_prompt(self, prompt_enum: PromptEnum = PromptEnum.INPUT) -> bool:
         # work_dirからの相対パス取得
         current_prompt = prompt_enum.get_current_prompt(self.magic_info)
-        current_prompt = current_prompt.strip()
         past_prompt = self.load_prompt(prompt_enum)
-        past_prompt = past_prompt.strip()
 
-        log("current_prompt(末尾100文字)=\n%s", current_prompt[-100:])
-        log("past_prompt(末尾100文字)=\n%s", past_prompt[-100:])
-        return current_prompt == past_prompt
+        log(prompt_enum + " current_prompt(末尾100文字)=\n%s", current_prompt[-100:])
+        log(prompt_enum + " past_prompt(末尾100文字)=\n%s", past_prompt[-100:])
+        diff_content = DiffUtil.diff0_ignore_space(current_prompt, past_prompt)
+
+        if diff_content.strip() == "":
+            log("プロンプトが同じです")
+            return True
+        log("プロンプトが異なります diff=\n%s", diff_content)
+        return False
+
+    @log_inout
+    def show_diff_prompt(self, prompt_enum: PromptEnum = PromptEnum.INPUT) -> None:
+        # work_dirからの相対パス取得
+        current_prompt = prompt_enum.get_current_prompt(self.magic_info)
+        past_prompt = self.load_prompt(prompt_enum)
+        log(DiffUtil.diff0_ignore_space(current_prompt, past_prompt))
 
     @log_inout
     def prepare_prompt_final(self) -> str:

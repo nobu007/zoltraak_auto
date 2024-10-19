@@ -154,8 +154,8 @@ class MagicWorkflow:
         self.display_result()
         display_magic_info_post(self.magic_info)
 
-        # プロンプトを保存（実行時に保存するようになったため、いったん不要になった。実行してないものも残したいなら復活）
-        # self.prompt_manager.save_prompts()
+        # プロンプトを保存（実行時にも保存するが、prompt_finalとかが保存できないので、ここでも保存）
+        self.prompt_manager.save_prompts()
 
         # target_file_pathにコピーを配置
         self.copy_output_to_target()

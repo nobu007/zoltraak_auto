@@ -4,7 +4,8 @@ import zoltraak.llms.litellm_api as litellm
 from zoltraak import settings
 from zoltraak.core.prompt_manager import PromptEnum, PromptManager
 from zoltraak.gen_markdown import generate_md_from_prompt
-from zoltraak.schema.schema import MagicInfo, MagicLayer, SourceTargetSet
+from zoltraak.schema.schema import MagicInfo, SourceTargetSet
+from zoltraak.utils.diff_util import DiffUtil
 from zoltraak.utils.file_util import FileUtil
 from zoltraak.utils.log_util import log, log_change, log_e, log_head, log_inout
 
@@ -57,37 +58,65 @@ class BaseConverter:
         Returns:
             str: 処理結果のファイルパス
         """
-        source_skip_magic_layer_list = [
-            MagicLayer.LAYER_6_CODEBASE_GEN,
-            MagicLayer.LAYER_7_REQUIREMENT_GEN,
-            MagicLayer.LAYER_8_CLEAN_UP,
-        ]
         file_info = self.magic_info.file_info
         if self.prompt_manager.is_same_prompt(PromptEnum.FINAL):  # -- 前回と同じプロンプトの場合
             log(f"スキップ(既存＆input変更なし): {file_info.target_file_path}")
             self.magic_info.history_info += " ->スキップ(既存＆input変更なし)"
             return file_info.target_file_path  # --- 処理をスキップし既存のターゲットファイルを返す
 
-        if self.magic_info.magic_layer in source_skip_magic_layer_list:
-            # -- 前回と同じソースの場合
-            log(f"スキップ(ソース変更なし): {file_info.target_file_path}")
-            self.magic_info.history_info += " ->スキップ(ソース変更なし)"
-            return file_info.target_file_path  # --- 処理をスキップし既存のターゲットファイルを返す
+        # プロンプトの差分表示(デバッグ用)
+        self.prompt_manager.show_diff_prompt(PromptEnum.FINAL)
 
-        log(f"{file_info.target_file_path}を更新します。")
-        if os.path.exists(file_info.past_source_file_path):
-            log(f"{file_info.source_file_path}の差分から更新リクエストを生成中・・・")
-            self.magic_info.history_info += " ->差分から更新"
-            return self.update_target_file_from_source_diff()
-        log("プロンプトから更新リクエストを生成中・・・")
-        self.magic_info.history_info += " ->プロンプトから更新リクエストを生成"
-        return self.update_target_file_propose_and_apply(file_info.target_file_path, self.magic_info.prompt_input)
+        log(f"{file_info.source_file_path}の差分から更新リクエストを生成中・・・")
+        self.magic_info.history_info += " ->差分から更新"
+        return self.update_target_file_from_source_diff()
 
     # ソースファイルの差分比率のしきい値（超えると差分では処理できないので再作成）
     SOURCE_DIFF_RATIO_THRESHOLD = 0.1
 
-    # match_rateのしきい値（未満なら再作成）
-    MATCH_RATE_THRESHOLD = 50
+    # match_rateのしきい値
+    MATCH_RATE_THRESHOLD_OK = 90  # 高いと処理スキップ(低いと差分適用)
+    MATCH_RATE_THRESHOLD_NG = 50  # 低いと再作成
+
+    # 差分計算に使える最低文字数のしきい値（未満なら再作成）
+    VALID_CONTENT_THRESHOLD = 100
+
+    @log_inout
+    def is_need_handle_new_target_file(
+        self, old_source_content: str, new_source_content: str, source_diff: str
+    ) -> bool:
+        """ターゲットファイルをソースファイルの差分から更新する処理"""
+        file_info = self.magic_info.file_info
+        if len(old_source_content) < BaseConverter.VALID_CONTENT_THRESHOLD:
+            # 前回ソースがない場合
+            log(f"再作成(旧ソースなし): {file_info.target_file_path}")
+            self.magic_info.history_info += " ->再作成(旧ソースなし)"
+            return True
+
+        if source_diff.strip() == "":
+            # ソース差分なしの場合(=>コンテキストかプロンプトに差分あり)
+            log(f"再作成(ソース差分なし): {file_info.target_file_path}")
+            self.magic_info.history_info += " ->再作成(ソース差分なし)"
+            return True
+
+        log_head("ソースファイルの差分", source_diff, 300)
+
+        # source差分比率を計算
+        source_diff_ratio = 1.0
+        if len(new_source_content) > 0:
+            source_diff_ratio = len(source_diff) / len(new_source_content)
+            log("source_diff_ratio=%f", source_diff_ratio)
+        else:
+            log_e("source_diff_ratioの計算失敗： len(new_source_lines)=%d", len(new_source_content))
+
+        # source_diffを加味したプロンプト(prompt_diff)を作成
+        if source_diff_ratio > BaseConverter.SOURCE_DIFF_RATIO_THRESHOLD:
+            # 差分が大きすぎる
+            log(f"再作成(ソース差分過大): {file_info.target_file_path}")
+            self.magic_info.history_info += " ->再作成(ソース差分過大)"
+            return True
+
+        return False
 
     @log_inout
     def update_target_file_from_source_diff(self) -> str:
@@ -97,74 +126,72 @@ class BaseConverter:
             str: 処理結果のファイルパス
         """
         file_info = self.magic_info.file_info
-        import difflib
 
-        old_source_lines = FileUtil.read_file(file_info.past_source_file_path)
-        new_source_lines = FileUtil.read_file(file_info.source_file_path)
-        old_target_lines = FileUtil.read_file(file_info.past_target_file_path)
+        old_source_content = FileUtil.read_file(file_info.past_source_file_path)
+        new_source_content = FileUtil.read_file(file_info.source_file_path)
+        old_target_content = FileUtil.read_file(file_info.past_target_file_path)
+        source_diff = DiffUtil.diff0_ignore_space(old_source_content, new_source_content)
 
-        source_diff = difflib.unified_diff(old_source_lines, new_source_lines, lineterm="", n=0)
-        source_diff_text = "".join(source_diff)
-        log_head("ソースファイルの差分", source_diff_text, 300)
-
-        # source差分比率を計算
-        source_diff_ratio = 1.0
-        if len(new_source_lines) > 0:
-            source_diff_ratio = len(source_diff_text) / len(new_source_lines)
-            log("source_diff_ratio=%f", source_diff_ratio)
-
-        # source_diffを加味したプロンプト(prompt_diff)を作成
-        prompt_diff_order = "\n<<最新の作業指示>>\n" + new_source_lines
-        if source_diff_ratio > BaseConverter.SOURCE_DIFF_RATIO_THRESHOLD:
-            # 差分が大きすぎる
-            log("ソースファイルの差分が大きいためターゲットファイルを再作成します。")
-            self.magic_info.history_info += " ->差分大"
+        if self.is_need_handle_new_target_file(old_source_content, new_source_content, source_diff):
+            # 新規で再作成が必要な場合
             return self.handle_new_target_file()
-        match_rate = self.get_match_rate_source_and_target_file(old_target_lines, new_source_lines)
-        if match_rate < BaseConverter.MATCH_RATE_THRESHOLD:
+
+        # 前回ターゲットと今回ソースの適合度判定
+        prompt_final = PromptEnum.FINAL.get_current_prompt(self.magic_info)
+        match_rate = self.get_match_rate_source_and_target_file(old_target_content, new_source_content, prompt_final)
+        if match_rate >= BaseConverter.MATCH_RATE_THRESHOLD_OK:
+            # 処理不要につきスキップ
+            log("MATCH_RATE_THRESHOLD_OK 以上のためスキップします。")
+            self.magic_info.history_info += f" ->スキップ(match_rate高={match_rate})"
+            return self.handle_new_target_file()
+        if match_rate < BaseConverter.MATCH_RATE_THRESHOLD_NG:
             # match_rateが低すぎる
-            log("MATCH_RATE_THRESHOLD に満たないためターゲットファイルを再作成します。")
-            self.magic_info.history_info += f" ->MATCH_RATE小({match_rate})"
+            log("MATCH_RATE_THRESHOLD_NG に満たないためターゲットファイルを再作成します。")
+            self.magic_info.history_info += f" ->再作成(match_rate不適合={match_rate})"
             return self.handle_new_target_file()
+        # match_rateがMATCH_RATE_THRESHOLD_NG ～ MATCH_RATE_THRESHOLD_OK の場合は処理継続(差分適用モード)
 
         # source_diffを加味したプロンプト(prompt_diff)を作成
-        prompt_diff_order = "\n<<最新の作業指示>>\n" + new_source_lines
-        if source_diff_text:
-            prompt_diff_order += "\n\n<<(注意)重要な変化点(注意)>>\n"
-            prompt_diff_order += source_diff_text
-        else:
-            # 差分がない場合はスキップ
-            log("source_diff_textが空のため、target_fileを更新しません。")
-            self.magic_info.history_info += " ->スキップ（source_diff_textなし）"
-            return file_info.target_file_path
+        prompt_diff_order = "\n<<最新の作業指示>>\n" + new_source_content
+        prompt_diff_order += "\n\n<<(注意)重要な変化点(注意)>>\n"
+        prompt_diff_order += source_diff
 
         # プロンプトサイズ制限
         if len(prompt_diff_order) > BaseConverter.DEF_MAX_PROMPT_SIZE_FOR_DIFF:
             log("prompt_diff_orderが大きすぎるため、target_fileを再作成します。")
-            self.magic_info.history_info += " ->prompt_diff_order大"
+            self.magic_info.history_info += " ->再作成(prompt_diff_order過大)"
             return self.handle_new_target_file()
 
         self.magic_info.prompt_diff_order = prompt_diff_order
 
         return self.update_target_file_propose_and_apply(file_info.target_file_path, prompt_diff_order)
 
-    def get_match_rate_source_and_target_file(self, old_target_lines: str, new_source_lines: str) -> int:
+    def get_match_rate_source_and_target_file(self, old_target_lines: str, new_source_lines: str, prompt: str) -> int:
         """
         最新のソースファイルと前回のターゲットファイルの適合性を[0-100]のスコアで返します。100が完全適合です。
 
         Args:
-            old_target_lines (str): 前回のターゲットファイルの内容
-            new_source_lines (str): 今回のソースファイルの内容
+            old_target_lines: 前回のターゲットファイルの内容
+            new_source_lines: 今回のソースファイルの内容
+            prompt: 変換システムのプロンプト
         """
 
         prompt_match_rate = f"""
-あなたは優秀なプログラマーです。前回のターゲットファイルの内容と今回のソースファイルの内容を示します。
-今回のターゲットファイルを再作成するべきか判断したいです。
+あなたは優秀なプロンプトエンジニアです。
+ソースファイル⇒ターゲットファイルの変換システムにおいて、前回結果の妥当性判断をしてください。
 
-そのために、前回のターゲットファイルの内容が今回のソースファイルの内容に適合するかどうかを[0-100]のint値のスコアで判定してください。
+下記の３つの情報を提示します。
+・前回のターゲットファイルの内容(pre_source)
+・今回のソースファイルの内容(source)
+・変換システムのプロンプト(prompt)
+
+今回のターゲットファイルの作成方法を（新規作成 or 差分作成 or 変更不要）から選択するための適合度を回答してください。
+プロンプトエンジニアの見識を生かして、適切な判断をお願いします。
+
+回答は以下を参考にして前回のターゲットファイルの内容が今回のソースファイルの内容＋変換システムのプロンプトと適合するかどうかを[0-100]のint値のスコアで判定してください。
 0  ：完全に適合しない⇒ターゲットファイルの再作成が必要
 30 ：適合度が低い⇒前回のターゲットファイルを破棄して再作成が望ましい
-80 ：適合度が高い⇒前回のターゲットファイルをベースに差分修正が望ましい
+70 ：適合度が高い⇒前回のターゲットファイルをベースに差分修正が望ましい
 100：完全適合⇒前回のターゲットファイルの内容から変更の必要なし
 
 注意点：
@@ -176,10 +203,19 @@ class BaseConverter:
 それではファイル内容を示します。
 
 前回のターゲットファイルの内容:
+<pre_source>
 {old_target_lines}
+</pre_source>
 
 今回のソースファイルの内容:
+<source>
 {new_source_lines}
+</source>
+
+変換システムのプロンプト:
+<prompt>
+{prompt}
+</prompt>
 
         """
         response = self.generate_response(
