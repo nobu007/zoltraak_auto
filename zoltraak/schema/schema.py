@@ -363,6 +363,8 @@ class MagicInfo(BaseModel):
         default="魔法式の構築中にエラーが発生しました。", description="グリモア失敗時のメッセージ"
     )
     language: str = Field(default="", description="汎用言語指定(現状ではgrimoire_formatterに影響)")
+    history_info: str = Field(default="", description="スキップ有無や新規/追加などの履歴(デバッグ用)")
+
     is_debug: bool = Field(default=True, description="デバッグモード(グリモア情報を逐次出力)")
 
     def update(self, **kwargs):

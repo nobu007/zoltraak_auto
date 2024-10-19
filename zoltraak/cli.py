@@ -185,9 +185,7 @@ def preprocess_input_prompt(params: ZoltraakParams) -> None:
 def main_exec(params: ZoltraakParams) -> None:
     """メイン処理(メイン処理実行)"""
     if params.canonical_name:
-        magic_info = process_markdown_file(params)
-        display_magic_info_final(magic_info)
-        FileUtil.log_file_content(magic_info.file_info.final_output_file_path)
+        process_markdown_file(params)
     else:
         # canonical_nameが未確定ならテキスト入力から確定させてから再実行
         zoltraak_command = process_text_input(params)  # - テキスト入力を処理する関数を呼び出す
@@ -322,6 +320,9 @@ def process_markdown_file(params: ZoltraakParams) -> MagicInfo:
 
     new_file_path = magic_workflow.run_loop()
     log("new_file_path: %s", new_file_path)
+    display_magic_info_final(magic_info)
+    log_i("プロセス履歴=\n%s", "\n".join(magic_workflow.workflow_history))
+    # FileUtil.log_file_content(magic_info.file_info.final_output_file_path)
     return magic_info
 
 

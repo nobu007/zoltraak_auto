@@ -86,6 +86,7 @@ class MarkdownToPythonConverter(BaseConverter):
         if FileUtil.has_content(file_info.target_file_path):  # -- マークダウンファイルのコンテンツが有効な場合
             if self.prompt_manager.is_same_prompt(PromptEnum.INPUT):  # -- 前回と同じプロンプトの場合
                 log(f"スキップ(既存＆input変更なし): {file_info.target_file_path}")
+                self.magic_info.history_info = "スキップ(既存＆input変更なしmd)"
                 return file_info.target_file_path  # --- 処理をスキップし既存のターゲットファイルを返す
             log(
                 f"{file_info.target_file_path}は既存のファイルです。promptに従って変更を提案します。"
@@ -185,4 +186,5 @@ class MarkdownToPythonConverter(BaseConverter):
 {file_info.source_file_path} -> {file_info.target_file_path}
             """
         )
+        self.magic_info.history_info = "要件定義(requirements)新規作成"
         return generate_md_from_prompt_recursive(self.magic_info)

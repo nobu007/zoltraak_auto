@@ -122,9 +122,9 @@ class MagicWorkflow:
     @log_inout
     def pre_process(self):
         # プロセスを実行する前の共通処理
-        log(f"pre_process called({self.magic_info.magic_layer})")
+        log(f"プロセス開始: {self.magic_info.magic_layer}")
         display_magic_info_pre(self.magic_info)
-        self.workflow_history.append(self.magic_info.description)
+        self.workflow_history.append(self.magic_info.magic_layer)
 
         # ソースファイルをprompt_goalに詰め込み
         prompt_goal = self.magic_info.prompt_input
@@ -149,7 +149,7 @@ class MagicWorkflow:
     @log_inout
     def post_process(self):
         # プロセスを実行した後の共通処理
-        log("プロセス完了： ↓実行履歴↓\n%s", self.workflow_history)
+        log("プロセス完了: %s", self.magic_info.magic_layer)
         self.display_result()
         display_magic_info_post(self.magic_info)
 
@@ -161,6 +161,9 @@ class MagicWorkflow:
 
         # 過去のファイルを保存
         self.copy_past_files()
+
+        # history_infoを更新
+        self.workflow_history[-1] += f"({self.magic_info.history_info})"
 
         log(f"post_process called({self.magic_info.magic_layer})")
 

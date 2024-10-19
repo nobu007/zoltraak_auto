@@ -37,13 +37,23 @@ class FileRemover(BaseConverter):
         file_paths = FileUtil.find_files(file_info.target_dir, "")  # 拡張子が空文字列の場合は全ファイルを取得
 
         # step3: ファイルリストとファイル構造定義書を比較して、不要ファイルを削除
+        self.magic_info.history_info = "クリーンアップ(対象なしでスキップ)"
+        remove_count = 0
+        removed_file_paths_set = []
         for file_path in file_paths:
             log("check file_path= %s", file_path)
             if file_path not in code_file_path_list:
                 log("remove file_path= %s", file_path)
                 os.remove(file_path)
+                remove_count += 1
+                self.magic_info.history_info = f"クリーンアップ(削除ファイル数: {remove_count})"
 
-        return []
+                removed_file_paths_set.append(SourceTargetSet(source_file_path=file_path, target_file_path=file_path))
+        return removed_file_paths_set
+
+    def convert(self) -> str:
+        """削除のみなので処理なし"""
+        return self.magic_info.file_info.target_file_path
 
 
 if __name__ == "__main__":  # このスクリプトが直接実行された場合にのみ、以下のコードを実行します。
