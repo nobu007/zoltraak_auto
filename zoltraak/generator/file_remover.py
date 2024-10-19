@@ -37,7 +37,7 @@ class FileRemover(BaseConverter):
         file_paths = FileUtil.find_files(file_info.target_dir, "")  # 拡張子が空文字列の場合は全ファイルを取得
 
         # step3: ファイルリストとファイル構造定義書を比較して、不要ファイルを削除
-        self.magic_info.history_info = "クリーンアップ(対象なしでスキップ)"
+        self.magic_info.history_info += " ->クリーンアップ(対象なしでスキップ)"
         remove_count = 0
         removed_file_paths_set = []
         for file_path in file_paths:

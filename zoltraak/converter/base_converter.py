@@ -65,22 +65,22 @@ class BaseConverter:
         file_info = self.magic_info.file_info
         if self.prompt_manager.is_same_prompt(PromptEnum.FINAL):  # -- 前回と同じプロンプトの場合
             log(f"スキップ(既存＆input変更なし): {file_info.target_file_path}")
-            self.magic_info.history_info = "スキップ(既存＆input変更なし)"
+            self.magic_info.history_info += " ->スキップ(既存＆input変更なし)"
             return file_info.target_file_path  # --- 処理をスキップし既存のターゲットファイルを返す
 
         if self.magic_info.magic_layer in source_skip_magic_layer_list:
             # -- 前回と同じソースの場合
             log(f"スキップ(ソース変更なし): {file_info.target_file_path}")
-            self.magic_info.history_info = "スキップ(ソース変更なし)"
+            self.magic_info.history_info += " ->スキップ(ソース変更なし)"
             return file_info.target_file_path  # --- 処理をスキップし既存のターゲットファイルを返す
 
         log(f"{file_info.target_file_path}を更新します。")
         if os.path.exists(file_info.past_source_file_path):
             log(f"{file_info.source_file_path}の差分から更新リクエストを生成中・・・")
-            self.magic_info.history_info = "差分から更新"
+            self.magic_info.history_info += " ->差分から更新"
             return self.update_target_file_from_source_diff()
         log("プロンプトから更新リクエストを生成中・・・")
-        self.magic_info.history_info = "プロンプトから更新リクエストを生成"
+        self.magic_info.history_info += " ->プロンプトから更新リクエストを生成"
         return self.update_target_file_propose_and_apply(file_info.target_file_path, self.magic_info.prompt_input)
 
     # ソースファイルの差分比率のしきい値（超えると差分では処理できないので再作成）
@@ -118,13 +118,13 @@ class BaseConverter:
         if source_diff_ratio > BaseConverter.SOURCE_DIFF_RATIO_THRESHOLD:
             # 差分が大きすぎる
             log("ソースファイルの差分が大きいためターゲットファイルを再作成します。")
+            self.magic_info.history_info += " ->差分大"
             return self.handle_new_target_file()
-        if (
-            self.get_match_rate_source_and_target_file(old_target_lines, new_source_lines)
-            < BaseConverter.MATCH_RATE_THRESHOLD
-        ):
+        match_rate = self.get_match_rate_source_and_target_file(old_target_lines, new_source_lines)
+        if match_rate < BaseConverter.MATCH_RATE_THRESHOLD:
             # match_rateが低すぎる
             log("MATCH_RATE_THRESHOLD に満たないためターゲットファイルを再作成します。")
+            self.magic_info.history_info += f" ->MATCH_RATE小({match_rate})"
             return self.handle_new_target_file()
 
         # source_diffを加味したプロンプト(prompt_diff)を作成
@@ -135,11 +135,13 @@ class BaseConverter:
         else:
             # 差分がない場合はスキップ
             log("source_diff_textが空のため、target_fileを更新しません。")
+            self.magic_info.history_info += " ->スキップ（source_diff_textなし）"
             return file_info.target_file_path
 
         # プロンプトサイズ制限
         if len(prompt_diff_order) > BaseConverter.DEF_MAX_PROMPT_SIZE_FOR_DIFF:
-            log("prompt_diff_orderが大きすぎるため、target_fileを更新しません。")
+            log("prompt_diff_orderが大きすぎるため、target_fileを再作成します。")
+            self.magic_info.history_info += " ->prompt_diff_order大"
             return self.handle_new_target_file()
 
         self.magic_info.prompt_diff_order = prompt_diff_order
@@ -311,7 +313,7 @@ class BaseConverter:
             file_info.source_file_path,
             file_info.target_file_path,
         )
-        self.magic_info.history_info = "新ファイル生成"
+        self.magic_info.history_info += " ->新ファイル生成"
         return generate_md_from_prompt(self.magic_info)
 
     def is_same_source_as_past(self) -> bool:

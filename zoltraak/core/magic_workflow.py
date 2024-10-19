@@ -125,6 +125,7 @@ class MagicWorkflow:
         log(f"プロセス開始: {self.magic_info.magic_layer}")
         display_magic_info_pre(self.magic_info)
         self.workflow_history.append(self.magic_info.magic_layer)
+        self.magic_info.history_info = ""
 
         # ソースファイルをprompt_goalに詰め込み
         prompt_goal = self.magic_info.prompt_input
