@@ -2,6 +2,7 @@ import argparse
 import os
 import os.path
 import sys
+import time
 
 import zoltraak
 import zoltraak.llms.litellm_api as litellm
@@ -10,11 +11,24 @@ from zoltraak.core.magic_workflow import MagicWorkflow
 from zoltraak.schema.schema import MagicInfo, MagicLayer, MagicMode, ZoltraakParams
 from zoltraak.utils.file_util import FileUtil
 from zoltraak.utils.grimoires_util import GrimoireUtil
-from zoltraak.utils.log_util import log
+from zoltraak.utils.log_util import log, log_i
 from zoltraak.utils.rich_console import display_info_full, display_magic_info_final
 from zoltraak.utils.subprocess_util import SubprocessUtil
 
 
+def measure_time(func):
+    def wrapper(*args, **kwargs):
+        start_time = time.time()
+        result = func(*args, **kwargs)
+        end_time = time.time()
+        elapsed_time = end_time - start_time
+        log_i(f"Execution time: {elapsed_time:.2f} seconds")
+        return result
+
+    return wrapper
+
+
+@measure_time
 def main() -> None:
     """メイン処理(args前処理、コンパイラー確認、パラメータ設定)"""
     log("")
