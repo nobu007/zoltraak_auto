@@ -98,17 +98,21 @@ class MarkdownToPythonConverter(BaseConverter):
                 # TODO: 次処理に進むのプロンプトなし時だけなのか？全体に薄く適用するformatterみたいなケースは不要？
                 if file_info.source_hash and file_info.source_hash == embedded_hash:
                     if self.prompt_manager.is_same_prompt(PromptEnum.INPUT):  # -- 前回と同じプロンプトの場合
+                        if self.is_same_target_as_past():
+                            log("過去のターゲットファイルと同一のためコード生成をスキップします。")
+                            self.magic_info.history_info += " ->コード生成をスキップ"
+                            return file_info.target_file_path
                         log(
                             f"prompt_inputの適用が完了しました。コード生成プロセスを開始します。{file_info.target_file_path}"
                         )
-                        if self.is_same_target_as_past():
-                            log("過去のターゲットファイルと同一のためコード生成をスキップします。")
-                            return file_info.target_file_path
+                        self.magic_info.history_info += " ->コード生成開始"
                         SubprocessUtil.run(["python", file_info.target_file_path], check=False)
                         log("コード生成プロセスが完了しました。")
+                        self.magic_info.history_info += " ->コード生成完了"
                         return file_info.target_file_path  # TODO: サブプロセスで作った別ファイルの情報は不要？
 
                     # プロンプトがある場合はプロンプトを再適用してtargetを更新
+                    self.magic_info.history_info += " ->プロンプトを再適用"
                     SubprocessUtil.run(
                         [
                             "zoltraak",
@@ -134,14 +138,18 @@ class MarkdownToPythonConverter(BaseConverter):
                 # =>source の前回差分が小さい & 前回target が存在でプロンプトに含める。
                 log(f"{file_info.source_file_path}の変更を検知しました。")
                 log("ソースファイルの差分:")
+                self.magic_info.history_info += " ->差分から更新"
                 if os.path.exists(file_info.past_source_file_path):
                     return self.update_target_file_from_source_diff()
                 log_w(f"過去のソースファイルが存在しないため再作成します: {file_info.past_source_file_path}")
+                self.magic_info.history_info += " ->再作成"
                 return self.handle_new_target_file_py()
             log_w(f"埋め込まれたハッシュが存在しないため再作成します。\n: {file_info.target_file_path}")
             log_w("最後の10行:%s", "\n".join(lines[-10:]))
+            self.magic_info.history_info += " ->再作成(hashなし)"
             return self.handle_new_target_file_py()
         log_w(f"想定外の動作です。再作成します。\n: {file_info.target_file_path}")
+        self.magic_info.history_info += " ->再作成(想定外)"
         return self.handle_new_target_file_py()
 
     @log_inout
