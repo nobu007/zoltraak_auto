@@ -10,7 +10,7 @@ from zoltraak.generator.gencodebase import CodeBaseGenerator
 from zoltraak.schema.schema import FileInfo, MagicInfo, MagicLayer, MagicMode
 from zoltraak.utils.file_util import FileUtil
 from zoltraak.utils.grimoires_util import GrimoireUtil
-from zoltraak.utils.log_util import log, log_change, log_head_diff, log_inout, log_w
+from zoltraak.utils.log_util import log, log_change, log_head_diff, log_inout
 from zoltraak.utils.rich_console import (
     display_magic_info_final,
     display_magic_info_full,
@@ -42,9 +42,9 @@ class MagicWorkflow:
     @log_inout
     def start_workflow(self):
         # ワークフローを開始したときの共通処理
-        log("ワークフローを開始します")
+        log(self.get_log("ワークフローを開始します"))
         display_magic_info_init(self.magic_info)
-        log(f"display_magic_info_init called({self.magic_info.magic_layer})")
+        log(self.get_log(f"display_magic_info_init called({self.magic_info.magic_layer})"))
         self.file_info.update_work_dir()
 
     @log_inout
@@ -55,20 +55,20 @@ class MagicWorkflow:
             if self.run_converters(layer):
                 # ZOLTRAAK_LEGACYモードの場合は１回で終了
                 if self.magic_info.magic_mode == MagicMode.ZOLTRAAK_LEGACY:
-                    log("ZOLTRAAK_LEGACYモードにより、convert処理を終了します")
+                    log(self.get_log("ZOLTRAAK_LEGACYモードにより、convert処理を終了します"))
                     break
 
                 # magic_layer_endで終了
                 if self.magic_info.magic_layer == self.magic_info.magic_layer_end:
-                    log("MAGIC_LAYER_ENDに到達したので、CONVERT処理を終了します")
+                    log(self.get_log("MAGIC_LAYER_ENDに到達したので、CONVERT処理を終了します"))
                     break
 
                 # 次のレイヤに進む
                 self.magic_info.magic_layer = layer.next()
-                log("end next = " + str(self.magic_info.magic_layer))
+                log(self.get_log("end next = " + str(self.magic_info.magic_layer)))
 
                 # 次のレイヤにprompt_inputを再度渡さないようにモード変更
-                log(f"magic_mode set {self.magic_info.magic_mode} => {MagicMode.GRIMOIRE_ONLY}")
+                log(self.get_log(f"magic_mode set {self.magic_info.magic_mode} => {MagicMode.GRIMOIRE_ONLY}"))
                 self.magic_info.magic_mode = MagicMode.GRIMOIRE_ONLY
 
         # ループの最後のoutput_file_pathをfinalとして設定して返す
@@ -77,11 +77,11 @@ class MagicWorkflow:
 
     @log_inout
     def run_converters(self, layer: MagicLayer) -> bool:
-        log("check layer = " + str(layer))
+        log(self.get_log("check layer = " + str(layer)))
         is_called = False
         for converter in self.converters:
             if layer in converter.acceptable_layers and layer == self.magic_info.magic_layer:
-                log(str(converter) + " convert layer = " + str(layer))
+                log(self.get_log(str(converter) + " convert layer = " + str(layer)))
                 converter.prepare()
                 self.run_converter(converter)
                 is_called = True
@@ -98,12 +98,12 @@ class MagicWorkflow:
                     source_target_set.source_file_path, source_target_set.target_file_path
                 )
                 self.file_info.update_hash()
-                log("run Generator source_target_set = %s", source_target_set)
+                log(self.get_log(f"run Generator source_target_set = {source_target_set}"))
                 self.run(converter.convert)
             is_gen = True
         else:
             # コンバーター
-            log("run Converter target_file_path = %s", self.file_info.target_file_path)
+            log(self.get_log(f"run Converter target_file_path = {self.file_info.target_file_path}"))
             self.run(converter.convert)
         return is_gen
 
@@ -112,7 +112,7 @@ class MagicWorkflow:
         # プロセスを実行する
         self.pre_process()
         output_file_path = func()
-        log("output_file_path= %s", output_file_path)
+        log(self.get_log(f"output_file_path= {output_file_path}"))
         display_magic_info_intermediate(self.magic_info)
         self.file_info.output_file_path = output_file_path
         self.post_process()
@@ -122,7 +122,7 @@ class MagicWorkflow:
     @log_inout
     def pre_process(self):
         # プロセスを実行する前の共通処理
-        log(f"プロセス開始: {self.magic_info.magic_layer}")
+        log(self.get_log(f"プロセス開始: {self.magic_info.magic_layer}"))
         display_magic_info_pre(self.magic_info)
         self.workflow_history.append(self.magic_info.magic_layer)
         self.magic_info.history_info = ""
@@ -133,12 +133,12 @@ class MagicWorkflow:
         if FileUtil.has_content(source_file_path):
             source_content = FileUtil.read_file(source_file_path)
             if prompt_goal.strip() != source_content.strip():
-                log(f"ソースファイル読込:  {self.file_info.source_file_path}")
+                log(self.get_log(f"ソースファイル読込:  {self.file_info.source_file_path}"))
                 self.magic_info.prompt_goal = self.magic_info.prompt_input
                 prompt_goal += f"\n\n<<追加情報>>\n{source_content}"
         else:
             # ソースファイルを保存(設計では初回のprompt_file_pathにだけ保存する)
-            log_w(f"ソースファイル更新(前レイヤ処理済？):  {source_file_path}")
+            log(self.get_log(f"ソースファイル更新(前レイヤ処理済？):  {source_file_path}"))
             FileUtil.write_file(source_file_path, self.magic_info.prompt_input)
 
         # prompt_goalを更新
@@ -150,12 +150,12 @@ class MagicWorkflow:
     @log_inout
     def post_process(self):
         # プロセスを実行した後の共通処理
-        log("プロセス完了: %s", self.magic_info.magic_layer)
+        log(self.get_log(f"プロセス完了: {self.magic_info.magic_layer}"))
         self.display_result()
         display_magic_info_post(self.magic_info)
 
-        # プロンプトを保存
-        self.prompt_manager.save_prompts()
+        # プロンプトを保存（実行時に保存するようになったため、いったん不要になった。実行してないものも残したいなら復活）
+        # self.prompt_manager.save_prompts()
 
         # target_file_pathにコピーを配置
         self.copy_output_to_target()
@@ -166,23 +166,23 @@ class MagicWorkflow:
         # history_infoを更新
         self.workflow_history[-1] += f"({self.magic_info.history_info})"
 
-        log(f"post_process called({self.magic_info.magic_layer})")
+        log(self.get_log(f"post_process called({self.magic_info.magic_layer})"))
 
     @log_inout
     def display_result(self):
         # 結果を表示する
         if settings.is_debug:
             display_magic_info_full(self.magic_info)
-        log("結果: is_success=%s", self.magic_info.is_success)
+        log(self.get_log(f"結果: is_success={self.magic_info.is_success}"))
         if self.magic_info.is_success:
-            log(self.magic_info.success_message)
+            log(self.get_log(self.magic_info.success_message))
         else:
-            log(self.magic_info.error_message)
+            log(self.get_log(self.magic_info.error_message))
 
     @log_inout
     def display_progress(self):
         # 進捗を表示する
-        log(f"実行中レイヤ: {self.magic_info.magic_layer}")
+        log(self.get_log(f"実行中レイヤ: {self.magic_info.magic_layer}"))
 
     @log_inout
     def create_folder(self):
@@ -195,7 +195,7 @@ class MagicWorkflow:
         ちなみにsource_file_pathで指定されたインプットファイルはpre_process()で詰め込む(重要)。
         """
         # モードによる分岐
-        log(f"{self.magic_info.magic_mode}で変更中。現状: %s", self.magic_info.grimoire_compiler)
+        log(self.get_log(f"{self.magic_info.magic_mode}で変更中。現状: {self.magic_info.grimoire_compiler}"))
 
         # コンパイラのパスを取得
         compiler_path = GrimoireUtil.get_valid_compiler(self.magic_info.grimoire_compiler)
@@ -206,7 +206,7 @@ class MagicWorkflow:
         if self.magic_info.magic_mode is MagicMode.GRIMOIRE_ONLY:
             # グリモアのみ
             if not os.path.isfile(compiler_path):
-                log("コンパイラが存在しないため、デフォルトのコンパイラを使用します。")
+                log(self.get_log("コンパイラが存在しないため、デフォルトのコンパイラを使用します。"))
                 compiler_path_new = default_compiler_path
             prompt_input_new = ""
         elif self.magic_info.magic_mode is MagicMode.GRIMOIRE_AND_PROMPT:
@@ -214,17 +214,17 @@ class MagicWorkflow:
             if not os.path.isfile(compiler_path):
                 compiler_path_new = ""
                 if not self.magic_info.prompt_input:
-                    log("コンパイラもプロンプトも未設定のため、一般的なプロンプトを使用します。")
+                    log(self.get_log("コンパイラもプロンプトも未設定のため、一般的なプロンプトを使用します。"))
                     prompt_input_new = FileUtil.read_grimoire(default_compiler_path)
         elif self.magic_info.magic_mode is MagicMode.PROMPT_ONLY:
             # プロンプトのみ
             compiler_path_new = ""
             if not self.magic_info.prompt_input:
-                log("プロンプトが未設定のため、一般的なプロンプトを使用します。")
+                log(self.get_log("プロンプトが未設定のため、一般的なプロンプトを使用します。"))
                 prompt_input_new = FileUtil.read_grimoire(default_compiler_path)
         else:
             # SEARCH_GRIMOIRE or ZOLTRAAK_LEGACY(ノーケア、別のところで処理すること！)
-            log("(SEARCH_GRIMOIRE)一般的なプロンプトを使用します。")
+            log(self.get_log("(SEARCH_GRIMOIRE)一般的なプロンプトを使用します。"))
             if not os.path.isfile(compiler_path):
                 compiler_path_new = default_compiler_path
                 prompt_input_new = FileUtil.read_grimoire(default_compiler_path)
@@ -248,11 +248,15 @@ class MagicWorkflow:
         if os.path.isfile(output_file_path_abs) and output_file_path_abs != target_file_path_abs:
             # target_file_pathをコピーで更新
             FileUtil.copy_file(output_file_path_abs, target_file_path_abs)
-            log(f"output_file_pathとtarget_file_pathが異なります。コピーを配置しました、{target_file_path_abs}")
+            log(
+                self.get_log(
+                    f"output_file_pathとtarget_file_pathが異なります。コピーを配置しました、{target_file_path_abs}"
+                )
+            )
             self.file_info.target_file_path = output_file_path_abs
-            log(f"target_file_pathが更新されました。{target_file_path_abs} -> {output_file_path_abs}")
+            log(self.get_log(f"target_file_pathが更新されました。{target_file_path_abs} -> {output_file_path_abs}"))
         else:
-            log("output_file_pathコピー不要 %s", output_file_path_abs)
+            log(self.get_log(f"output_file_pathコピー不要です。 :  {output_file_path_abs}"))
         return target_file_path_abs
 
     @log_inout
@@ -261,7 +265,9 @@ class MagicWorkflow:
         if os.path.isfile(self.file_info.source_file_path):
             os.makedirs(os.path.dirname(self.file_info.past_source_file_path), exist_ok=True)
             FileUtil.copy_file(self.file_info.source_file_path, self.file_info.past_source_file_path)
-            log("past_source_file_path にコピーを配置しました。 : %s", self.file_info.past_source_file_path)
+            log(
+                self.get_log(f"past_source_file_path にコピーを配置しました。 : {self.file_info.past_source_file_path}")
+            )
 
         # 変換後のファイルは配置先がoutput_path起因でtarget_file_path が更新されているので、相対パスを使う
         if os.path.isfile(self.file_info.target_file_path):
@@ -286,18 +292,21 @@ class MagicWorkflow:
             destination_file_path_abs = os.path.abspath(destination_file_path)
             os.makedirs(os.path.dirname(destination_file_path_abs), exist_ok=True)
             FileUtil.copy_file(origin_file_path_abs, destination_file_path_abs)
-            log("past_source_file_path にコピーを配置しました。 : %s", destination_file_path_abs)
+            log(self.get_log(f"past_source_file_path にコピーを配置しました。 : {destination_file_path_abs}"))
             return destination_file_path_abs
-        log("コピー元ファイルがないためコピーできませんでした。 %s", origin_file_path_abs)
+        log(self.get_log(f"コピー元ファイルがないためコピーできませんでした。 : {origin_file_path_abs}"))
         return ""
 
     @log_inout
     def end_workflow(self, final_output_file_path: str):
         # ワークフローを終了するときの共通処理
-        log("ワークフローを終了します")
+        log(self.get_log("ワークフローを終了します"))
         self.file_info.final_output_file_path = final_output_file_path
         display_magic_info_final(self.magic_info)
-        log(f"display_magic_info_final called({self.magic_info.magic_layer})")
+        log(self.get_log(f"display_magic_info_final called({self.magic_info.magic_layer})"))
+
+    def get_log(self, msg: str):
+        return f"{self.magic_info.magic_layer} : {msg}"
 
     def __str__(self) -> str:
         return f"MagicWorkflow({self.magic_info.description})"

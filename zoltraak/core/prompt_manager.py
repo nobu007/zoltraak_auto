@@ -27,6 +27,11 @@ class PromptEnum(str, Enum):
         log("current_prompt_attr=%s", current_prompt_attr)
         return getattr(magic_info, current_prompt_attr)
 
+    def set_current_prompt(self, prompt: str, magic_info: MagicInfo) -> None:
+        current_prompt_attr = f"prompt{self.value}"
+        log("current_prompt_attr=%s", current_prompt_attr)
+        setattr(magic_info, current_prompt_attr, prompt)
+
     def __str__(self) -> str:
         return f"PromptEnum({self.name})"
 
@@ -61,7 +66,7 @@ class PromptManager:
 
         # プロンプトを保存
         FileUtil.write_file(prompt_output_path, prompt)
-        log("プロンプトを保存しました %s: %s", prompt_enum, prompt_output_path)
+        log("プロンプトを保存しました↓ %s:\n%s", prompt_enum, prompt_output_path)
 
     @log_inout
     def load_prompt(self, prompt_enum: PromptEnum = PromptEnum.INPUT) -> str:

@@ -182,8 +182,8 @@ class BaseConverter:
 {new_source_lines}
 
         """
-        self.magic_info.prompt_match_rate = prompt_match_rate
-        response = litellm.generate_response(
+        response = self.generate_response(
+            PromptEnum.MATCH_RATE,
             model=settings.model_name_lite,
             prompt=prompt_match_rate,
             max_tokens=settings.max_tokens_get_match_rate,
@@ -241,8 +241,8 @@ class BaseConverter:
 +line4 modified
 
         """
-        self.magic_info.prompt_diff = prompt_diff
-        response = litellm.generate_response(
+        response = self.generate_response(
+            prompt_enum=PromptEnum.DIFF,
             model=settings.model_name_lite,
             prompt=prompt_diff,
             max_tokens=settings.max_tokens_propose_diff,
@@ -295,8 +295,12 @@ class BaseConverter:
         """
 
         self.magic_info.prompt_apply = prompt_apply
-        modified_content = litellm.generate_response(
-            settings.model_name, prompt_apply, settings.max_tokens_apply_diff, 0.3
+        modified_content = self.generate_response(
+            prompt_enum=PromptEnum.APPLY,
+            model=settings.model_name,
+            prompt=prompt_apply,
+            max_tokens=settings.max_tokens_apply_diff,
+            temperature=0.3,
         )
 
         # 修正後の内容をターゲットファイルに書き込む
@@ -337,6 +341,33 @@ class BaseConverter:
         log("current_target_content(末尾100文字)=\n%s", current_target_content[-100:])
         log("past_target_content(末尾100文字)   =\n%s", past_target_content[-100:])
         return current_target_content == past_target_content
+
+    def generate_response(
+        self, prompt_enum: PromptEnum, model: str, prompt: str, max_tokens: int = 4000, temperature: float = 0.0
+    ) -> str:
+        """ログ表示、プロンプトの保存、LLM呼び出し、結果の確認(TODO)をワンストップで実施する"""
+        file_info = self.magic_info.file_info
+        log("call prompt=%s", len(prompt))
+
+        # プロンプトを magic_info に保存
+        prompt_enum.set_current_prompt(prompt, self.magic_info)
+
+        # work_dirからの相対パス取得
+        target_file_path_rel = os.path.relpath(file_info.target_file_path, file_info.work_dir)
+
+        # promptをファイルに保存
+        self.prompt_manager.save_prompt(prompt, target_file_path_rel, prompt_enum)
+
+        # LLM呼び出し
+        response = litellm.generate_response(
+            model=model,
+            prompt=prompt,
+            max_tokens=max_tokens,
+            temperature=temperature,
+        )
+        log("response=%s", len(response))
+
+        return response
 
     def __str__(self) -> str:
         return f"{self.name}({self.magic_info.magic_layer})"
