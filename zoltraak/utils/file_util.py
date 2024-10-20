@@ -80,13 +80,14 @@ class FileUtil:
         return ""
 
     @staticmethod
-    def read_structure_file_content(structure_file_path: str, target_dir: str) -> list[str]:
+    def read_structure_file_content(structure_file_path: str, target_dir: str, canonical_name: str) -> list[str]:
         """
         構造ファイルの内容を読み込み、絶対ファイルパスのリストを返します。
 
         引数:
-            structure_file_path (str): 相対ファイルパスを含む構造ファイルのパス。
-            target_dir (str): 相対ファイルパスを解決するためのターゲットディレクトリ。
+            structure_file_path: 相対ファイルパスを含む構造ファイルのパス。
+            target_dir: 相対ファイルパスを解決するためのターゲットディレクトリ。
+            canonical_name: アウトプットファイルやフォルダを一意に識別するための正規名称
 
         戻り値:
             list[str]: ターゲットディレクトリに存在する絶対ファイルパスのリスト。
@@ -95,7 +96,7 @@ class FileUtil:
         file_path_list = []
         for file_path_rel in structure_file_content.split("\n"):
             log("check file_path_rel= %s", file_path_rel)
-            file_path = os.path.abspath(os.path.join(target_dir, file_path_rel))
+            file_path = os.path.abspath(os.path.join(target_dir, canonical_name, file_path_rel))
             if os.path.isfile(file_path):
                 file_path_list.append(file_path)
                 log("append file_path= %s", file_path)

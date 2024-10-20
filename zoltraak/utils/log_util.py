@@ -96,13 +96,18 @@ def _add_file_handler(
 
 logger = get_logger(zoltraak.__name__)
 
+DEF_MAX_SHOW_RETURN_LEN = 100
+
 
 def log_inout(func):
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
         print("  --> " + f"Calling {func.__name__} with args: {args}, kwargs: {kwargs}")
         result = func(*args, **kwargs)
-        print("  --> " + f"{func.__name__} returned: {result}")
+        if isinstance(result, str) and len(result) > DEF_MAX_SHOW_RETURN_LEN:
+            print("  --> " + f"{func.__name__} returned: {result[:DEF_MAX_SHOW_RETURN_LEN]} ...")
+        else:
+            print("  --> " + f"{func.__name__} returned: {result}")
         return result
 
     return wrapper

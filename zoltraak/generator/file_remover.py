@@ -1,5 +1,7 @@
 import os
 
+from tqdm import tqdm
+
 from zoltraak.converter.base_converter import BaseConverter
 from zoltraak.core.prompt_manager import PromptManager
 from zoltraak.schema.schema import MagicInfo, MagicLayer, SourceTargetSet
@@ -31,7 +33,9 @@ class FileRemover(BaseConverter):
         """
         # step1: ファイル構造定義書を取得
         file_info = self.magic_info.file_info
-        code_file_path_list = FileUtil.read_structure_file_content(file_info.structure_file_path, file_info.target_dir)
+        code_file_path_list = FileUtil.read_structure_file_content(
+            file_info.structure_file_path, file_info.target_dir, file_info.canonical_name
+        )
 
         # step2: ファイルリストを取得
         file_paths = FileUtil.find_files(file_info.target_dir, "")  # 拡張子が空文字列の場合は全ファイルを取得
@@ -40,7 +44,7 @@ class FileRemover(BaseConverter):
         self.magic_info.history_info += " ->クリーンアップ(対象なしでスキップ)"
         remove_count = 0
         removed_file_paths_set = []
-        for file_path in file_paths:
+        for file_path in tqdm(file_paths):
             log("check file_path= %s", file_path)
             if file_path not in code_file_path_list:
                 log("remove file_path= %s", file_path)

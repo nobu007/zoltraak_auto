@@ -81,7 +81,6 @@ class BaseConverter:
     # 差分計算に使える最低文字数のしきい値（未満なら再作成）
     VALID_CONTENT_THRESHOLD = 100
 
-    @log_inout
     def is_need_handle_new_target_file(
         self, old_source_content: str, new_source_content: str, source_diff: str
     ) -> bool:

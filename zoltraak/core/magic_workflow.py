@@ -1,5 +1,7 @@
 import os
 
+from tqdm import tqdm
+
 from zoltraak import settings
 from zoltraak.converter.base_converter import BaseConverter
 from zoltraak.converter.converter import MarkdownToPythonConverter
@@ -93,7 +95,7 @@ class MagicWorkflow:
         if hasattr(converter, "prepare_generation") and callable(converter.prepare_generation):
             # ジェネレータ
             source_target_set_list = converter.prepare_generation()
-            for source_target_set in source_target_set_list:
+            for source_target_set in tqdm(source_target_set_list):
                 self.file_info.update_source_target(
                     source_target_set.source_file_path, source_target_set.target_file_path
                 )
@@ -167,8 +169,8 @@ class MagicWorkflow:
         # 過去のファイルを保存
         self.copy_past_files()
 
-        # history_infoを更新
-        self.workflow_history[-1] += f"({self.magic_info.history_info})"
+        # history_infoを更新 例: (main.md ->スキップ(既存＆input変更なし))
+        self.workflow_history[-1] += f"({self.file_info.target_file_name}{self.magic_info.history_info})"
 
         log(self.get_log(f"post_process called({self.magic_info.magic_layer})"))
 

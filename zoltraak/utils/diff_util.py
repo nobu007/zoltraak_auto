@@ -1,6 +1,6 @@
 import difflib
 
-from zoltraak.utils.log_util import log, log_head
+from zoltraak.utils.log_util import log_head
 
 
 class DiffUtil:
@@ -27,5 +27,5 @@ class DiffUtil:
         content_lines = content.split("\n")
         content_lines_strip_space_list = [line.strip() for line in content_lines]
         content_lines_ignore_empty_list = [line for line in content_lines_strip_space_list if line != ""]
-        log("\n".join(content_lines_ignore_empty_list))
+        log_head("get_strip_space", "\n".join(content_lines_ignore_empty_list))
         return content_lines_ignore_empty_list
