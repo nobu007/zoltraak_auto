@@ -113,7 +113,7 @@ class FileUtil:
     @staticmethod
     def has_content(file_path: str, threshold: int = THRESHOLD_BYTES_MIN_CONTENT) -> bool:
         content = FileUtil.read_file(file_path)
-        log_i("has_content file_path= %s, content(len)= %d", file_path, len(content))
+        log("file_path= %s, content(len)= %d", file_path, len(content))
         return len(content) > threshold
 
     @staticmethod

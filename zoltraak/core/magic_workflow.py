@@ -12,7 +12,7 @@ from zoltraak.generator.gencodebase import CodeBaseGenerator
 from zoltraak.schema.schema import FileInfo, MagicInfo, MagicLayer, MagicMode
 from zoltraak.utils.file_util import FileUtil
 from zoltraak.utils.grimoires_util import GrimoireUtil
-from zoltraak.utils.log_util import log, log_change, log_head_diff, log_inout
+from zoltraak.utils.log_util import log, log_change, log_head_diff, log_inout, log_progress
 from zoltraak.utils.rich_console import (
     display_magic_info_final,
     display_magic_info_full,
@@ -95,13 +95,22 @@ class MagicWorkflow:
         if hasattr(converter, "prepare_generation") and callable(converter.prepare_generation):
             # ジェネレータ
             source_target_set_list = converter.prepare_generation()
-            for source_target_set in tqdm(source_target_set_list):
+
+            # プログレスバーを初期化
+            progress_bar = tqdm(total=len(source_target_set_list), unit="files")
+            for source_target_set in source_target_set_list:
+                log_progress(progress_bar)
                 self.file_info.update_source_target(
-                    source_target_set.source_file_path, source_target_set.target_file_path
+                    source_target_set.source_file_path,
+                    source_target_set.target_file_path,
+                    source_target_set.context_file_path,
                 )
                 self.file_info.update_hash()
                 log(self.get_log(f"run Generator source_target_set = {source_target_set}"))
                 self.run(converter.convert)
+                progress_bar.update(1)
+            progress_bar.close()
+
             # forが一回も回らなかった場合
             log("source_target_set_list empty")
             self.workflow_history.append(self.magic_info.magic_layer + "(source_target_set_list empty)")
@@ -138,14 +147,21 @@ class MagicWorkflow:
         source_file_path = self.file_info.source_file_path
         if FileUtil.has_content(source_file_path):
             source_content = FileUtil.read_file(source_file_path)
+            # prompt_inputがsource_content由来の場合に備えて同一チェック
             if prompt_goal.strip() != source_content.strip():
                 log(self.get_log(f"ソースファイル読込:  {self.file_info.source_file_path}"))
-                self.magic_info.prompt_goal = self.magic_info.prompt_input
                 prompt_goal += f"\n\n<<追加情報>>\n{source_content}"
         else:
             # ソースファイルを保存(設計では初回のprompt_file_pathにだけ保存する)
             log(self.get_log(f"ソースファイル更新(前レイヤ処理済？):  {source_file_path}"))
             FileUtil.write_file(source_file_path, self.magic_info.prompt_input)
+
+        # コンテキストファイルをprompt_goalに詰め込み
+        context_file_path = self.file_info.context_file_path
+        if FileUtil.has_content(context_file_path):
+            context_content = FileUtil.read_file(context_file_path)
+            log(self.get_log(f"コンテキストファイル読込:  {self.file_info.context_file_path}"))
+            prompt_goal += f"\n\n<<背景情報>>\n{context_content}"
 
         # prompt_goalを更新
         self.magic_info.prompt_goal = prompt_goal

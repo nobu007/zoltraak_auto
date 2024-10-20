@@ -12,6 +12,17 @@ from zoltraak import settings
 class SourceTargetSet(BaseModel):
     source_file_path: str = Field(default="", description="source_file_path")
     target_file_path: str = Field(default="", description="target_file_path")
+    context_file_path: str = Field(default="", description="context_file_path")
+
+    def __str__(self):
+        return self.__repr__()
+
+    def __repr__(self) -> str:
+        return f"""SourceTargetSet
+    source_file_path: {self.source_file_path}
+    target_file_path: {self.target_file_path}
+    context_file_path: {self.context_file_path}
+  """
 
 
 class MagicMode(str, Enum):
@@ -40,10 +51,11 @@ class MagicLayer(str, Enum):
     LAYER_2_STRUCTURE_GEN = "layer_2_structure_gen"  # 生のprompt => ファイル構造定義書
     LAYER_3_REQUIREMENT_GEN = "layer_3_requirement_gen"  # ユーザ要求記述書 and ファイル構造定義書 => 要件定義書
     LAYER_4_REQUIREMENT_GEN = "layer_4_requirement_gen"  # 要件定義書 => 要件定義書(requirements)
-    LAYER_5_CODE_GEN = "layer_5_code_gen"  # 要件定義書(requirements) => コード
-    LAYER_6_CODEBASE_GEN = "layer_6_codebase_gen"  # コード => コードベース
-    LAYER_7_REQUIREMENT_GEN = "layer_7_requirement_gen"  # コードベース => 要件定義書
-    LAYER_8_CLEAN_UP = "layer_8_clean_up"  # ファイル構造定義書 => 不要ファイル削除
+    LAYER_5_CODE_GEN = "layer_5_code_gen"  # 要件定義書(requirements) => Pythonコード（ファイル生成用）＋最終コード
+    LAYER_6_CODEBASE_GEN = "layer_6_codebase_gen"  # 最終コード => コードベース
+    LAYER_7_INFO_STRUCTURE_GEN = "layer_7_info_structure_gen"  # コードベース => 情報構造体
+    LAYER_8_CODE_GEN = "layer_8_code_gen"  #  情報構造体 => 最終コード（再作成）
+    LAYER_9_CLEAN_UP = "layer_9_clean_up"  # ファイル構造定義書 => 不要ファイル削除
 
     def __str__(self):
         return self.__repr__()
@@ -120,6 +132,7 @@ DEFAULT_REQUEST_FILE = "REQUEST.md"
 DEFAULT_STRUCTURE_FILE = "STRUCTURE.md"
 DEFAULT_MD_FILE = "ARCHITECTURE.md"
 DEFAULT_PY_FILE = "ARCHITECTURE.py"
+EMPTY_CONTEXT_FILE = "EMPTY_CONTEXT.md"
 
 
 class FileInfo(BaseModel):
@@ -158,18 +171,24 @@ class FileInfo(BaseModel):
     past_dir: str = Field(default="./past", description="過去の出力先のルートディレクトリ")
     past_source_dir: str = Field(default="./past/source", description="過去のソースフォルダ")
     past_target_dir: str = Field(default="./past/target", description="過去の出力先ファイルフォルダ")
+    past_context_dir: str = Field(default="./past/context", description="過去のコンテキストファイルフォルダ")
     prompt_dir: str = Field(default="./prompt", description="利用したプロンプト離籍のルートディレクトリ")
 
     # 処理対象ファイル(convert source => targetに利用)
     source_file_path: str = Field(default=DEFAULT_REQUEST_FILE, description="ソースファイルパス(絶対パス)")
     target_file_path: str = Field(default=DEFAULT_MD_FILE, description="処理対象のファイルパス(絶対パス)")
-    source_file_name: str = Field(default=DEFAULT_REQUEST_FILE, description="ソースファイル名")
+    context_file_path: str = Field(default=EMPTY_CONTEXT_FILE, description="コンテキストファイルパス(絶対パス)")
     target_file_name: str = Field(default=DEFAULT_MD_FILE, description="処理対象のファイル名")
+    source_file_name: str = Field(default=DEFAULT_REQUEST_FILE, description="ソースファイル名")
+    context_file_name: str = Field(default=EMPTY_CONTEXT_FILE, description="コンテキストのファイル名")
     past_source_file_path: str = Field(
         default="./past/source/" + DEFAULT_REQUEST_FILE, description="過去のソースファイル(絶対パス)"
     )
     past_target_file_path: str = Field(
         default="./past/target/" + DEFAULT_MD_FILE, description="過去の出力先ファイル(絶対パス)"
+    )
+    past_context_file_path: str = Field(
+        default="./past/context/" + EMPTY_CONTEXT_FILE, description="過去のコンテキストファイル(絶対パス)"
     )
 
     # 結果ファイルパス
@@ -180,8 +199,10 @@ class FileInfo(BaseModel):
     # その他
     source_hash: str = Field(default="1", description="ソースファイルのハッシュ値")
     target_hash: str = Field(default="2", description="出力先ファイルのハッシュ値")
+    context_hash: str = Field(default="10", description="コンテキストファイルのハッシュ値")
     past_source_hash: str = Field(default="3", description="過去のソースファイルのハッシュ値")
     past_target_hash: str = Field(default="4", description="過去の出力先ファイルのハッシュ値")
+    past_context_hash: str = Field(default="11", description="過去のコンテキストファイルのハッシュ値")
 
     def update_work_dir(self, new_work_dir: str = ""):
         if not new_work_dir:
@@ -223,20 +244,23 @@ class FileInfo(BaseModel):
         if self.py_file_path:
             self.py_file_path = os.path.abspath(self.py_file_path)
 
-    def update_source_target(self, source_file_path, target_file_path):
+    def update_source_target(self, source_file_path, target_file_path, context_file_path=EMPTY_CONTEXT_FILE):
         # source_file_path, source_file_path を更新する処理(path系のトリガー)
 
         # full path
         self.source_file_path = os.path.abspath(source_file_path)
         self.target_file_path = os.path.abspath(target_file_path)
+        self.context_file_path = os.path.abspath(context_file_path)
 
         # file name
         self.source_file_name = os.path.basename(source_file_path)
         self.target_file_name = os.path.basename(target_file_path)
+        self.context_file_name = os.path.basename(context_file_path)
 
         # mkdir
         os.makedirs(os.path.dirname(self.source_file_path), exist_ok=True)
         os.makedirs(os.path.dirname(self.target_file_path), exist_ok=True)
+        os.makedirs(os.path.dirname(self.context_file_path), exist_ok=True)
 
         # past source and target
         self.update_source_target_past()
@@ -249,24 +273,30 @@ class FileInfo(BaseModel):
         # work_dirからの相対パス取得
         source_file_path_rel = os.path.relpath(self.source_file_path, self.work_dir)
         target_file_path_rel = os.path.relpath(self.target_file_path, self.work_dir)
+        context_file_path_rel = os.path.relpath(self.context_file_path, self.work_dir)
 
         # past_path更新(絶対パス)
         self.past_source_file_path = os.path.abspath(os.path.join(self.past_dir, "source", source_file_path_rel))
         self.past_target_file_path = os.path.abspath(os.path.join(self.past_dir, "target", target_file_path_rel))
+        self.past_context_file_path = os.path.abspath(os.path.join(self.past_dir, "context", context_file_path_rel))
 
         # past_dir更新
         self.past_source_dir = os.path.dirname(self.past_source_file_path)
         self.past_target_dir = os.path.dirname(self.past_target_file_path)
+        self.past_context_dir = os.path.dirname(self.past_context_file_path)
 
         # past_dir作成
         os.makedirs(self.past_source_dir, exist_ok=True)
         os.makedirs(self.past_target_dir, exist_ok=True)
+        os.makedirs(self.past_context_dir, exist_ok=True)
 
     def update_hash(self):
         self.source_hash = self.calculate_file_hash(self.source_file_path)
         self.target_hash = self.calculate_file_hash(self.target_file_path)
+        self.target_hash = self.calculate_file_hash(self.target_file_path)
         self.past_source_hash = self.calculate_file_hash(self.past_source_file_path)
         self.past_target_hash = self.calculate_file_hash(self.past_target_file_path)
+        self.past_context_hash = self.calculate_file_hash(self.past_context_file_path)
 
     def add_output_file_path(self, output_file_path: str):
         self.output_file_path = os.path.abspath(output_file_path)

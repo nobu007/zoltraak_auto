@@ -6,6 +6,8 @@ import sys
 from logging.handlers import RotatingFileHandler
 from typing import Any
 
+from tqdm import tqdm
+
 import zoltraak
 from zoltraak import settings
 
@@ -187,6 +189,12 @@ def log_change(title: str, content1: str, content2: str):
         content2_part = content2 + separator_part
         all_info = title_part + content1_part + change_part + content2_part
         logger.info(all_info)
+
+
+def log_progress(t: tqdm):
+    """tqdmオブジェクトから進捗率を計算し、ログに記録するコールバック関数"""
+    progress = t.n / t.total
+    log(f"Progress: {t.n}/{t.total} ({progress:.2%})")
 
 
 def show_fully_qualified_name(obj: Any) -> str:

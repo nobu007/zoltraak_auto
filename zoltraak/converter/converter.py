@@ -51,6 +51,7 @@ class MarkdownToPythonConverter(BaseConverter):
     @log_inout
     def prepare(self) -> None:
         """prompt + ユーザ要求記述書(pre_md_file) => 要件定義書(md_file)"""
+        super().prepare()
 
         # step1: ファイル情報を更新
         file_info = self.magic_info.file_info

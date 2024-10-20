@@ -5,7 +5,7 @@ import zoltraak.llms.litellm_api as litellm
 from zoltraak import settings
 from zoltraak.core.prompt_manager import PromptEnum, PromptManager
 from zoltraak.gen_markdown import generate_md_from_prompt
-from zoltraak.schema.schema import MagicInfo, MagicLayer, SourceTargetSet
+from zoltraak.schema.schema import EMPTY_CONTEXT_FILE, MagicInfo, MagicLayer, SourceTargetSet
 from zoltraak.utils.diff_util import DiffUtil
 from zoltraak.utils.file_util import FileUtil
 from zoltraak.utils.log_util import log, log_change, log_e, log_head, log_inout
@@ -35,7 +35,15 @@ class BaseConverter:
         self.source_target_set_list: list[SourceTargetSet] = []
 
     def prepare(self) -> None:
-        pass
+        """converter共通の初期化処理"""
+
+        # context_file_pathを常にEMPTYで初期化する
+        context_file_path = EMPTY_CONTEXT_FILE
+        self.magic_info.file_info.context_file_path = context_file_path
+        if not os.path.isfile(context_file_path):
+            # 空のコンテキストファイルを保存(設計では初回だけデフォルトで保存する)
+            log(f"コンテキストファイル更新(空):  {context_file_path}")
+            FileUtil.write_file(context_file_path, "")
 
     def convert(self) -> str:
         """生成処理"""
@@ -52,7 +60,7 @@ class BaseConverter:
         # ターゲットファイルが存在しない場合
         return self.handle_new_target_file()  # - 新しいターゲットファイルを処理
 
-    SKIP_LAYERS_BY_SOURCE: ClassVar[list[MagicLayer]] = [MagicLayer.LAYER_7_REQUIREMENT_GEN]
+    SKIP_LAYERS_BY_SOURCE: ClassVar[list[MagicLayer]] = [MagicLayer.LAYER_7_INFO_STRUCTURE_GEN]
 
     @log_inout
     def handle_existing_target_file(self) -> str:

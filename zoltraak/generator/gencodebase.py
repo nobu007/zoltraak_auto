@@ -23,7 +23,8 @@ class CodeBaseGenerator(BaseConverter):
         self.prompt_manager = prompt_manager
         self.acceptable_layers = [
             MagicLayer.LAYER_6_CODEBASE_GEN,
-            MagicLayer.LAYER_7_REQUIREMENT_GEN,
+            MagicLayer.LAYER_7_INFO_STRUCTURE_GEN,
+            MagicLayer.LAYER_8_CODE_GEN,
         ]
         self.name = "CodeBaseGenerator"
 
@@ -44,6 +45,7 @@ class CodeBaseGenerator(BaseConverter):
                 self.source_target_set_list.append(source_target_set)
                 log("append source_target_set= %s", source_target_set)
 
+        # コンテキストには
         # step2: グリモア更新
         # 変更なし
 
@@ -59,23 +61,38 @@ class CodeBaseGenerator(BaseConverter):
         if cade_base_file_path == code_file_path:
             cade_base_file_path += ".md"  # もともと.mdだった場合は.md.mdになる
 
+        # info_structure_file_path(情報構造体)
+        info_structure_file_path = os.path.join(os.path.dirname(code_file_path), "info_structure.md")
+
         if self.magic_info.magic_layer is MagicLayer.LAYER_6_CODEBASE_GEN:
             # ソースファイル => 詳細設計書
             source_file_path = code_file_path
             target_file_path = cade_base_file_path
+            context_file_path = self.magic_info.file_info.md_file_path
             self.magic_info.grimoire_compiler = "dev_obj_file.md"
-        elif self.magic_info.magic_layer is MagicLayer.LAYER_7_REQUIREMENT_GEN:
-            # MagicLayer.LAYER_7_REQUIREMENT_GEN
-            # 詳細設計書 => 要件定義書
+        elif self.magic_info.magic_layer is MagicLayer.LAYER_7_INFO_STRUCTURE_GEN:
+            # MagicLayer.LAYER_7_INFO_STRUCTURE_GEN
+            # 詳細設計書 => 情報構造体
             source_file_path = cade_base_file_path
-            target_file_path = self.magic_info.file_info.md_file_path
+            target_file_path = info_structure_file_path
+            context_file_path = self.magic_info.file_info.md_file_path
+            self.magic_info.grimoire_compiler = "dev_obj_modify.md"
+        elif self.magic_info.magic_layer is MagicLayer.LAYER_8_CODE_GEN:
+            # MagicLayer.LAYER_8_CODE_GEN
+            # 情報構造体 => 最終コード（再作成）
+            source_file_path = info_structure_file_path
+            target_file_path = code_file_path
+            context_file_path = cade_base_file_path
             self.magic_info.grimoire_compiler = "dev_obj_modify.md"
         else:
             # 呼ばれないはず
             source_file_path = ""
             target_file_path = ""
+            context_file_path = ""
 
-        return SourceTargetSet(source_file_path=source_file_path, target_file_path=target_file_path)
+        return SourceTargetSet(
+            source_file_path=source_file_path, target_file_path=target_file_path, context_file_path=context_file_path
+        )
 
     def convert(self) -> str:
         """コード => コードベース"""
