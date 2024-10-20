@@ -99,7 +99,7 @@ class MagicLayer(str, Enum):
 
 
 class ZoltraakParams(BaseModel):
-    input: str = Field(default="", description="対変換対象のMarkdownファイルのパスまたはテキスト")
+    # input: str = Field(default="", description="対変換対象のMarkdownまたはテキスト(分かりづらいので廃止)")
     output_dir: str = Field(default="generated", description="生成されたPythonファイルの出力ディレクトリ")
     prompt: str = Field(default="", description="追加のプロンプト情報")
     compiler: str = Field(default="", description="コンパイラー（要件定義書のテンプレート）")
@@ -116,9 +116,9 @@ class ZoltraakParams(BaseModel):
     eternal_intent: str = Field(default="", description="全レイヤで共通不変の永続的な作業指示")
 
     def get_zoltraak_command(self):
-        cmd = f"zoltraak {self.input}"
+        cmd = "zoltraak"
         for field, value in self:
-            if value and field != "input":
+            if value:
                 cmd += f" --{field} {value}"
         print("get_zoltraak_command cmd=", cmd)
         return cmd

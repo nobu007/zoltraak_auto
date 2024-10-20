@@ -92,9 +92,6 @@ def main() -> None:
     if args.version:  # バージョン情報表示オプションが指定された場合
         show_version_and_exit()  # - バージョン情報を表示して終了
 
-    if args.input is None:  # 入力ファイルまたはテキストが指定されていない場合
-        show_usage_and_exit()  # - 使用方法を表示して終了
-
     if args.model_name:  # -- 使用するモデルの名前が指定された場合
         settings.model_name = args.model_name  # -- zoltraak全体設定に保存してどこからでも使えるようにする
 
@@ -105,7 +102,6 @@ def main() -> None:
     compiler_path = prepare_compiler(args.input, args.compiler, args.custom_compiler)
 
     params = ZoltraakParams()
-    params.input = args.input
     params.prompt = args.prompt
     params.compiler = compiler_path  # compilerとcustom_compilerを集約(絶対パス)
     params.architect = args.architect
@@ -117,22 +113,24 @@ def main() -> None:
     params.magic_layer = args.magic_layer
     params.magic_layer_end = args.magic_layer_end
     params.eternal_intent = args.eternal_intent
-    preprocess_input(params)
+    preprocess_input(args.input, params)
     display_info_full(params, title="ZoltraakParams")
     main_exec(params)
 
 
-def preprocess_input(params: ZoltraakParams) -> None:
-    log("params.input=" + params.input)
+def preprocess_input(args_input: str, params: ZoltraakParams) -> None:
+    if not args_input:
+        args_input = ""  # - args_inputに空文字列を代入(ログ表示で落ちないようにするため)
+    log("args_input=" + args_input)
     # input は canonical_name または promptが入る
     # この関数ではinputからcanonical_name、promptを決定する
     # 以降はinputを参照しないこと！
-    preprocess_input_canonical_name(params)
-    preprocess_input_prompt(params)
+    preprocess_input_canonical_name(args_input, params)
+    preprocess_input_prompt(args_input, params)
 
 
-def preprocess_input_canonical_name(params: ZoltraakParams) -> None:
-    log("params.input=" + params.input)
+def preprocess_input_canonical_name(args_input: str, params: ZoltraakParams) -> None:
+    log("args_input=" + args_input)
     # ---- canonical_nameの決定ロジック ----
     # canonical_name は params ⇒ input ⇒デフォルト値(空白) の順に優先して設定
 
@@ -142,9 +140,9 @@ def preprocess_input_canonical_name(params: ZoltraakParams) -> None:
     if params.canonical_name:
         # paramsから決める
         canonical_name = params.canonical_name
-    elif params.input.endswith(".md"):
+    elif args_input.endswith(".md"):
         # inputから決める
-        canonical_name = os.path.basename(params.input)
+        canonical_name = os.path.basename(args_input)
 
     # 拡張子と冒頭のdef_を削除
     canonical_name = os.path.splitext(canonical_name)[0]
@@ -155,7 +153,7 @@ def preprocess_input_canonical_name(params: ZoltraakParams) -> None:
     log("canonical_name: %s", params.canonical_name)
 
 
-def preprocess_input_prompt(params: ZoltraakParams) -> None:
+def preprocess_input_prompt(args_input: str, params: ZoltraakParams) -> None:
     # ---- promptの決定ロジック ----
     # 1. promptが引数で指定済みならそのまま採用
     # 1.2. ただし、mdファイルが有効なら中身を展開する
@@ -170,13 +168,14 @@ def preprocess_input_prompt(params: ZoltraakParams) -> None:
             params.prompt = "次の資料を参考にしてください。\n" + FileUtil.read_md_recursive(params.prompt)
         return
 
-    # inputが有効、かつmdファイル以外ならpromptとして採用
-    if params.input and not params.input.endswith(".md"):
-        params.prompt = params.input
-        return
-
-    # canonical_nameで指定されたmdの中身があれば、promptは空で確定
-    if FileUtil.has_content(params.canonical_name, 10):
+    # inputが有効
+    if args_input:
+        # ただし、mdファイルかつ有効なら中身を展開する
+        if args_input.endswith(".md") and FileUtil.has_content(args_input, 10):
+            params.prompt = "次の資料を参考にしてください。\n" + FileUtil.read_md_recursive(args_input)
+            return
+        # mdファイル以外ならpromptとして採用
+        params.prompt = args_input
         return
 
     # promptは未定かつmdも空なのでエラー終了
@@ -271,7 +270,7 @@ def show_args(args: argparse.Namespace):
 def process_markdown_file(params: ZoltraakParams) -> MagicInfo:
     """
     Markdownファイルを処理する
-    前提： params.input で処理対象のmarkdownファイルが指定される
+    前提： canonical_name で処理対象のmarkdownファイルが指定される
     """
     output_dir_abs = os.path.abspath(params.output_dir)
 
@@ -346,12 +345,10 @@ def get_custom_compiler_path(custom_compiler):
 
 def process_text_input(params: ZoltraakParams) -> str:
     # 要件定義書の名前をinputから新規に作成する
-    next_prompt = params.input
-    md_file_path = generate_md_file_name(next_prompt)
+    md_file_path = generate_md_file_name(params.prompt)
 
     # コマンドを再発行する
-    params.input = md_file_path
-    params.prompt = next_prompt
+    params.canonical_name = md_file_path
     zoltraak_command = params.get_zoltraak_command()
     SubprocessUtil.run_shell_command(zoltraak_command)
     return zoltraak_command
