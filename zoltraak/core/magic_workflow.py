@@ -269,11 +269,7 @@ class MagicWorkflow:
     def copy_past_files(self) -> None:
         # ソースは固定場所なのでfile_infoの情報を使う
         if os.path.isfile(self.file_info.source_file_path):
-            os.makedirs(os.path.dirname(self.file_info.past_source_file_path), exist_ok=True)
-            FileUtil.copy_file(self.file_info.source_file_path, self.file_info.past_source_file_path)
-            log(
-                self.get_log(f"past_source_file_path にコピーを配置しました。 : {self.file_info.past_source_file_path}")
-            )
+            self.copy_file_by_rel_path(self.file_info.source_file_path, self.file_info.past_source_dir)
 
         # 変換後のファイルは配置先がoutput_path起因でtarget_file_path が更新されているので、相対パスを使う
         if os.path.isfile(self.file_info.target_file_path):

@@ -1,10 +1,11 @@
 import os
+from typing import ClassVar
 
 import zoltraak.llms.litellm_api as litellm
 from zoltraak import settings
 from zoltraak.core.prompt_manager import PromptEnum, PromptManager
 from zoltraak.gen_markdown import generate_md_from_prompt
-from zoltraak.schema.schema import MagicInfo, SourceTargetSet
+from zoltraak.schema.schema import MagicInfo, MagicLayer, SourceTargetSet
 from zoltraak.utils.diff_util import DiffUtil
 from zoltraak.utils.file_util import FileUtil
 from zoltraak.utils.log_util import log, log_change, log_e, log_head, log_inout
@@ -51,6 +52,8 @@ class BaseConverter:
         # ターゲットファイルが存在しない場合
         return self.handle_new_target_file()  # - 新しいターゲットファイルを処理
 
+    SKIP_LAYERS_BY_SOURCE: ClassVar[list[MagicLayer]] = [MagicLayer.LAYER_7_REQUIREMENT_GEN]
+
     @log_inout
     def handle_existing_target_file(self) -> str:
         """ターゲットファイルが存在する場合の処理
@@ -59,8 +62,16 @@ class BaseConverter:
             str: 処理結果のファイルパス
         """
         file_info = self.magic_info.file_info
+
+        # 最終プロンプトによる分岐
         if self.prompt_manager.is_same_prompt(PromptEnum.FINAL):  # -- 前回と同じプロンプトの場合
             log(f"スキップ(既存＆input変更なし): {file_info.target_file_path}")
+            self.magic_info.history_info += " ->スキップ(既存＆input変更なし)"
+            return file_info.target_file_path  # --- 処理をスキップし既存のターゲットファイルを返す
+
+        # レイヤ個別のスキップ処理(要件定義書など複数inputで更新されるものはインプットの一致だけでスキップ)
+        if self.magic_info.magic_layer in BaseConverter.SKIP_LAYERS_BY_SOURCE and self.is_same_source_as_past():
+            log(f"スキップ(既存ソース): {file_info.target_file_path}")
             self.magic_info.history_info += " ->スキップ(既存＆input変更なし)"
             return file_info.target_file_path  # --- 処理をスキップし既存のターゲットファイルを返す
 
