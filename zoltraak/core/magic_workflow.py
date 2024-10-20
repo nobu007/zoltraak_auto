@@ -1,4 +1,5 @@
 import os
+import sys
 
 from tqdm import tqdm
 
@@ -97,7 +98,7 @@ class MagicWorkflow:
             source_target_set_list = converter.prepare_generation()
 
             # プログレスバーを初期化
-            progress_bar = tqdm(total=len(source_target_set_list), unit="files")
+            progress_bar = tqdm(total=len(source_target_set_list), unit="files", file=sys.stdout)
             for source_target_set in source_target_set_list:
                 log_progress(progress_bar)
                 self.file_info.update_source_target(

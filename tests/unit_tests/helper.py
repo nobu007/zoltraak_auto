@@ -14,12 +14,6 @@ class MockManager:
         self._init_default_mocks()
 
     def _init_default_mocks(self):
-        # FileUtilを無効化するfixtureを生成
-        # self._set_mock("fixture_file_util_read_ok", "zoltraak.utils.file_util.FileUtil.read_file", "ok")
-        # self._set_mock("fixture_file_util_read_long", "zoltraak.utils.file_util.FileUtil.read_file", "ok")
-        self._set_mock("fixture_file_util_write_ok", "zoltraak.utils.file_util.FileUtil.write_file", return_value="ok")
-        self._set_mock("fixture_file_util_write_ng", "zoltraak.utils.file_util.FileUtil.write_file", return_value="ok")
-
         # llm呼び出しを無効化するfixtureを生成
         self._set_mock("fixture_litellm_api_generate_response_ok", "zoltraak.llms.litellm_api.generate_response", "ok")
 

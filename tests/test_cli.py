@@ -29,8 +29,22 @@ print("===============================")
 #    a. ALL_MOCK_(関数名)： 全てのテストで使用するモック
 MOCK_CLI_MAIN_EXEC = "zoltraak.cli.main_exec"
 
+# キーワード定義
+PROMPT_KEYWORD = "<<追加指示>>"
+PROMPT_KEYWORD_NO_SOURCE = "zoltraakシステムは曖昧なユーザー入力を"
+DUMMY_CONTENTS = "# Test File\nThis is a test file.\n# HASH: e32c2339" * 10
+
 
 class TestZoltraakCommand(BaseTestCase):  # TestZoltraakCommand クラスを定義し、 BaseTestCaseを継承します。
+    def setUp(self):
+        super().setUp()
+        self.set_up_files()
+
+    def set_up_files(self):
+        # テスト全体で使用するファイルのセットアップ
+        with open("test_file.md", "w", encoding="utf-8") as f:
+            f.write("test_file.md\n" + DUMMY_CONTENTS)
+
     def test_zoltraak_command(self):
         """
         zoltraakコマンドの機能をテストします。
@@ -128,9 +142,6 @@ class TestZoltraakCommand(BaseTestCase):  # TestZoltraakCommand クラスを定�
         実行例: `zoltraak calc.md -p "足し算のプログラムを書きたい"` コマンドを実行した場合、
         エラーが発生せずに正常に終了するはずです。
         """
-        with open("test_file.md", "w") as f:
-            f.write("# Test File\n\nThis is a test file.")
-
         result = SubprocessUtil.run(
             ["zoltraak", "test_file.md", "-p", "足し算のプログラムを書きたい"],
             capture_output=True,

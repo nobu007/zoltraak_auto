@@ -1,4 +1,5 @@
 import os
+import sys
 
 from tqdm import tqdm
 
@@ -44,7 +45,7 @@ class FileRemover(BaseConverter):
         self.magic_info.history_info += " ->クリーンアップ(対象なしでスキップ)"
         remove_count = 0
         removed_file_paths_set = []
-        for file_path in tqdm(file_paths):
+        for file_path in tqdm(file_paths, file=sys.stdout):
             log("check file_path= %s", file_path)
             if file_path not in code_file_path_list:
                 log("remove file_path= %s", file_path)

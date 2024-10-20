@@ -25,7 +25,7 @@ from zoltraak.utils.process_text import `normal`
         - `要件定義ファイル`の内容を読み込みモードで開く
         -- `要件定義ファイル`の内容をREADME.mdに書き込む
     - tqdmのプログレスバーを利用
-        プログレスバーを初期化。合計処理ファイル数: len(files)、単位: "files"
+        プログレスバーを初期化。合計処理ファイル数: len(files)、単位: "files"、file=sys.stdout
         filesリストの要素を順にループ。各要素は (ディレクトリ名, ファイル名, プロンプト) のタプル
             モジュール記載忘れないように
             全てのファイルは`generate_response(model, prompt, max_tokens, temperature)`をもちいてfor文で然るべき内容を記載
