@@ -145,13 +145,14 @@ def preprocess_input_canonical_name(params: ZoltraakParams) -> None:
     elif params.input.endswith(".md"):
         # inputから決める
         canonical_name = os.path.basename(params.input)
+
+    # 拡張子と冒頭のdef_を削除
+    canonical_name = os.path.splitext(canonical_name)[0]
+    if canonical_name.startswith("def_"):
+        canonical_name = canonical_name[4:]
+
     params.canonical_name = canonical_name
     log("canonical_name: %s", params.canonical_name)
-
-    # 初回になければ作成対象のファイルを生成する
-    original_md_file_path = os.path.abspath(params.canonical_name)
-    if not os.path.isfile(original_md_file_path):
-        FileUtil.write_file(original_md_file_path, "")
 
 
 def preprocess_input_prompt(params: ZoltraakParams) -> None:
@@ -306,6 +307,10 @@ def process_markdown_file(params: ZoltraakParams) -> MagicInfo:
 
     # prompt_inputを保存する
     FileUtil.write_file(magic_info.file_info.prompt_file_path, magic_info.prompt_input)
+
+    # 初回になければ作成対象のファイルを生成する
+    if not os.path.isfile(magic_info.file_info.md_file_path):
+        FileUtil.write_file(magic_info.file_info.md_file_path, "")
 
     # eternal_intentをdestiny_contentとして保存する
     if params.eternal_intent:

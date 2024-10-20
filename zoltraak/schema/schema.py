@@ -97,7 +97,7 @@ class ZoltraakParams(BaseModel):
     formatter: str = Field(default="", description="対変換対象のMarkdownファイルのパスまたはテキスト")
     language: str = Field(default="", description="対出力言語を指定")
     model_name: str = Field(default="", description="使用するモデルの名前")
-    canonical_name: str = Field(default="zoltraak.md", description="正規名称(最初のinputのMarkdownファイル名: xx.md）")
+    canonical_name: str = Field(default="zoltraak", description="正規名称(最初のinputのMarkdownファイル名: xx.md->xx）")
     magic_mode: str = Field(default="", description="グリモアの利用方法")
     magic_layer: str = Field(default="", description="グリモアの起動レイヤ")
     magic_layer_end: str = Field(default="", description="グリモアの終了レイヤ")
@@ -125,7 +125,7 @@ DEFAULT_PY_FILE = "ARCHITECTURE.py"
 class FileInfo(BaseModel):
     # 識別子
     canonical_name: str = Field(
-        default="zoltraak.md", description="対象のファイル群をシステム全体で一意に識別するための標準的な名前"
+        default="zoltraak", description="対象のファイル群をシステム全体で一意に識別するための標準的な名前"
     )
 
     # Input/Outputファイル
@@ -202,12 +202,12 @@ class FileInfo(BaseModel):
         self.update_hash()
 
     def update_canonical_name(self, canonical_name: str):
-        self.destiny_file_path = "destiny_" + canonical_name
-        self.prompt_file_path = "prompt_" + canonical_name
-        self.request_file_path = "request_" + canonical_name
-        self.structure_file_path = "structure_" + canonical_name
-        self.md_file_path = canonical_name
-        self.py_file_path = os.path.splitext(self.md_file_path)[0] + ".py"  # Markdownファイルの拡張子を.pyに変更
+        self.destiny_file_path = "destiny_" + canonical_name + ".md"
+        self.prompt_file_path = "prompt_" + canonical_name + ".md"
+        self.request_file_path = "request_" + canonical_name + ".md"
+        self.structure_file_path = "structure_" + canonical_name + ".md"
+        self.md_file_path = canonical_name + ".md"
+        self.py_file_path = canonical_name + ".py"
 
     def update_path_abs(self):
         if self.destiny_file_path:

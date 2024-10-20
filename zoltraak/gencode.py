@@ -158,20 +158,10 @@ class TargetCodeGenerator:
         return load_prompt(create_domain_grimoire, variables)
 
     def generate_code(self, prompt):
-        """
-        Claudeを使用してコードを生成するメソッド
-        """
-        # print("geminiを使用してコードを生成します")
-        # code = gemini.generate_response(
-        #     "gemini-1.5-pro"
-        #     , prompt, 8192, 1
-        # )
         code = litellm.generate_response(
-            # "claude-3-haiku-20240307"
-            # "claude-3-opus-20240229"
             settings.model_name,
             prompt,
-            4000,
+            settings.max_tokens_generate_code,
             0.3,
         )
         return code.replace("```python", "").replace("```", "")

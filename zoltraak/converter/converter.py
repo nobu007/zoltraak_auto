@@ -55,7 +55,7 @@ class MarkdownToPythonConverter(BaseConverter):
         # step1: ファイル情報を更新
         file_info = self.magic_info.file_info
         requirements_md_file_path = os.path.join(
-            file_info.work_dir, "requirements", os.path.basename(file_info.md_file_path)
+            file_info.work_dir, "requirements", "def_" + os.path.basename(file_info.md_file_path)
         )
 
         # step2: 要件定義書を更新
@@ -137,12 +137,7 @@ class MarkdownToPythonConverter(BaseConverter):
                 # TODO: 前回のtarget を加味したほうが良い？
                 # =>source の前回差分が小さい & 前回target が存在でプロンプトに含める。
                 log(f"{file_info.source_file_path}の変更を検知しました。")
-                log("ソースファイルの差分:")
-                self.magic_info.history_info += " ->差分から更新"
-                if os.path.exists(file_info.past_source_file_path):
-                    return self.update_target_file_from_source_diff()
-                log_w(f"過去のソースファイルが存在しないため再作成します: {file_info.past_source_file_path}")
-                self.magic_info.history_info += " ->再作成"
+                self.magic_info.history_info += " ->再作成(ソース変更)"
                 return self.handle_new_target_file_py()
             log_w(f"埋め込まれたハッシュが存在しないため再作成します。\n: {file_info.target_file_path}")
             log_w("最後の10行:%s", "\n".join(lines[-10:]))

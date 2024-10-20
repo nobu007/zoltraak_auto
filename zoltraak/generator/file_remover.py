@@ -51,6 +51,7 @@ class FileRemover(BaseConverter):
                 removed_file_paths_set.append(SourceTargetSet(source_file_path=file_path, target_file_path=file_path))
         return removed_file_paths_set
 
+    @log_inout
     def convert(self) -> str:
         """削除のみなので処理なし"""
         return self.magic_info.file_info.target_file_path

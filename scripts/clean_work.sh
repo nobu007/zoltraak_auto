@@ -9,4 +9,4 @@ echo "WORK_DIR=$WORK_DIR"
 
 echo "rm -rf $WORK_DIR/*"
 rm -rf "$WORK_DIR/"*
-cp -p "$SAMPLES_DIR/destiny_def_InstantPromptBox.md" "$WORK_DIR/"
+cp -p "$SAMPLES_DIR/destiny_InstantPromptBox.md" "$WORK_DIR/"
