@@ -12,7 +12,7 @@ from zoltraak.schema.schema import MagicInfo, MagicLayer, MagicMode, ZoltraakPar
 from zoltraak.utils.file_util import FileUtil
 from zoltraak.utils.grimoires_util import GrimoireUtil
 from zoltraak.utils.log_util import log, log_i
-from zoltraak.utils.rich_console import display_info_full, display_magic_info_final
+from zoltraak.utils.rich_console import display_info_full
 from zoltraak.utils.subprocess_util import SubprocessUtil
 
 
@@ -324,8 +324,6 @@ def process_markdown_file(params: ZoltraakParams) -> MagicInfo:
 
     new_file_path = magic_workflow.run_loop()
     log("new_file_path: %s", new_file_path)
-    display_magic_info_final(magic_info)
-    log_i("プロセス履歴=\n%s", "\n".join(magic_workflow.workflow_history))
     # FileUtil.log_file_content(magic_info.file_info.final_output_file_path)
     return magic_info
 

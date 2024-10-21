@@ -72,7 +72,7 @@ class BaseConverter:
         file_info = self.magic_info.file_info
 
         # 最終プロンプトによる分岐
-        if self.prompt_manager.is_same_prompt(PromptEnum.FINAL):  # -- 前回と同じプロンプトの場合
+        if self.prompt_manager.is_same_prompt(self.magic_info, PromptEnum.FINAL):  # -- 前回と同じプロンプトの場合
             log(f"スキップ(既存＆input変更なし): {file_info.target_file_path}")
             self.magic_info.history_info += " ->スキップ(既存＆input変更なし)"
             return file_info.target_file_path  # --- 処理をスキップし既存のターゲットファイルを返す
@@ -84,7 +84,7 @@ class BaseConverter:
             return file_info.target_file_path  # --- 処理をスキップし既存のターゲットファイルを返す
 
         # プロンプトの差分表示(デバッグ用)
-        self.prompt_manager.show_diff_prompt(PromptEnum.FINAL)
+        self.prompt_manager.show_diff_prompt(self.magic_info, PromptEnum.FINAL)
 
         log(f"{file_info.source_file_path}の差分から更新リクエストを生成中・・・")
         self.magic_info.history_info += " ->差分から更新"
@@ -410,7 +410,7 @@ class BaseConverter:
         target_file_path_rel = os.path.relpath(file_info.target_file_path, file_info.work_dir)
 
         # promptをファイルに保存
-        self.prompt_manager.save_prompt(prompt, target_file_path_rel, prompt_enum)
+        self.prompt_manager.save_prompt(self.magic_info, prompt, target_file_path_rel, prompt_enum)
 
         # LLM呼び出し
         response = litellm.generate_response(

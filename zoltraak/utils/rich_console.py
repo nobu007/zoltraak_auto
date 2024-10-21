@@ -226,7 +226,12 @@ def generate_response_with_spinner(magic_info: MagicInfo, prompt: str):
     """
     スピナーを表示しながらコマンドを実行し、結果を表示します。
     """
-    result = run_function_with_spinner(magic_info, generate_response, magic_info.model_name, prompt)
+    print("magic_info.is_async", magic_info.is_async)
+    if magic_info.is_async:
+        # 非同期モードではスピナーを表示しない
+        result = generate_response(magic_info.model_name, prompt)
+    else:
+        result = run_function_with_spinner(magic_info, generate_response, magic_info.model_name, prompt)
     if result is None:
         return "グリモアの展開に失敗しました"
 

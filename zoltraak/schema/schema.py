@@ -396,6 +396,7 @@ class MagicInfo(BaseModel):
     history_info: str = Field(default="", description="スキップ有無や新規/追加などの履歴(デバッグ用)")
 
     is_debug: bool = Field(default=True, description="デバッグモード(グリモア情報を逐次出力)")
+    is_async: bool = Field(default=False, description="非同期モード(一部の同期処理をスキップする)")
 
     def update(self, **kwargs):
         for key, value in kwargs.items():
@@ -412,3 +413,8 @@ class MagicInfo(BaseModel):
 
     def get_formatter_path(self):
         return os.path.join(settings.formatter_dir, self.grimoire_formatter)
+
+
+class MagicWorkflowInfo(BaseModel):
+    # 履歴
+    magic_info_list: list[MagicInfo] = Field(default_factory=list, description="workflowで実行したMagicInfoのコピー")

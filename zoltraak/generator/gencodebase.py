@@ -40,7 +40,9 @@ class CodeBaseGenerator(BaseConverter):
             file_info.structure_file_path, file_info.target_dir, file_info.canonical_name
         )
 
-        for code_file_path in tqdm(code_file_path_list, file=sys.stdout):
+        for code_file_path in tqdm(
+            code_file_path_list, unit="files", file=sys.stdout, desc=self.magic_info.magic_layer
+        ):
             if os.path.isfile(code_file_path):
                 source_target_set = self.prepare_generation_code_file(code_file_path)
                 self.source_target_set_list.append(source_target_set)

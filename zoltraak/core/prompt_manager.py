@@ -2,7 +2,7 @@ import os
 import re
 from enum import Enum
 
-from zoltraak.schema.schema import FileInfo, MagicInfo
+from zoltraak.schema.schema import MagicInfo
 from zoltraak.utils.diff_util import DiffUtil
 from zoltraak.utils.file_util import FileUtil
 from zoltraak.utils.log_util import log, log_e, log_inout
@@ -41,26 +41,23 @@ class PromptEnum(str, Enum):
 
 
 class PromptManager:
-    def __init__(self, magic_info: MagicInfo = None):
-        self.magic_info: MagicInfo = magic_info
-        self.file_info: FileInfo = magic_info.file_info
-
     @log_inout
-    def save_prompts(self) -> None:
+    def save_prompts(self, magic_info: MagicInfo) -> None:
         # work_dirからの相対パス取得
-        target_file_path_rel = os.path.relpath(self.file_info.target_file_path, self.file_info.work_dir)
+        target_file_path_rel = os.path.relpath(magic_info.file_info.target_file_path, magic_info.file_info.work_dir)
 
         # promptの保存先パス取得
         for prompt_enum in PromptEnum:
-            self.save_prompt(prompt_enum.get_current_prompt(self.magic_info), target_file_path_rel, prompt_enum)
-            # (例)self.save_prompt(self.magic_info.prompt_input, target_file_path_rel, "_input")
+            self.save_prompt(magic_info, prompt_enum.get_current_prompt(magic_info), target_file_path_rel, prompt_enum)
 
     @log_inout
-    def save_prompt(self, prompt: str, target_file_path_rel: str, prompt_enum: PromptEnum = PromptEnum.INPUT) -> None:
+    def save_prompt(
+        self, magic_info: MagicInfo, prompt: str, target_file_path_rel: str, prompt_enum: PromptEnum = PromptEnum.INPUT
+    ) -> None:
         if prompt == "":
             return
 
-        prompt_output_path = prompt_enum.get_prompt_file_path(target_file_path_rel, self.magic_info)
+        prompt_output_path = prompt_enum.get_prompt_file_path(target_file_path_rel, magic_info)
 
         # フォルダがない場合は作成
         os.makedirs(os.path.dirname(prompt_output_path), exist_ok=True)
@@ -70,17 +67,17 @@ class PromptManager:
         log("プロンプトを保存しました↓ %s:\n%s", prompt_enum, prompt_output_path)
 
     @log_inout
-    def load_prompt(self, prompt_enum: PromptEnum = PromptEnum.INPUT) -> str:
+    def load_prompt(self, magic_info: MagicInfo, prompt_enum: PromptEnum = PromptEnum.INPUT) -> str:
         # work_dirからの相対パス取得
-        target_file_path_rel = os.path.relpath(self.file_info.target_file_path, self.file_info.work_dir)
-        prompt_output_path = prompt_enum.get_prompt_file_path(target_file_path_rel, self.magic_info)
+        target_file_path_rel = os.path.relpath(magic_info.file_info.target_file_path, magic_info.file_info.work_dir)
+        prompt_output_path = prompt_enum.get_prompt_file_path(target_file_path_rel, magic_info)
         return FileUtil.read_file(prompt_output_path)
 
     @log_inout
-    def is_same_prompt(self, prompt_enum: PromptEnum = PromptEnum.INPUT) -> bool:
+    def is_same_prompt(self, magic_info: MagicInfo, prompt_enum: PromptEnum = PromptEnum.INPUT) -> bool:
         # work_dirからの相対パス取得
-        current_prompt = prompt_enum.get_current_prompt(self.magic_info)
-        past_prompt = self.load_prompt(prompt_enum)
+        current_prompt = prompt_enum.get_current_prompt(magic_info)
+        past_prompt = self.load_prompt(magic_info, prompt_enum)
 
         log(prompt_enum + " current_prompt(末尾100文字)=\n%s", current_prompt[-100:])
         log(prompt_enum + " past_prompt(末尾100文字)=\n%s", past_prompt[-100:])
@@ -93,14 +90,14 @@ class PromptManager:
         return False
 
     @log_inout
-    def show_diff_prompt(self, prompt_enum: PromptEnum = PromptEnum.INPUT) -> None:
+    def show_diff_prompt(self, magic_info: MagicInfo, prompt_enum: PromptEnum = PromptEnum.INPUT) -> None:
         # work_dirからの相対パス取得
-        current_prompt = prompt_enum.get_current_prompt(self.magic_info)
-        past_prompt = self.load_prompt(prompt_enum)
+        current_prompt = prompt_enum.get_current_prompt(magic_info)
+        past_prompt = self.load_prompt(magic_info, prompt_enum)
         log(DiffUtil.diff0_ignore_space(current_prompt, past_prompt))
 
     @log_inout
-    def prepare_prompt_final(self) -> str:
+    def prepare_prompt_final(self, magic_info: MagicInfo) -> str:
         """
         prompt_finalを生成してMagicInfoに反映する関数
         利用するグリモアはMagicInfoに展開済みの前提
@@ -111,20 +108,21 @@ class PromptManager:
         - コンテキスト(プロンプトに含める設計)
         - グリモア(compiler, formatter)
         """
-        magic_info = self.magic_info
         compiler_path = magic_info.get_compiler_path()
         formatter_path = magic_info.get_formatter_path()
         language = magic_info.language
 
         prompt_final = self.create_prompt(
-            magic_info.prompt_goal, compiler_path, formatter_path, language
+            magic_info.prompt_goal, compiler_path, formatter_path, language, magic_info.file_info.destiny_file_path
         )  # プロンプトを作成
         log("prompt_final=\n%s\n...\n%s", prompt_final[:50], prompt_final[-5:])
         magic_info.prompt_final = prompt_final
         return prompt_final
 
     @log_inout
-    def create_prompt(self, goal_prompt: str, compiler_path: str, formatter_path: str, language: str):
+    def create_prompt(
+        self, goal_prompt: str, compiler_path: str, formatter_path: str, language: str, destiny_file_path: str
+    ):
         """
         LLMへの最終的なプロンプト(prompt_final)を生成を作成する関数
 
@@ -141,7 +139,7 @@ class PromptManager:
             prompt_final = self.apply_fomatter(prompt_final, formatter_path, language)
 
         # destiny_content
-        destiny_content = FileUtil.read_file(self.file_info.destiny_file_path)
+        destiny_content = FileUtil.read_file(destiny_file_path)
         prompt_final = (
             "#### 前提コンテキスト(この内容は重要ではないですが、緩く全体的な判断に活用してください) ####\n"
             + destiny_content
@@ -211,7 +209,7 @@ class PromptManager:
         return formatter_prompt
 
     def __str__(self) -> str:
-        return f"PromptManager({self.magic_info.description})"
+        return "PromptManager"
 
     def __repr__(self) -> str:
         return self.__str__()

@@ -98,7 +98,9 @@ class MarkdownToPythonConverter(BaseConverter):
                 log_head("prompt_input=%s", self.magic_info.prompt_input)
                 # TODO: 次処理に進むのプロンプトなし時だけなのか？全体に薄く適用するformatterみたいなケースは不要？
                 if file_info.source_hash and file_info.source_hash == embedded_hash:
-                    if self.prompt_manager.is_same_prompt(PromptEnum.INPUT):  # -- 前回と同じプロンプトの場合
+                    if self.prompt_manager.is_same_prompt(
+                        self.magic_info, PromptEnum.INPUT
+                    ):  # -- 前回と同じプロンプトの場合
                         if self.is_same_target_as_past():
                             log("過去のターゲットファイルと同一のためコード生成をスキップします。")
                             self.magic_info.history_info += " ->コード生成をスキップ"
