@@ -1,5 +1,7 @@
+import asyncio
 import os
 from collections import defaultdict
+from typing import ClassVar
 
 import litellm
 from litellm import ModelResponse, Router
@@ -16,15 +18,15 @@ class ModelStatsLogger(CustomLogger):
     def log_success_event(self, kwargs, response_obj, start_time, end_time):
         log_w("log_success_event start_time=%s, end_time=%s", start_time, end_time)
         model = kwargs["model"]
-        if response_obj:
-            tokens = response_obj["usage"]["total_tokens"]
+        if response_obj and "usage" in response_obj:
+            tokens = response_obj["usage"].get("total_tokens", 0)
             self.stats[model]["count"] += 1
             self.stats[model]["total_tokens"] += tokens
             if self.stats[model]["start_time"] is None:
                 self.stats[model]["start_time"] = start_time
             self.stats[model]["end_time"] = end_time
 
-    def get_stats(self):
+    def get_stats(self) -> dict:
         return dict(self.stats)
 
 
@@ -36,130 +38,189 @@ litellm.callbacks = [logger]
 DEFAULT_MODEL_GEMINI = "gemini/gemini-1.5-flash-latest"
 DEFAULT_MODEL_CLAUDE = "claude-3-5-sonnet-20240620"
 
+# https://ai.google.dev/gemini-api/docs/models/gemini?hl=ja
+RPM_GEMINI_FLASH = 100  # 1分あたりのリクエスト数(MAX: 1500)
+RPM_GEMINI_PRO = 2  # 1分あたりのリクエスト数(MAX: 1500)
+RPM_ANTHROPIC_CLAUDE = 1  # 1分あたりのリクエスト数
+RPM_OTHER = 1  # 1分あたりのリクエスト数
 
-def generate_response(model: str, prompt: str, max_tokens: int = 4000, temperature: float = 0.0) -> str:
-    """
-    LiteLLM APIを使用してプロンプトに対する応答を生成する関数。
+TPM_GEMINI_FLASH = 200000  # 1分あたりのトークン数(MAX: 100万)
+TPM_GEMINI_PRO = 10000  # 1分あたりのトークン数(MAX: 32,000)
+TPM_ANTHROPIC_CLAUDE = 100000  # 1分あたりのトークン数(MAX: ？？)
 
-    Args:
-        prompt (str): 応答を生成するためのプロンプト。
-        max_tokens (int): 生成する最大トークン数。
-        temperature (float): 生成時の温度パラメータ。
 
-    Returns:
-        str: 生成された応答テキスト。
-    """
-    # エラー時のリトライ定義
-    fallbacks_dict = [
-        {"main": ["gemini_bkup1", "gemini_bkup2"]},
-        {"gemini_bkup1": ["claude_bkup"]},
-        {"gemini_bkup2": ["claude_bkup"]},
-    ]
-    default_model_list = [
-        {
-            "model_name": "gemini_bkup1",
-            "litellm_params": {
-                "model": DEFAULT_MODEL_GEMINI,
-                "api_key": os.getenv("GEMINI_API_KEY"),
-                "num_retries": 2,
-            },
-        },
-        {
-            "model_name": "gemini_bkup2",
-            "litellm_params": {
-                "model": DEFAULT_MODEL_GEMINI,
-                "api_key": os.getenv("GEMINI_API_KEY2"),
-                "num_retries": 2,
-            },
-        },
-        {
-            "model_name": "claude_bkup",
-            "litellm_params": {
-                "model": DEFAULT_MODEL_CLAUDE,
-                "api_key": os.getenv("ANTHROPIC_API_KEY"),
-                "num_retries": 2,
-            },
-        },
-    ]
+class LitellmApi:
+    # Model constants
+    DEFAULT_MODEL_GEMINI = "gemini/gemini-1.5-flash-latest"
+    DEFAULT_MODEL_CLAUDE = "claude-3-5-sonnet-20240620"
 
-    # modelに応じたapi_keyを準備
-    api_key_env = "GEMINI_API_KEY"
-    if "claude" in model:
-        api_key_env = "ANTHROPIC_API_KEY"
-    if "groq" in model:
-        api_key_env = "GROQ_API_KEY"
-    api_key = os.getenv(api_key_env)
+    # Rate limits
+    RPM_LIMITS: ClassVar[dict[str, int]] = {"gemini_flash": 100, "gemini_pro": 2, "anthropic_claude": 1, "other": 1}
 
-    model_list = [
-        {
+    def __init__(self):
+        self.logger = ModelStatsLogger()
+        litellm.callbacks = [self.logger]
+        self._router: Router | None = None
+
+    async def _get_router(self, model: str) -> Router:
+        """Initialize and return a router with proper configuration."""
+        if self._router:
+            return self._router
+
+        api_key = self._get_api_key(model)
+        model_list = self._create_model_list(model, api_key)
+        fallbacks_dict = self._create_fallbacks_dict()
+
+        self._router = Router(model_list=model_list, fallbacks=fallbacks_dict, retry_after=3)
+        return self._router
+
+    def _get_api_key(self, model: str) -> str:
+        """Get appropriate API key based on model type."""
+        key_mapping = {"claude": "ANTHROPIC_API_KEY", "groq": "GROQ_API_KEY", "gemini": "GEMINI_API_KEY"}
+
+        for model_type, env_var in key_mapping.items():
+            if model_type in model:
+                return os.getenv(env_var, "")
+        return os.getenv("GEMINI_API_KEY", "")  # default fallback
+
+    def _create_model_list(self, primary_model: str, api_key: str) -> list[dict]:
+        """Create model list configuration including fallbacks."""
+        base_model = {
             "model_name": "main",
             "litellm_params": {
-                "model": model,
+                "model": primary_model,
                 "api_key": api_key,
+                "rpm": self.RPM_LIMITS["other"],
             },
-        },
-        *default_model_list,  # 配列を展開して追加
-    ]
+        }
 
-    if not show_input_prompt_warning(prompt):
-        return "promptが空なので応答を生成できませんでした"
-    router = Router(model_list=model_list, fallbacks=fallbacks_dict, retry_after=3)  # 3秒待機してからリトライ
-    len_prompt = len(prompt)
-    log("len_prompt=%s, max_tokens=%d", len_prompt, max_tokens)
-    if len_prompt + 1000 > max_tokens:
-        log_w("WARN: max_tokens might is too small. prompt len=%s, max_tokens=%d", len_prompt, max_tokens)
-        FileUtil.write_file(f"over_prompt_{len_prompt}.txt", prompt)
+        fallback_models = [
+            {
+                "model_name": "gemini_bkup1",
+                "litellm_params": {
+                    "model": self.DEFAULT_MODEL_GEMINI,
+                    "api_key": os.getenv("GEMINI_API_KEY"),
+                    "num_retries": 2,
+                    "rpm": self.RPM_LIMITS["gemini_flash"],
+                },
+            },
+            {
+                "model_name": "gemini_bkup2",
+                "litellm_params": {
+                    "model": self.DEFAULT_MODEL_GEMINI,
+                    "api_key": os.getenv("GEMINI_API_KEY2"),
+                    "num_retries": 2,
+                    "rpm": self.RPM_LIMITS["gemini_flash"],
+                },
+            },
+            {
+                "model_name": "claude_bkup",
+                "litellm_params": {
+                    "model": self.DEFAULT_MODEL_CLAUDE,
+                    "api_key": os.getenv("ANTHROPIC_API_KEY"),
+                    "num_retries": 2,
+                    "rpm": self.RPM_LIMITS["anthropic_claude"],
+                },
+            },
+        ]
 
-    response = router.completion(
-        model=model,
-        messages=[{"content": prompt, "role": "user"}],
-        max_tokens=max_tokens,
-        temperature=temperature,
-    )
-    if not show_response_warning(response, prompt):
-        # 差分を生成する処理で差分なしの時は空白なので、空白を返す
-        return ""
-    return response.choices[0].message.content.strip()
+        # 全モデルを配列に入れて返す
+        return [base_model, *fallback_models]
 
+    @staticmethod
+    def _create_fallbacks_dict() -> list[dict]:
+        """Create fallback configuration."""
+        return [
+            {"main": ["gemini_bkup1", "gemini_bkup2"]},
+            {"gemini_bkup1": ["claude_bkup"]},
+            {"gemini_bkup2": ["claude_bkup"]},
+        ]
 
-def show_input_prompt_warning(prompt: str) -> bool:
-    # 異常なpromptが来たらログで警告する
-    if prompt.strip() == "":
-        log_w("Empty prompt received")
-        return False
-    return True
+    async def generate_response(
+        self,
+        model: str,
+        prompt: str,
+        max_tokens: int = 4000,
+        temperature: float = 0.0,
+        is_async: bool = False,  # noqa: FBT001
+    ) -> str:
+        """Unified interface for generating responses, handling both sync and async calls."""
+        if not self._validate_input(prompt, max_tokens):
+            return ""
 
+        if is_async:
+            # Async call
+            return await self._generate_async(model, prompt, max_tokens, temperature)
+        # Sync call
+        return await asyncio.get_event_loop().run_in_executor(
+            None, self._generate_sync, model, prompt, max_tokens, temperature
+        )
 
-def show_response_warning(response: ModelResponse, prompt: str) -> bool:
-    # 異常なresponseが来たらログで警告する
-    if len(response.choices) == 0:
-        log_w("Empty response.choices received. prompt=%s", prompt)
-        return False
-    if not response.choices[0].message:
-        log_w("Empty message received. message=%s. prompt=%s", str(response.choices[0].message), prompt)
-        return False
-    if not response.choices[0].message.content:
-        log_w("Invalid content=%s. prompt=%s", str(response.choices[0].message.content), prompt)
-        return False
-    return True
+    def _validate_input(self, prompt: str, max_tokens: int) -> bool:
+        """Validate input parameters."""
+        if not prompt.strip():
+            log_w("Empty prompt received")
+            return False
 
+        prompt_length = len(prompt)
+        if prompt_length + 1000 > max_tokens:
+            log_w("WARN: max_tokens might be too small. prompt len=%s, max_tokens=%d", prompt_length, max_tokens)
+            FileUtil.write_file(f"over_prompt_{prompt_length}.txt", prompt)
 
-def show_used_total_tokens():
-    # 統計を取得して表示
-    stats = logger.get_stats()
-    for model, data in stats.items():
-        log(f"Model: {model}")
-        log(f"  Total requests: {data['count']}")
-        log(f"  Total tokens: {data['total_tokens']}")
-        log(f"  Average tokens per request: {data['total_tokens'] / data['count']:.2f}")
+        return True
+
+    async def _generate_async(self, model: str, prompt: str, max_tokens: int, temperature: float) -> str:
+        """Handle async response generation."""
+        router = await self._get_router(model)
+        response = await router.acompletion(
+            model=model,
+            messages=[{"content": prompt, "role": "user"}],
+            max_tokens=max_tokens,
+            temperature=temperature,
+        )
+        return self._process_response(response, prompt)
+
+    def _generate_sync(self, model: str, prompt: str, max_tokens: int, temperature: float) -> str:
+        """Handle sync response generation."""
+        router = asyncio.run(self._get_router(model))
+        response = router.completion(
+            model=model,
+            messages=[{"content": prompt, "role": "user"}],
+            max_tokens=max_tokens,
+            temperature=temperature,
+        )
+        return self._process_response(response, prompt)
+
+    def _process_response(self, response: ModelResponse, prompt: str) -> str:
+        """Process and validate response."""
+        if not response.choices or not response.choices[0].message:
+            log_w("Invalid response received for prompt: %s", prompt)
+            return ""
+        return response.choices[0].message.content.strip()
+
+    def show_stats(self) -> None:
+        """Display usage statistics."""
+        stats = self.logger.get_stats()
+        for model, data in stats.items():
+            if data["count"] > 0:
+                avg_tokens = data["total_tokens"] / data["count"]
+                log(f"Model: {model}")
+                log(f"  Total requests: {data['count']}")
+                log(f"  Total tokens: {data['total_tokens']}")
+                log(f"  Average tokens per request: {avg_tokens:.2f}")
 
 
 if __name__ == "__main__":
-    model_ = "claude-3-haiku-20240307"
-    prompt = "今日の晩御飯を提案して"
-    max_tokens = 100
-    temperature = 0.8
 
-    response_ = generate_response(model_, prompt, max_tokens, temperature)
+    async def main():
+        model_ = "claude-3-haiku-20240307"
+        prompt_ = "今日の晩御飯を提案して"
+        max_tokens_ = 100
+        temperature_ = 0.8
 
-    print(response_)
+        llm = LitellmApi()
+        response_ = await llm.generate_response(model_, prompt_, max_tokens_, temperature_, is_async=True)
+        print(response_)
+        llm.show_stats()
+
+    asyncio.run(main())
