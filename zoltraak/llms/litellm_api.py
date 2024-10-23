@@ -1,8 +1,8 @@
-import asyncio
 import os
 from collections import defaultdict
 from typing import ClassVar
 
+import anyio
 import litellm
 from litellm import ModelResponse, Router
 from litellm.integrations.custom_logger import CustomLogger
@@ -30,9 +30,9 @@ class ModelStatsLogger(CustomLogger):
         return dict(self.stats)
 
 
-# ロガーを設定
-logger = ModelStatsLogger()
-litellm.callbacks = [logger]
+# ロガーを設定(ファイル内グローバル変数)
+logger_ = ModelStatsLogger()
+litellm.callbacks = [logger_]
 
 
 DEFAULT_MODEL_GEMINI = "gemini/gemini-1.5-flash-latest"
@@ -49,7 +49,62 @@ TPM_GEMINI_PRO = 10000  # 1分あたりのトークン数(MAX: 32,000)
 TPM_ANTHROPIC_CLAUDE = 100000  # 1分あたりのトークン数(MAX: ？？)
 
 
+def generate_response(
+    model: str,
+    prompt: str,
+    max_tokens: int = 4000,
+    temperature: float = 0.0,
+    *,
+    is_async: bool = False,
+) -> str:
+    return anyio.run(
+        generate_response_async,
+        model,
+        prompt,
+        max_tokens,
+        temperature,
+        is_async,
+    )
+
+
+async def generate_response_async(
+    model: str,
+    prompt: str,
+    max_tokens: int = 4000,
+    temperature: float = 0.0,
+    is_async: bool = False,  # noqa: FBT001
+) -> str:
+    api = LitellmApi()
+    return await api.generate_response(model, prompt, max_tokens, temperature, is_async=is_async)
+
+
+def show_used_total_tokens():
+    return LitellmApi().show_stats()
+
+
 class LitellmApi:
+    """LitellmApi 設計メモ(with anyio)
+
+    # 非同期処理の実装ポイント
+    非同期の実装ポイントを使用する際に理解すべきポイントを以下に整理します。
+
+    ## 非同期⇒非同期
+    非同期関数同士の呼び出しでは、awaitを必ず使います。
+    await 関数() の形で呼び出すことで、非同期関数が実行されます。
+
+    ## 非同期⇒同期
+    非同期関数から同期関数を呼び出すには、anyio.to_thread.run_sync()を使用します。
+    これにより、ブロッキングな同期関数を別スレッドで実行できます。
+
+    ## 同期⇒非同期
+    同期関数から非同期関数を実行する際には、anyio.run()を使用します。
+    これにより、同期コードの中で非同期関数を簡単に実行できます。
+
+    ## 間違わないための理解ポイント：
+    awaitは非同期関数内で使う必要がある。非同期関数を呼び出すときは、awaitを忘れない。
+    同期と非同期を正しく橋渡しするために、anyioのrun系関数（anyio.runやto_thread.run_sync）を使う。
+    """
+
     # Model constants
     DEFAULT_MODEL_GEMINI = "gemini/gemini-1.5-flash-latest"
     DEFAULT_MODEL_CLAUDE = "claude-3-5-sonnet-20240620"
@@ -57,12 +112,11 @@ class LitellmApi:
     # Rate limits
     RPM_LIMITS: ClassVar[dict[str, int]] = {"gemini_flash": 100, "gemini_pro": 2, "anthropic_claude": 1, "other": 1}
 
-    def __init__(self):
-        self.logger = ModelStatsLogger()
-        litellm.callbacks = [self.logger]
+    def __init__(self, logger: ModelStatsLogger = logger_):
+        self.logger = logger
         self._router: Router | None = None
 
-    async def _get_router(self, model: str) -> Router:
+    def _get_router(self, model: str) -> Router:
         """Initialize and return a router with proper configuration."""
         if self._router:
             return self._router
@@ -142,9 +196,10 @@ class LitellmApi:
         prompt: str,
         max_tokens: int = 4000,
         temperature: float = 0.0,
-        is_async: bool = False,  # noqa: FBT001
+        *,
+        is_async: bool = False,
     ) -> str:
-        """Unified interface for generating responses, handling both sync and async calls."""
+        """同期と非同期を共通の関数で呼べるようにした"""
         if not self._validate_input(prompt, max_tokens):
             return ""
 
@@ -152,9 +207,9 @@ class LitellmApi:
             # Async call
             return await self._generate_async(model, prompt, max_tokens, temperature)
         # Sync call
-        return await asyncio.get_event_loop().run_in_executor(
-            None, self._generate_sync, model, prompt, max_tokens, temperature
-        )
+        return await anyio.to_thread.run_sync(
+            self._generate_sync, model, prompt, max_tokens, temperature
+        )  # 別スレッドで同期関数を実行
 
     def _validate_input(self, prompt: str, max_tokens: int) -> bool:
         """Validate input parameters."""
@@ -171,7 +226,7 @@ class LitellmApi:
 
     async def _generate_async(self, model: str, prompt: str, max_tokens: int, temperature: float) -> str:
         """Handle async response generation."""
-        router = await self._get_router(model)
+        router = self._get_router(model)
         response = await router.acompletion(
             model=model,
             messages=[{"content": prompt, "role": "user"}],
@@ -182,7 +237,7 @@ class LitellmApi:
 
     def _generate_sync(self, model: str, prompt: str, max_tokens: int, temperature: float) -> str:
         """Handle sync response generation."""
-        router = asyncio.run(self._get_router(model))
+        router = self._get_router(model)
         response = router.completion(
             model=model,
             messages=[{"content": prompt, "role": "user"}],
@@ -219,8 +274,8 @@ if __name__ == "__main__":
         temperature_ = 0.8
 
         llm = LitellmApi()
-        response_ = await llm.generate_response(model_, prompt_, max_tokens_, temperature_, is_async=True)
+        response_ = await generate_response_async(model_, prompt_, max_tokens_, temperature_, is_async=True)
         print(response_)
         llm.show_stats()
 
-    asyncio.run(main())
+    anyio.run(main)

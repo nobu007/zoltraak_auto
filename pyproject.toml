@@ -37,6 +37,7 @@ pyperclip = "^1.9.0"
 python = ">=3.10,<3.13"
 python-dotenv = "^1.0.1"
 rich = "^13.8.1"
+anyio = "^4.6.2"
 
 [tool.poetry.group.test]
 optional = true
