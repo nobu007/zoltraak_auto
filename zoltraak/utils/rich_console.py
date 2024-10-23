@@ -24,7 +24,8 @@ with open("rich.log", "a", encoding="utf-8") as log_file:
 # 暇ができたらトライしたい
 # 参考： https://qiita.com/bounoki/items/a34da7ac3be867b037fe
 def console_print_all(*args, **kwargs):
-    console.print(*args, **kwargs)
+    if settings.is_debug:
+        console.print(*args, **kwargs)
     file_console.print(*args, **kwargs)
 
 
@@ -226,7 +227,6 @@ def generate_response_with_spinner(magic_info: MagicInfo, prompt: str):
     """
     スピナーを表示しながらコマンドを実行し、結果を表示します。
     """
-    print("magic_info.is_async", magic_info.is_async)
     if magic_info.is_async:
         # 非同期モードではスピナーを表示しない
         result = generate_response(magic_info.model_name, prompt)

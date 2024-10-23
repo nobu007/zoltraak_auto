@@ -92,7 +92,7 @@ class TargetCodeGenerator:
         prompt = self.load_prompt_with_variables(
             create_domain_grimoire, variables
         )  # 領域術式（要件定義書）からプロンプトを読み込み、変数を埋め込む
-        code = self.generate_code(prompt)  # Claudeを使用してコードを生成
+        code = self.generate_code(prompt)
 
         return prompt, code
 
@@ -290,5 +290,5 @@ class TargetCodeGenerator:
         """
         Pythonファイルを実行するメソッド
         """
-        print(f"Pythonファイルを実行します: {self.file_info.target_file_path}")
+        log(f"Pythonファイルを実行します: {self.file_info.target_file_path}")
         SubprocessUtil.run(["python", self.file_info.target_file_path], check=False)

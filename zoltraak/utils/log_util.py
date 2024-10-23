@@ -104,6 +104,9 @@ DEF_MAX_SHOW_RETURN_LEN = 100
 def log_inout(func):
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
+        if not settings.is_debug:
+            return func(*args, **kwargs)
+
         print("  --> " + f"Calling {func.__name__} with args: {args}, kwargs: {kwargs}")
         result = func(*args, **kwargs)
         if isinstance(result, str) and len(result) > DEF_MAX_SHOW_RETURN_LEN:
