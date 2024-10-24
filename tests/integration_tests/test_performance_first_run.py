@@ -14,6 +14,7 @@ class TestZoltraakCommand(BaseTestCase):  # TestZoltraakCommand クラスを定�
         self.zoltraak_auto_dir = os.path.abspath(self.zoltraak_auto_dir)
         self.prompt_input_path = os.path.join(self.zoltraak_auto_dir, "InstantPromptBox", "README_JA.md")
         self.work_dir = os.path.join(self.zoltraak_auto_dir, "work")
+        os.makedirs(self.work_dir, exist_ok=True)
 
         # テスト開始時の時間を取得
         self.start_time = time.time()

@@ -12,6 +12,7 @@ class TestZoltraakCommand(BaseTestCase):  # TestZoltraakCommand クラスを定�
         self.zoltraak_auto_dir = os.path.abspath(self.zoltraak_auto_dir)
         self.prompt_input_path = os.path.join(self.zoltraak_auto_dir, "InstantPromptBox", "README_JA.md")
         self.work_dir = os.path.join(self.zoltraak_auto_dir, "work")
+        os.makedirs(self.work_dir, exist_ok=True)
 
     def tearDown(self):
         # 終了時の処理を記述
