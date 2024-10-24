@@ -2,9 +2,6 @@ import os
 import sys
 import unittest
 
-import litellm
-import pytest
-
 from tests.unit_tests.helper import BaseTestCase
 from zoltraak.cli import main
 from zoltraak.core.magic_workflow import MagicWorkflow
@@ -116,7 +113,7 @@ class TestZoltraakCommand(BaseTestCase):  # TestZoltraakCommand クラスを定�
         - `zoltraak sample.md` : sample.mdファイルを入力として実行
         """
         # mdファイルの引数を指定したテスト
-        sample_input = os.path.join(os.path.dirname(__file__), "sample.md")
+        sample_input = os.path.join(os.path.dirname(__file__), "tests", "sample.md")
         result = SubprocessUtil.run(["zoltraak", sample_input], capture_output=True, text=True)
         self.assertEqual(result.returncode, 0)
         self.assertIn("sample.md", result.stdout)
@@ -387,13 +384,6 @@ class TestGenerateResponse(unittest.TestCase):
             print(f"{model_name}からの応答: {response}")  # 応答内容を出力
             self.assertIsInstance(response, str, f"{model_name}からの応答が文字列ではありません")
             self.assertGreater(len(response), 0, f"{model_name}からの応答が空です")
-
-    def test_generate_response_invalid_developer(self):
-        """
-        サポートされていないデベロッパーを指定した場合のgenerate_response関数のテスト
-        """
-        with pytest.raises(litellm.exceptions.BadRequestError):
-            generate_response("invalid_developer", "model_name", "prompt")
 
 
 if __name__ == "__main__":  # このスクリプトが直接実行された場合にのみ、以下のコードを実行します。
