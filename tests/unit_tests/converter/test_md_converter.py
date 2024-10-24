@@ -55,7 +55,7 @@ class TestMarkdownToMarkdownConverter(TestBaseConverter):
         print("tearDown")
 
     def test_update_grimoire_and_prompt(self):
-        self.magic_workflow.update_grimoire_and_prompt()
+        self.magic_workflow.update_grimoire_and_prompt(self.magic_info)
         self.assertIn(PROMPT_KEYWORD, self.md_converter.magic_info.prompt_input)
         self.check_mock_call_count_llm_generate_response(0)
 
