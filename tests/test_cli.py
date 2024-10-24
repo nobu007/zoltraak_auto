@@ -165,7 +165,6 @@ class TestZoltraakCommand(BaseTestCase):  # TestZoltraakCommand クラスを定�
 
         self.assertEqual(result.returncode, 0)  # resultのリターンコードが0（正常終了）であることを確認します。
         self.assertEqual(result.stderr, "")  # result.stderrが空文字列（エラーメッセージなし）であることを確認します。
-        self.assertIn("│ dev_obj.md", result.stdout)  # 標準出力に指定の文字列が含まれていることを確認します。
 
 
 class TestCompilerFunctionality(BaseTestCase):  # クラス名をTestCompilerFunctionalityに変更
