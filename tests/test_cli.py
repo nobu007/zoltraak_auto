@@ -27,8 +27,7 @@ print("===============================")
 MOCK_CLI_MAIN_EXEC = "zoltraak.cli.main_exec"
 
 # キーワード定義
-PROMPT_KEYWORD = "<<追加指示>>"
-PROMPT_KEYWORD_NO_SOURCE = "zoltraakシステムは曖昧なユーザー入力を"
+CANONICAL_NAME_KEYWORD = "zoltraak end canonical_name: sample"
 DUMMY_CONTENTS = "# Test File\nThis is a test file.\n# HASH: e32c2339" * 10
 
 
@@ -116,7 +115,7 @@ class TestZoltraakCommand(BaseTestCase):  # TestZoltraakCommand クラスを定�
         sample_input = os.path.join(os.path.dirname(__file__), "tests", "sample.md")
         result = SubprocessUtil.run(["zoltraak", sample_input], capture_output=True, text=True)
         self.assertEqual(result.returncode, 0)
-        self.assertIn("sample.md", result.stdout)
+        self.assertIn(CANONICAL_NAME_KEYWORD, result.stdout)
 
     def test_missing_md_file_argument(self):  # mdファイルの引数がない場合のテストメソッドを定義します.
         """

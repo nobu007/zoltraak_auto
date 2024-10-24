@@ -193,6 +193,7 @@ def main_exec(params: ZoltraakParams) -> None:
 
     # llm使用量を表示
     litellm.show_used_total_tokens()
+    print("zoltraak end canonical_name:", params.canonical_name)
 
 
 def prepare_compiler(input_: str, compiler: str, custom_compiler: str) -> str:
