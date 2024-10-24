@@ -322,7 +322,7 @@ class TestCompilerFunctionality(BaseTestCase):  # クラス名をTestCompilerFun
             os.remove(expected_md_path)
 
         # テストを実行
-        self.prompt_manager.prepare_prompt_final()
+        self.prompt_manager.prepare_prompt_final(self.magic_info)
         generate_md_from_prompt(self.magic_info)
 
         self.check_generated_md_content(expected_md_path, compiler_path)  # 生成されたMDファイルの内容をチェックする
