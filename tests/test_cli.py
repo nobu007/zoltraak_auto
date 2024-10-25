@@ -341,7 +341,8 @@ class TestCompilerFunctionality(BaseTestCase):  # クラス名をTestCompilerFun
         """
         import datetime
 
-        timestamp = datetime.datetime.now(datetime.UTC).strftime("%Y%m%d_%H%M%S")
+        # Python 3.10でdatetime.UTCは存在しないので、datetime.timezone.utc を使う！
+        timestamp = datetime.datetime.now(datetime.timezone.utc).strftime("%Y%m%d_%H%M%S")  # noqa: UP017
         gomi_dir = "gomi"
         if not os.path.exists(gomi_dir):
             os.makedirs(gomi_dir)
