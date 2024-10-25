@@ -31,6 +31,17 @@ max_tokens_propose_diff = 4000
 max_tokens_apply_diff = 8000
 max_tokens_any = 4000  # その他の場合
 
+# max_tokens
+temperature_create_file_name = 0.0
+temperature_generate_md = 0.0
+temperature_generate_code = 0.0
+temperature_generate_code_fix = 0.0
+temperature_generate_error_reason = 0.0
+temperature_get_match_rate = 0.0
+temperature_propose_diff = 0.0
+temperature_apply_diff = 0.0
+temperature_any = 0.0  # その他の場合
+
 # folder
 zoltraak_dir = os.path.dirname(zoltraak.__file__)
 zoltraak_dir = os.path.abspath(zoltraak_dir)

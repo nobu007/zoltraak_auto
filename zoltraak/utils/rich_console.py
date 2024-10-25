@@ -223,23 +223,28 @@ def _add_row_relpath(table: Table, key: str, path: str, base_path: str) -> None:
     table.add_row(key, rel_path_with_abs_path)
 
 
-def generate_response_with_spinner(magic_info: MagicInfo, prompt: str):
+def generate_response_with_spinner(
+    magic_info: MagicInfo, prompt: str, max_tokens: int = 4000, temperature: float = 0.0
+):
     """
     スピナーを表示しながらコマンドを実行し、結果を表示します。
     """
+    temperature = settings.temperature_generate_spinner
     if magic_info.is_async:
         # 非同期モードではスピナーを表示しない
-        result = generate_response(magic_info.model_name, prompt)
+        result = generate_response(magic_info.model_name, prompt, max_tokens, temperature)
     else:
-        result = run_function_with_spinner(magic_info, generate_response, magic_info.model_name, prompt)
+        result = run_function_with_spinner(
+            magic_info, generate_response, magic_info.model_name, prompt, max_tokens, temperature
+        )
     if result is None:
         return "グリモアの展開に失敗しました"
 
     return result
 
 
-def generate_response(model_name: str, prompt: str) -> str:
+def generate_response(model_name: str, prompt: str, max_tokens: int = 4000, temperature: float = 0.0) -> str:
     """
     promptを指定してllmからのレスポンスを生成する関数
     """
-    return litellm.generate_response(model_name, prompt, settings.max_tokens_any, 0.7)
+    return litellm.generate_response(model_name, prompt, max_tokens, temperature)

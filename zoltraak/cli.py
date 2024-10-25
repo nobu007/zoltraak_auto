@@ -375,7 +375,10 @@ def generate_md_file_name(prompt):
     file_name_prompt += "単一のファイル名以外は絶対に出力しないでください\n"
     # print("file_name_prompt:", file_name_prompt)
     response = litellm.generate_response(
-        settings.model_name_smart, file_name_prompt, settings.max_tokens_create_file_name, 0.7
+        settings.model_name_smart,
+        file_name_prompt,
+        settings.max_tokens_create_file_name,
+        settings.temperature_create_file_name,
     )
     file_name = response.strip()
 

@@ -162,7 +162,7 @@ class TargetCodeGenerator:
             settings.model_name,
             prompt,
             settings.max_tokens_generate_code,
-            0.3,
+            settings.temperature_generate_code,
         )
         return code.replace("```python", "").replace("```", "")
 
@@ -255,7 +255,7 @@ class TargetCodeGenerator:
             model=settings.model_name,
             prompt=fix_code_prompt,
             max_tokens=settings.max_tokens_generate_code_fix,
-            temperature=0.3,
+            temperature=settings.temperature_generate_code_fix,
         )
         code = code.replace("```python", "").replace("```", "")
         log("コードを修正しました。len(code)=%s", len(code))
@@ -275,7 +275,7 @@ class TargetCodeGenerator:
             model=settings.model_name,
             prompt=error_reason_prompt,
             max_tokens=settings.max_tokens_generate_error_reason,
-            temperature=0.3,
+            temperature=settings.temperature_generate_error_reason,
         )
         log("error_reason=%s", error_reason)
         return error_reason

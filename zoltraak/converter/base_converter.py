@@ -241,7 +241,7 @@ class BaseConverter:
             model=settings.model_name_lite,
             prompt=prompt_match_rate,
             max_tokens=settings.max_tokens_get_match_rate,
-            temperature=0.0,
+            temperature=settings.temperature_get_match_rate,
         )
         match_rate = response.strip()
         # ターゲットファイルの差分を表示
@@ -300,7 +300,7 @@ class BaseConverter:
             model=settings.model_name_lite,
             prompt=prompt_diff,
             max_tokens=settings.max_tokens_propose_diff,
-            temperature=0.0,
+            temperature=settings.temperature_propose_diff,
         )
         target_diff = response.strip()
         # ターゲットファイルの差分を表示
@@ -354,7 +354,7 @@ class BaseConverter:
             model=settings.model_name,
             prompt=prompt_apply,
             max_tokens=settings.max_tokens_apply_diff,
-            temperature=0.3,
+            temperature=settings.temperature_apply_diff,
         )
 
         # 修正後の内容をターゲットファイルに書き込む
