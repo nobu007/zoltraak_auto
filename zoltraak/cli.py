@@ -72,7 +72,7 @@ def main() -> None:
         "--magic_layer",
         type=str,
         help=MagicLayer.get_description(),
-        default=str(MagicLayer.LAYER_3_REQUIREMENT_GEN),
+        default=str(MagicLayer.LAYER_4_REQUIREMENT_GEN),
     )
     parser.add_argument(
         "-mle",
