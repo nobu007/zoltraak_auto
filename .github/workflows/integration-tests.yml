@@ -46,7 +46,9 @@ jobs:
 
       - name: Get run times script
         run: |
-          python ./ssripts/python/get_run_times.py
+          python ./scripts/python/get_run_times.py
+        env:
+          GH_TOKEN: ${{ github.token }}
 
       - name: Upload chart
         uses: actions/upload-artifact@v3
