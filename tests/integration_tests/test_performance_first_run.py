@@ -41,7 +41,7 @@ class TestZoltraakCommand(BaseTestCase):  # TestZoltraakCommand クラスを定�
         zoltraakコマンドに実データを入力して処理時間を確認します。
         """
         result = SubprocessUtil.run(
-            ["zoltraak", "def_InstantPromptBox.md", "-p", self.prompt_input_path, "-ml", "5_", "-mle", "9_"],
+            ["zoltraak", "def_InstantPromptBox.md", "-p", self.prompt_input_path, "-ml", "4_", "-mle", "6_"],
             capture_output=True,
             text=True,
             check=False,
