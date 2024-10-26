@@ -144,7 +144,7 @@ class MagicWorkflow:
         for source_target_set in source_target_set_list:
             task = self.process_single_set(converter, source_target_set, progress_bar)
             tasks.append(task)
-        await tqdm_asyncio.as_completed(asyncio.gather(*tasks, return_exceptions=True))
+        tqdm_asyncio.as_completed(asyncio.gather(*tasks, return_exceptions=True))
 
     async def process_single_set(
         self, converter: BaseConverter, source_target_set: SourceTargetSet, progress_bar: tqdm
