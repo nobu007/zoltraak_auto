@@ -119,7 +119,7 @@ class ZoltraakParams(BaseModel):
         cmd = "zoltraak"
         for field, value in self:
             if value:
-                cmd += f" --{field} {value}"
+                cmd += f' --{field} "{value}"'
         print("get_zoltraak_command cmd=", cmd)
         return cmd
 

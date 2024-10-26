@@ -229,7 +229,6 @@ def generate_response_with_spinner(
     """
     スピナーを表示しながらコマンドを実行し、結果を表示します。
     """
-    temperature = settings.temperature_generate_spinner
     if magic_info.is_async:
         # 非同期モードではスピナーを表示しない
         result = generate_response(magic_info.model_name, prompt, max_tokens, temperature)

@@ -218,7 +218,7 @@ class LitellmApi:
             return False
 
         prompt_length = len(prompt)
-        if prompt_length + 1000 > max_tokens:
+        if int(prompt_length * 1.2) > max_tokens:
             log_w("WARN: max_tokens might be too small. prompt len=%s, max_tokens=%d", prompt_length, max_tokens)
             FileUtil.write_file(f"over_prompt_{prompt_length}.txt", prompt)
 
