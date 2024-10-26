@@ -110,7 +110,7 @@ class LitellmApi:
     DEFAULT_MODEL_CLAUDE = "claude-3-5-sonnet-20240620"
 
     # Rate limits
-    RPM_LIMITS: ClassVar[dict[str, int]] = {"gemini_flash": 100, "gemini_pro": 2, "anthropic_claude": 1, "other": 1}
+    RPM_LIMITS: ClassVar[dict[str, int]] = {"gemini_flash": 50, "gemini_pro": 2, "anthropic_claude": 1, "other": 1}
 
     def __init__(self, logger: ModelStatsLogger = logger_):
         self.logger = logger
