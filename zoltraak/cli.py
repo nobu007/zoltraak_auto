@@ -178,6 +178,10 @@ def preprocess_input_prompt(args_input: str, params: ZoltraakParams) -> None:
         params.prompt = args_input
         return
 
+    # canonical_nameが有効ならinputなしで処理する
+    if params.canonical_name:
+        return
+
     # promptは未定かつmdも空なのでエラー終了
     show_usage_and_exit()
 

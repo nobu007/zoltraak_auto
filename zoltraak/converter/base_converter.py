@@ -400,17 +400,13 @@ class BaseConverter:
         self, prompt_enum: PromptEnum, model: str, prompt: str, max_tokens: int = 4000, temperature: float = 0.0
     ) -> str:
         """ログ表示、プロンプトの保存、LLM呼び出し、結果の確認(TODO)をワンストップで実施する"""
-        file_info = self.magic_info.file_info
         log("call prompt=%s", len(prompt))
 
-        # プロンプトを magic_info に保存
+        # プロンプトを保存
         prompt_enum.set_current_prompt(prompt, self.magic_info)
 
-        # work_dirからの相対パス取得
-        target_file_path_rel = os.path.relpath(file_info.target_file_path, file_info.work_dir)
-
         # promptをファイルに保存
-        self.prompt_manager.save_prompt(self.magic_info, prompt, target_file_path_rel, prompt_enum)
+        self.save_prompt(prompt, prompt_enum)
 
         # LLM呼び出し
         response = litellm.generate_response(
@@ -422,6 +418,17 @@ class BaseConverter:
         log("response=%s", len(response))
 
         return response
+
+    def save_prompt(self, prompt: str, prompt_enum: PromptEnum) -> None:
+        file_info = self.magic_info.file_info
+        # プロンプトを magic_info に保存
+        prompt_enum.set_current_prompt(prompt, self.magic_info)
+
+        # work_dirからの相対パス取得
+        target_file_path_rel = os.path.relpath(file_info.target_file_path, file_info.work_dir)
+
+        # promptをファイルに保存
+        self.prompt_manager.save_prompt(self.magic_info, prompt, target_file_path_rel, prompt_enum)
 
     def __str__(self) -> str:
         return f"{self.name}({self.magic_info.magic_layer})"

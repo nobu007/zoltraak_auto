@@ -98,6 +98,8 @@ class MarkdownToPythonConverter(BaseConverter):
                 log_head("prompt_input=%s", self.magic_info.prompt_input)
                 # TODO: 次処理に進むのプロンプトなし時だけなのか？全体に薄く適用するformatterみたいなケースは不要？
                 if file_info.source_hash and file_info.source_hash == embedded_hash:
+                    # 重要: is_same_promptはpast_promptとself.magic_infoを比較するため、ここで設定する必要がある
+                    PromptEnum.INPUT.set_current_prompt(self.magic_info.prompt_input, self.magic_info)
                     if self.prompt_manager.is_same_prompt(
                         self.magic_info, PromptEnum.INPUT
                     ):  # -- 前回と同じプロンプトの場合
@@ -116,14 +118,19 @@ class MarkdownToPythonConverter(BaseConverter):
 
                     # プロンプトがある場合はプロンプトを再適用してtargetを更新
                     self.magic_info.history_info += " ->プロンプトを再適用"
+                    # promptをファイルに保存
+                    self.save_prompt(self.magic_info.prompt_input, PromptEnum.INPUT)
                     SubprocessUtil.run(
                         [
                             "zoltraak",
+                            "-n",
                             file_info.canonical_name,
                             "-p",
                             self.magic_info.prompt_input,
                             "-ml",
-                            self.magic_info.magic_layer,
+                            MagicLayer.LAYER_5_CODE_GEN,
+                            "-mle",
+                            MagicLayer.LAYER_5_CODE_GEN,
                             "-mm",
                             "grimoire_only",
                         ],

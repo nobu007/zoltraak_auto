@@ -20,8 +20,6 @@ class FileUtil:
     def write_file(file_path: str, content: str) -> str:
         if not file_path:
             return "ファイルパスが空です。"
-        if not content:
-            return "ファイルの内容が空です。"
 
         file_dir = os.path.dirname(file_path)
         if file_dir != "" and not os.path.exists(file_dir):

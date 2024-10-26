@@ -54,9 +54,6 @@ class PromptManager:
     def save_prompt(
         self, magic_info: MagicInfo, prompt: str, target_file_path_rel: str, prompt_enum: PromptEnum = PromptEnum.INPUT
     ) -> None:
-        if prompt == "":
-            return
-
         prompt_output_path = prompt_enum.get_prompt_file_path(target_file_path_rel, magic_info)
 
         # フォルダがない場合は作成
@@ -79,14 +76,14 @@ class PromptManager:
         current_prompt = prompt_enum.get_current_prompt(magic_info)
         past_prompt = self.load_prompt(magic_info, prompt_enum)
 
-        log(prompt_enum + " current_prompt(末尾100文字)=\n%s", current_prompt[-100:])
-        log(prompt_enum + " past_prompt(末尾100文字)=\n%s", past_prompt[-100:])
+        log("PromptEnum=" + prompt_enum + " current_prompt(末尾100文字)=\n%s", current_prompt[-100:])
+        log("PromptEnum=" + prompt_enum + " past_prompt(末尾100文字)=\n%s", past_prompt[-100:])
         diff_content = DiffUtil.diff0_ignore_space(current_prompt, past_prompt)
 
         if diff_content.strip() == "":
-            log("プロンプトが同じです")
+            log("PromptEnum=" + prompt_enum + " プロンプトが同じです")
             return True
-        log("プロンプトが異なります diff=\n%s", diff_content)
+        log("PromptEnum=" + prompt_enum + " プロンプトが異なります diff=\n%s", diff_content)
         return False
 
     @log_inout
