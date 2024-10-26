@@ -4,8 +4,8 @@ import subprocess
 from datetime import datetime
 
 # 環境変数から設定値を取得
-GITHUB_ORG = os.getenv("GITHUB_ORG", "https://github.com")
-GITHUB_PROJECT = os.getenv("GITHUB_PROJECT", "nobu007")
+GITHUB_ORG = os.getenv("GITHUB_ORG", "https://github.com/nobu007")
+GITHUB_PROJECT = os.getenv("GITHUB_PROJECT", "zoltraak_auto")
 WORKFLOW_FILE = os.getenv("WORKFLOW_FILE", "integration-tests.yml")
 BRANCH_NAME = os.getenv("BRANCH_NAME", "main")
 JOB_NAME = os.getenv("JOB_NAME", "integration-tests")
