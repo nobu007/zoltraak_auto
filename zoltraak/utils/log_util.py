@@ -11,7 +11,10 @@ from tqdm import tqdm
 import zoltraak
 from zoltraak import settings
 
-default_level = logging.INFO if settings.is_debug else logging.WARNING
+# カスタムログレベル
+INFO_PROGRESS = 25
+
+default_level = logging.DEBUG if settings.is_debug else INFO_PROGRESS
 logging.basicConfig(level=default_level)
 
 
@@ -156,7 +159,7 @@ def log_w(msg: str, *args, **kwargs):
 
 
 def log_i(msg: str, *args, **kwargs):
-    logger.info(msg, *args, **kwargs)
+    logger.log(INFO_PROGRESS, msg, *args, **kwargs)
 
 
 def log_d(msg: str, *args, **kwargs):
