@@ -44,6 +44,35 @@ class GitHubActionsAnalyzer:
         # キャッシュディレクトリの作成
         os.makedirs(self.cache_dir, exist_ok=True)
 
+    # 応答の例
+    # https://docs.github.com/ja/rest/actions/workflow-runs?apiVersion=2022-11-28
+    # {
+    #   "total_count": 1,
+    #   "workflow_runs": [
+    #     {
+    #       "id": 30433642,
+    #       "name": "Build",
+    #       "node_id": "MDEyOldvcmtmbG93IFJ1bjI2OTI4OQ==",
+    #       "check_suite_id": 42,
+    #       "check_suite_node_id": "MDEwOkNoZWNrU3VpdGU0Mg==",
+    #       "head_branch": "master",
+    #       "head_sha": "acb5820ced9479c074f688cc328bf03f341a511d",
+    #       "path": ".github/workflows/build.yml@main",
+    #       "run_number": 562,
+    #       "event": "push",
+    #       "display_title": "Update README.md",
+    #       "status": "queued",
+    #       "conclusion": null,
+    #       "workflow_id": 159038,
+    #       "url": "https://api.github.com/repos/octo-org/octo-repo/actions/runs/30433642",
+    #       "html_url": "https://github.com/octo-org/octo-repo/actions/runs/30433642",
+    #       "pull_requests": [],
+    #       "created_at": "2020-01-22T19:33:08Z",
+    #       "updated_at": "2020-01-22T19:33:08Z",
+    #       "run_attempt": 1,
+    #       "run_started_at": "2020-01-22T19:33:08Z",
+    #       "actor": {
+    #      ・・・
     def _call_github_api(self, path: str) -> dict:
         """GitHub APIを呼び出す"""
         cmd = ["gh", "api", f"https://api.github.com/repos/{self.github_org}/{self.github_project}/{path}"]
