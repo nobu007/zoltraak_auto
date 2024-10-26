@@ -4,7 +4,7 @@ import subprocess
 from datetime import datetime
 
 # 環境変数から設定値を取得
-GITHUB_ORG = os.getenv("GITHUB_ORG", "https://github.com/nobu007")
+GITHUB_ORG = os.getenv("GITHUB_ORG", "nobu007")
 GITHUB_PROJECT = os.getenv("GITHUB_PROJECT", "zoltraak_auto")
 WORKFLOW_FILE = os.getenv("WORKFLOW_FILE", "integration-tests.yml")
 BRANCH_NAME = os.getenv("BRANCH_NAME", "main")
@@ -15,7 +15,8 @@ PAGE_LIMIT = int(os.getenv("PAGE_LIMIT", "10"))  # ページ数を環境変数�
 
 # GitHub API呼び出し関数
 def _call_github_api(path: str) -> dict:
-    cmd = ["gh", "api", f"repos/{GITHUB_ORG}/{GITHUB_PROJECT}/{path}"]
+    # URL例: https://api.github.com/repos/nobu007/zoltraak_auto/actions/runs?branch=main&per_page=100&page=1
+    cmd = ["gh", "api", f"https://api.github.com/repos/{GITHUB_ORG}/{GITHUB_PROJECT}/{path}"]
     result = subprocess.run(cmd, stdout=subprocess.PIPE, check=True)  # noqa: S603
     return json.loads(result.stdout)
 
