@@ -64,10 +64,9 @@ def _generate_chart_content(times: list[float]) -> str:
     data = ", ".join([str(int(t)) for t in times if t != 0])
     chart_content = f"""```mermaid
 xychart-beta
-line [
-    {data}
-]
-```"""
+line [{data}]
+```
+"""
     print("generate_chart chart_content len=", len(chart_content))
     return chart_content
 

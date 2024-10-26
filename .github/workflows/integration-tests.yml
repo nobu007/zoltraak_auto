@@ -66,6 +66,15 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
 
+      - name: Create job summary
+        run: |
+          echo "## Integration Tests Duration Chart" >> $GITHUB_STEP_SUMMARY
+          echo "This chart shows the duration of integration tests over time:" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          cat chart.md >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Last updated: $(date)" >> $GITHUB_STEP_SUMMARY
+
       - name: Upload chart
         uses: actions/upload-artifact@v4
         with:
