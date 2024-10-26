@@ -269,7 +269,8 @@ class TargetCodeGenerator:
         コード: {code}
         エラーメッセージ: {self.last_exception!s}
         考えられるエラーの原因と解決方法を教えてください。
-        プログラムコードのみ記載してください。
+        推論が発散しないように、簡潔な説明をお願いします。
+        プログラムコードを回答する場合は関数単位やブロック単位で完全なコードを記載してください。
         """
         error_reason = litellm.generate_response(
             model=settings.model_name,

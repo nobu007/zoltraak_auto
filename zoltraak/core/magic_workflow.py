@@ -1,9 +1,12 @@
 import asyncio
 import copy
+import inspect
 import os
 import sys
 
+import anyio
 from tqdm import tqdm
+from tqdm.asyncio import tqdm_asyncio
 
 from zoltraak import settings
 from zoltraak.converter.base_converter import BaseConverter
@@ -111,12 +114,12 @@ class MagicWorkflow:
             self.magic_info.is_async = True
 
             # プログレスバーを初期化
-            progress_bar = tqdm(
+            progress_bar = tqdm_asyncio(
                 total=len(source_target_set_list), unit="files", file=sys.stdout, desc=self.magic_info.magic_layer
             )
 
             # 非同期処理を実行
-            asyncio.run(self.process_source_target_sets(converter, source_target_set_list, progress_bar))
+            anyio.run(self.process_source_target_sets, converter, source_target_set_list, progress_bar)
 
             progress_bar.close()
 
@@ -141,10 +144,10 @@ class MagicWorkflow:
         for source_target_set in source_target_set_list:
             task = self.process_single_set(converter, source_target_set, progress_bar)
             tasks.append(task)
-        await asyncio.gather(*tasks)
+        await tqdm_asyncio.as_completed(asyncio.gather(*tasks, return_exceptions=True))
 
     async def process_single_set(
-        self, converter: BaseConverter, source_target_set: list[SourceTargetSet], progress_bar: tqdm
+        self, converter: BaseConverter, source_target_set: SourceTargetSet, progress_bar: tqdm
     ):
         log_progress(progress_bar)
 
@@ -167,12 +170,11 @@ class MagicWorkflow:
 
     async def async_run(self, convert_method: callable, magic_info: MagicInfo):
         # convert_method が非同期の場合
-        if asyncio.iscoroutinefunction(convert_method):
-            await self.run(convert_method, magic_info)
+        if inspect.iscoroutinefunction(convert_method):
+            await convert_method(magic_info)
         else:
             # convert_method が同期の場合、別スレッドで実行
-            loop = asyncio.get_running_loop()
-            await loop.run_in_executor(None, self.run, convert_method, magic_info)
+            await anyio.to_thread.run_sync(self.run, convert_method, magic_info)
 
     @log_inout
     def run(self, func: callable, magic_info: MagicInfo):
