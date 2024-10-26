@@ -3,81 +3,98 @@ import os
 import subprocess
 from datetime import datetime
 
-# 環境変数から設定値を取得
-GITHUB_ORG = os.getenv("GITHUB_ORG", "nobu007")
-GITHUB_PROJECT = os.getenv("GITHUB_PROJECT", "zoltraak_auto")
-WORKFLOW_FILE = os.getenv("WORKFLOW_FILE", "integration-tests.yml")
-BRANCH_NAME = os.getenv("BRANCH_NAME", "main")
-JOB_NAME = os.getenv("JOB_NAME", "integration-tests")
-STEP_FILTER = os.getenv("STEP_FILTER", "integration")
-PAGE_LIMIT = int(os.getenv("PAGE_LIMIT", "10"))  # ページ数を環境変数で設定可能
 
+class GitHubActionsAnalyzer:
+    def __init__(self):
+        self.github_org = os.getenv("GITHUB_ORG", "nobu007")
+        self.github_project = os.getenv("GITHUB_PROJECT", "zoltraak_auto")
+        self.workflow_file = os.getenv("WORKFLOW_FILE", "integration-tests.yml")
+        self.branch_name = os.getenv("BRANCH_NAME", "main")
+        self.job_name = os.getenv("JOB_NAME", "integration-tests")
+        self.step_filter = os.getenv("STEP_FILTER", "integration")
+        self.page_limit = int(os.getenv("PAGE_LIMIT", "10"))
+        self.cache_dir = "cache"
 
-# GitHub API呼び出し関数
-def _call_github_api(path: str) -> dict:
-    # URL例: https://api.github.com/repos/nobu007/zoltraak_auto/actions/runs?branch=main&per_page=100&page=1
-    cmd = ["gh", "api", f"https://api.github.com/repos/{GITHUB_ORG}/{GITHUB_PROJECT}/{path}"]
-    result = subprocess.run(cmd, stdout=subprocess.PIPE, check=True)  # noqa: S603
-    return json.loads(result.stdout)
+        # キャッシュディレクトリの作成
+        os.makedirs(self.cache_dir, exist_ok=True)
 
+    def _call_github_api(self, path: str) -> dict:
+        """GitHub APIを呼び出す"""
+        cmd = ["gh", "api", f"https://api.github.com/repos/{self.github_org}/{self.github_project}/{path}"]
+        result = subprocess.run(cmd, stdout=subprocess.PIPE, check=True)  # noqa: S603
+        return json.loads(result.stdout)
 
-# 実行時間の取得関数
-def get_run_times() -> list[float]:
-    run_ids = []
-    for i in range(1, PAGE_LIMIT + 1):  # ページ数は環境変数で調整可能
-        runs_data = _call_github_api(f"actions/runs?branch={BRANCH_NAME}&per_page=100&page={i}")
-        for run in runs_data["workflow_runs"]:
-            if run["path"] == f".github/workflows/{WORKFLOW_FILE}":
-                run_ids.append(run["id"])  # noqa: PERF401
+    def _get_datetime(self, time_str: str) -> datetime:
+        """ISO形式の時間文字列をdatetimeオブジェクトに変換"""
+        return datetime.fromisoformat(time_str.replace("Z", "+00:00"))
 
-    times = []
-    for run_id in run_ids:
-        try:
-            with open(f"{run_id}.json", encoding="utf-8") as f:
-                job_data = json.load(f)
-                print(f"{run_id}.json loaded")
-        except FileNotFoundError:
-            job_data = _call_github_api(f"actions/runs/{run_id}/jobs")
-            print(f"actions/runs/{run_id}/jobs loaded")
-            with open(f"{run_id}.json", "w", encoding="utf-8") as f:
-                json.dump(job_data, f, indent=2)
-                print(f"{run_id}.json saved")
+    def _calculate_job_duration(self, job: dict) -> float:
+        """ジョブの合計実行時間を計算"""
+        if not job["started_at"] or not job["completed_at"]:
+            return -1.0
 
-        for job in job_data["jobs"]:
-            if job["name"] == JOB_NAME:
-                for step in job["steps"]:
-                    if STEP_FILTER in step["name"]:
-                        start_time = datetime.fromisoformat(step["started_at"].replace("Z", "+00:00"))
-                        complete_time = datetime.fromisoformat(step["completed_at"].replace("Z", "+00:00"))
-                        duration = (complete_time - start_time).total_seconds()
-                        times.append(duration)
-    return times
+        start_time = self._get_datetime(job["started_at"])
+        complete_time = self._get_datetime(job["completed_at"])
+        return (complete_time - start_time).total_seconds()
 
+    def get_run_data(self) -> list[tuple[str, float]]:
+        """ワークフローの実行データを取得"""
+        run_data = []
+        run_number = 0
 
-# Mermaidチャート生成関数
-def generate_chart(times: list[float], file_path: str = "chart.md") -> str:
-    chart_content = _generate_chart_content(times)
-    _store_chart(chart_content, file_path)
+        for page in range(1, self.page_limit + 1):
+            runs = self._call_github_api(f"actions/runs?branch={self.branch_name}&per_page=100&page={page}")
 
+            for run in runs["workflow_runs"]:
+                if run["path"] != f".github/workflows/{self.workflow_file}":
+                    continue
 
-def _generate_chart_content(times: list[float]) -> str:
-    data = ", ".join([str(int(t)) for t in times if t != 0])
-    chart_content = f"""```mermaid
+                run_number += 1
+                run_id = run["id"]
+                cache_file = os.path.join(self.cache_dir, f"{run_id}.json")
+
+                try:
+                    with open(cache_file, encoding="utf-8") as f:
+                        job_data = json.load(f)
+                        print(f"Cache hit: {cache_file}")
+                except FileNotFoundError:
+                    job_data = self._call_github_api(f"actions/runs/{run_id}/jobs")
+                    print(f"Cache miss: Fetched data for run {run_id}")
+                    with open(cache_file, "w", encoding="utf-8") as f:
+                        json.dump(job_data, f, indent=2)
+
+                for job in job_data["jobs"]:
+                    if job["name"] == self.job_name:
+                        duration = self._calculate_job_duration(job)
+                        if duration >= 0:
+                            run_data.append((f"#{run_number}", duration))
+                        break
+
+        return run_data
+
+    def generate_chart(self, run_data: list[tuple[str, float]], file_path: str = "chart.md") -> None:
+        """Mermaidチャートを生成"""
+        times = [str(int(duration)) for _, duration in run_data]
+        labels = [label for label, _ in run_data]
+
+        chart_content = f"""```mermaid
 xychart-beta
-line [{data}]
-```
-"""
-    print("generate_chart chart_content len=", len(chart_content))
-    return chart_content
+title "Integration Test Job Execution Time[sec]"
+x-axis [{', '.join(labels)}]
+y-axis "Seconds"
+line [{', '.join(times)}]
+```"""
+
+        print(f"Generating chart with {len(run_data)} data points")
+        with open(file_path, "w", encoding="utf-8") as f:
+            f.write(chart_content)
 
 
-def _store_chart(chart_content: str, file_path: str) -> None:
-    print("store_chart file_path=", file_path)
-    with open(file_path, "w", encoding="utf-8") as f:
-        f.write(chart_content)
+def main():
+    analyzer = GitHubActionsAnalyzer()
+    run_data = analyzer.get_run_data()
+    analyzer.generate_chart(run_data)
 
 
-# 実行
 if __name__ == "__main__":
-    times_ = get_run_times()
-    generate_chart(times_)
+    main()
