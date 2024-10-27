@@ -1,6 +1,5 @@
 import asyncio
 import copy
-import inspect
 import os
 import sys
 
@@ -145,7 +144,7 @@ class MagicWorkflow:
         for source_target_set in source_target_set_list:
             task = self.process_single_set(converter, source_target_set, progress_bar)
             tasks.append(task)
-        tqdm_asyncio.as_completed(asyncio.gather(*tasks, return_exceptions=True))
+        tqdm_asyncio.as_completed(await asyncio.gather(*tasks, return_exceptions=True))
 
     async def process_single_set(
         self, converter: BaseConverter, source_target_set: SourceTargetSet, progress_bar: tqdm
@@ -166,16 +165,16 @@ class MagicWorkflow:
         )
         file_info_copy.update_hash()
         log(self.get_log(f"run Generator source_target_set = {source_target_set}"))
-        await self.async_run(converter_copy.convert, magic_info_copy)
+        await anyio.to_thread.run_sync(self.run, converter_copy.convert, magic_info_copy)
         progress_bar.update(1)
 
-    async def async_run(self, convert_method: callable, magic_info: MagicInfo):
-        # convert_method が非同期の場合
-        if inspect.iscoroutinefunction(convert_method):
-            await convert_method(magic_info)
-        else:
-            # convert_method が同期の場合、別スレッドで実行
-            await anyio.to_thread.run_sync(self.run, convert_method, magic_info)
+    # async def async_run(self, convert_method: callable, magic_info: MagicInfo):
+    #     # convert_method が非同期の場合
+    #     if inspect.iscoroutinefunction(convert_method):
+    #         await convert_method(magic_info)
+    #     else:
+    #         # convert_method が同期の場合、別スレッドで実行
+    #         await anyio.to_thread.run_sync(self.run, convert_method, magic_info)
 
     @log_inout
     def run(self, func: callable, magic_info: MagicInfo):
