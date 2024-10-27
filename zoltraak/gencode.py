@@ -5,6 +5,8 @@ from instant_prompt_box import InstantPromptBox
 
 import zoltraak.llms.litellm_api as litellm
 from zoltraak import settings
+from zoltraak.converter.base_converter import BaseConverter
+from zoltraak.core.prompt_manager import PromptEnum, PromptManager
 from zoltraak.schema.schema import MagicInfo
 from zoltraak.utils.file_util import FileUtil
 from zoltraak.utils.log_util import log, log_inout
@@ -12,9 +14,9 @@ from zoltraak.utils.prompt_import import load_prompt
 from zoltraak.utils.subprocess_util import SubprocessUtil
 
 
-class TargetCodeGenerator:
-    def __init__(self, magic_info: MagicInfo):
-        self.magic_info = magic_info
+class TargetCodeGenerator(BaseConverter):
+    def __init__(self, magic_info: MagicInfo, prompt_manager: PromptManager):
+        super().__init__(magic_info, prompt_manager)
         self.file_info = magic_info.file_info
         self.first_code = ""
         self.last_code = ""
@@ -158,7 +160,8 @@ class TargetCodeGenerator:
         return load_prompt(create_domain_grimoire, variables)
 
     def generate_code(self, prompt):
-        code = litellm.generate_response(
+        code = self.generate_response(
+            PromptEnum.FINAL,
             settings.model_name,
             prompt,
             settings.max_tokens_generate_code,

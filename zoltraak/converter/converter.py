@@ -167,7 +167,7 @@ class MarkdownToPythonConverter(BaseConverter):
 {file_info.source_file_path} -> {file_info.target_file_path}
                 """
         )
-        target = TargetCodeGenerator(self.magic_info)
+        target = TargetCodeGenerator(self.magic_info, self.prompt_manager)
         return target.generate_target_code()
 
     @log_inout
