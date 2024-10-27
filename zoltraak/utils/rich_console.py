@@ -246,4 +246,4 @@ def generate_response(model_name: str, prompt: str, max_tokens: int = 4000, temp
     """
     promptを指定してllmからのレスポンスを生成する関数
     """
-    return litellm.generate_response(model_name, prompt, max_tokens, temperature)
+    return litellm.generate_response(model=model_name, prompt=prompt, max_tokens=max_tokens, temperature=temperature)

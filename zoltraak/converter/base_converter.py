@@ -237,11 +237,11 @@ class BaseConverter:
 
         """
         response = self.generate_response(
-            PromptEnum.MATCH_RATE,
-            model=settings.model_name_lite,
+            prompt_enum=PromptEnum.MATCH_RATE,
             prompt=prompt_match_rate,
             max_tokens=settings.max_tokens_get_match_rate,
             temperature=settings.temperature_get_match_rate,
+            model_name=settings.model_name_lite,
         )
         match_rate = response.strip()
         # ターゲットファイルの差分を表示
@@ -297,10 +297,10 @@ class BaseConverter:
         """
         response = self.generate_response(
             prompt_enum=PromptEnum.DIFF,
-            model=settings.model_name_lite,
             prompt=prompt_diff,
             max_tokens=settings.max_tokens_propose_diff,
             temperature=settings.temperature_propose_diff,
+            model_name=settings.model_name_lite,
         )
         target_diff = response.strip()
         # ターゲットファイルの差分を表示
@@ -351,10 +351,10 @@ class BaseConverter:
         self.magic_info.prompt_apply = prompt_apply
         modified_content = self.generate_response(
             prompt_enum=PromptEnum.APPLY,
-            model=settings.model_name,
             prompt=prompt_apply,
             max_tokens=settings.max_tokens_apply_diff,
             temperature=settings.temperature_apply_diff,
+            model_name=settings.model_name,
         )
 
         # 修正後の内容をターゲットファイルに書き込む
@@ -397,7 +397,12 @@ class BaseConverter:
         return current_target_content == past_target_content
 
     def generate_response(
-        self, prompt_enum: PromptEnum, model: str, prompt: str, max_tokens: int = 4000, temperature: float = 0.0
+        self,
+        prompt_enum: PromptEnum,
+        prompt: str,
+        max_tokens: int = 4000,
+        temperature: float = 0.0,
+        model_name: str = settings.model_name,
     ) -> str:
         """ログ表示、プロンプトの保存、LLM呼び出し、結果の確認(TODO)をワンストップで実施する"""
         log("call prompt=%s", len(prompt))
@@ -411,7 +416,7 @@ class BaseConverter:
         # LLM呼び出し
         response = generate_response_with_spinner(
             magic_info=self.magic_info,
-            model_name=model,
+            model_name=model_name,
             prompt=prompt,
             max_tokens=max_tokens,
             temperature=temperature,
@@ -436,11 +441,11 @@ class BaseConverter:
         prompt_finalから任意のマークダウンファイルを生成する関数
         """
         response = self.generate_response(
-            PromptEnum.FINAL,
-            self.magic_info.model_name,
-            self.magic_info.prompt_final,
-            settings.max_tokens_generate_md,
-            settings.temperature_generate_md,
+            prompt_enum=PromptEnum.FINAL,
+            prompt=self.magic_info.prompt_final,
+            max_tokens=settings.max_tokens_generate_md,
+            temperature=settings.temperature_generate_md,
+            model_name=self.magic_info.model_name,
         )
         target_file_path = self.magic_info.file_info.target_file_path
         md_content = response.strip()  # 生成された要件定義書の内容を取得し、前後の空白を削除

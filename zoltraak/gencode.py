@@ -161,11 +161,10 @@ class TargetCodeGenerator(BaseConverter):
 
     def generate_code(self, prompt):
         code = self.generate_response(
-            PromptEnum.FINAL,
-            settings.model_name,
-            prompt,
-            settings.max_tokens_generate_code,
-            settings.temperature_generate_code,
+            prompt_enum=PromptEnum.FINAL,
+            prompt=prompt,
+            max_tokens=settings.max_tokens_generate_code,
+            temperature=settings.temperature_generate_code,
         )
         return code.replace("```python", "").replace("```", "")
 

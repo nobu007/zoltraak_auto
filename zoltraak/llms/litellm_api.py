@@ -75,7 +75,9 @@ async def generate_response_async(
     is_async: bool = False,  # noqa: FBT001
 ) -> str:
     api = LitellmApi()
-    return await api.generate_response(model, prompt, max_tokens, temperature, is_async=is_async)
+    return await api.generate_response(
+        model=model, prompt=prompt, max_tokens=max_tokens, temperature=temperature, is_async=is_async
+    )
 
 
 def show_used_total_tokens():
@@ -200,16 +202,12 @@ class LitellmApi:
         is_async: bool = False,
     ) -> str:
         """同期と非同期を共通の関数で呼べるようにした"""
-        if not self._validate_input(prompt, max_tokens):
+        if not await anyio.to_thread.run_sync(self._validate_input, prompt, max_tokens):
             return ""
 
-        if is_async:
-            # Async call
-            return await self._generate_async(model, prompt, max_tokens, temperature)
-        # Sync call
-        return await anyio.to_thread.run_sync(
-            self._generate_sync, model, prompt, max_tokens, temperature
-        )  # 別スレッドで同期関数を実行
+        # Async call
+        log("is_async=", is_async)
+        return await self._generate_async(model, prompt, max_tokens, temperature)
 
     def _validate_input(self, prompt: str, max_tokens: int) -> bool:
         """Validate input parameters."""
@@ -233,7 +231,7 @@ class LitellmApi:
             max_tokens=max_tokens,
             temperature=temperature,
         )
-        return self._process_response(response, prompt)
+        return await anyio.to_thread.run_sync(self._process_response, response, prompt)
 
     def _generate_sync(self, model: str, prompt: str, max_tokens: int, temperature: float) -> str:
         """Handle sync response generation."""
@@ -248,7 +246,7 @@ class LitellmApi:
 
     def _process_response(self, response: ModelResponse, prompt: str) -> str:
         """Process and validate response."""
-        if not response.choices or not response.choices[0].message:
+        if not response.choices or not response.choices[0].message or not response.choices[0].message.content:
             log_w("Invalid response received for prompt: %s", prompt)
             return ""
         return response.choices[0].message.content.strip()
