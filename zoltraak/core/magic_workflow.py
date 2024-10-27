@@ -346,33 +346,33 @@ class MagicWorkflow:
         file_info = magic_info.file_info
         # ソースを past_source_dir にコピー
         if os.path.isfile(file_info.source_file_path):
-            self.copy_file_by_rel_path(file_info.source_file_path, file_info.past_source_dir, file_info.work_dir)
+            FileUtil.copy_file(file_info.source_file_path, file_info.past_source_file_path)
 
         # ターゲットを past_target_dir にコピー
         if os.path.isfile(file_info.target_file_path):
-            self.copy_file_by_rel_path(file_info.target_file_path, file_info.past_target_dir, file_info.work_dir)
+            FileUtil.copy_file(file_info.target_file_path, file_info.past_target_file_path)
 
-    @log_inout
-    def copy_file_by_rel_path(self, origin_file_path: str, destination_dir: str, origin_base_dir: str) -> str:
-        """コピー元ファイルを、コピー先のディレクトリ配下に、元のディレクトリ構造を保持してコピーする。
-        基準ディレクトリのデフォルト値はwork_dir
+    # @log_inout
+    # def copy_file_by_rel_path(self, origin_file_path: str, destination_dir: str, origin_base_dir: str) -> str:
+    #     """コピー元ファイルを、コピー先のディレクトリ配下に、元のディレクトリ構造を保持してコピーする。
+    #     基準ディレクトリのデフォルト値はwork_dir
 
-        Args:
-            origin_base_dir (str): origin_file_pathのどこからディレクトリ構造を保持するか
-        """
+    #     Args:
+    #         origin_base_dir (str): origin_file_pathのどこからディレクトリ構造を保持するか
+    #     """
 
-        # past_source_file_path or past_target_file_path にコピーを配置する
-        origin_file_path_abs = os.path.abspath(origin_file_path)
-        if os.path.isfile(origin_file_path_abs):
-            origin_file_path_rel = os.path.relpath(origin_file_path_abs, origin_base_dir)
-            destination_file_path = os.path.join(destination_dir, origin_file_path_rel)
-            destination_file_path_abs = os.path.abspath(destination_file_path)
-            os.makedirs(os.path.dirname(destination_file_path_abs), exist_ok=True)
-            FileUtil.copy_file(origin_file_path_abs, destination_file_path_abs)
-            log(self.get_log(f"pastファイルをコピーしました。 : {destination_file_path_abs}"))
-            return destination_file_path_abs
-        log(self.get_log(f"コピー元ファイルがないためコピーできませんでした。 : {origin_file_path_abs}"))
-        return ""
+    #     # past_source_file_path or past_target_file_path にコピーを配置する
+    #     origin_file_path_abs = os.path.abspath(origin_file_path)
+    #     if os.path.isfile(origin_file_path_abs):
+    #         origin_file_path_rel = os.path.relpath(origin_file_path_abs, origin_base_dir)
+    #         destination_file_path = os.path.join(destination_dir, origin_file_path_rel)
+    #         destination_file_path_abs = os.path.abspath(destination_file_path)
+    #         os.makedirs(os.path.dirname(destination_file_path_abs), exist_ok=True)
+    #         FileUtil.copy_file(origin_file_path_abs, destination_file_path_abs)
+    #         log(self.get_log(f"pastファイルをコピーしました。 : {destination_file_path_abs}"))
+    #         return destination_file_path_abs
+    #     log(self.get_log(f"コピー元ファイルがないためコピーできませんでした。 : {origin_file_path_abs}"))
+    #     return ""
 
     @log_inout
     def end_workflow(self, magic_info: MagicInfo):
