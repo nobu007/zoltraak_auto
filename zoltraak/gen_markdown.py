@@ -1,7 +1,8 @@
 from zoltraak import settings
+from zoltraak.schema.schema import MagicInfo
 from zoltraak.utils.file_util import FileUtil
 from zoltraak.utils.log_util import log
-from zoltraak.utils.rich_console import MagicInfo, generate_response_with_spinner
+from zoltraak.utils.rich_console import generate_response_with_spinner
 
 
 def generate_md_from_prompt(magic_info: MagicInfo) -> str:
@@ -9,7 +10,11 @@ def generate_md_from_prompt(magic_info: MagicInfo) -> str:
     prompt_finalから任意のマークダウンファイルを生成する関数
     """
     response = generate_response_with_spinner(
-        magic_info, magic_info.prompt_final, settings.max_tokens_generate_md, settings.temperature_generate_md
+        magic_info,
+        magic_info.model_name,
+        magic_info.prompt_final,
+        settings.max_tokens_generate_md,
+        settings.temperature_generate_md,
     )
     target_file_path = magic_info.file_info.target_file_path
     md_content = response.strip()  # 生成された要件定義書の内容を取得し、前後の空白を削除

@@ -224,14 +224,14 @@ def _add_row_relpath(table: Table, key: str, path: str, base_path: str) -> None:
 
 
 def generate_response_with_spinner(
-    magic_info: MagicInfo, prompt: str, max_tokens: int = 4000, temperature: float = 0.0
+    magic_info: MagicInfo, model_name: str, prompt: str, max_tokens: int = 4000, temperature: float = 0.0
 ):
     """
     スピナーを表示しながらコマンドを実行し、結果を表示します。
     """
     if magic_info.is_async:
         # 非同期モードではスピナーを表示しない
-        result = generate_response(magic_info.model_name, prompt, max_tokens, temperature)
+        result = generate_response(model_name, prompt, max_tokens, temperature)
     else:
         result = run_function_with_spinner(
             magic_info, generate_response, magic_info.model_name, prompt, max_tokens, temperature

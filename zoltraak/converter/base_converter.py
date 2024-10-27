@@ -1,7 +1,6 @@
 import os
 from typing import ClassVar
 
-import zoltraak.llms.litellm_api as litellm
 from zoltraak import settings
 from zoltraak.core.prompt_manager import PromptEnum, PromptManager
 from zoltraak.gen_markdown import generate_md_from_prompt
@@ -9,6 +8,7 @@ from zoltraak.schema.schema import EMPTY_CONTEXT_FILE, MagicInfo, MagicLayer, So
 from zoltraak.utils.diff_util import DiffUtil
 from zoltraak.utils.file_util import FileUtil
 from zoltraak.utils.log_util import log, log_change, log_e, log_head, log_inout
+from zoltraak.utils.rich_console import generate_response_with_spinner
 
 
 class BaseConverter:
@@ -409,8 +409,9 @@ class BaseConverter:
         self.save_prompt(prompt, prompt_enum)
 
         # LLM呼び出し
-        response = litellm.generate_response(
-            model=model,
+        response = generate_response_with_spinner(
+            magic_info=self.magic_info,
+            model_name=model,
             prompt=prompt,
             max_tokens=max_tokens,
             temperature=temperature,
@@ -429,6 +430,45 @@ class BaseConverter:
 
         # promptをファイルに保存
         self.prompt_manager.save_prompt(self.magic_info, prompt, target_file_path_rel, prompt_enum)
+
+    def generate_md_from_prompt(self) -> str:
+        """
+        prompt_finalから任意のマークダウンファイルを生成する関数
+        """
+        response = self.generate_response(
+            PromptEnum.FINAL,
+            self.magic_info.model_name,
+            self.magic_info.prompt_final,
+            settings.max_tokens_generate_md,
+            settings.temperature_generate_md,
+        )
+        target_file_path = self.magic_info.file_info.target_file_path
+        md_content = response.strip()  # 生成された要件定義書の内容を取得し、前後の空白を削除
+        output_file_path = self.save_md_content(
+            md_content, target_file_path
+        )  # 生成された要件定義書の内容をファイルに保存
+        self.print_generation_result(output_file_path)  # 生成結果を出力
+        return output_file_path
+
+    def save_md_content(self, md_content, target_file_path) -> str:
+        """
+        生成された要件定義書の内容をファイルに保存する関数
+
+        Args:
+            md_content (str): 生成された要件定義書の内容
+            target_file_path (str): 保存先のファイルパス
+        """
+        return FileUtil.write_grimoire(md_content, target_file_path)
+
+    def print_generation_result(self, output_file_path):
+        """
+        要件定義書の生成結果を表示する関数
+
+        Args:
+            output_file_path (str): 生成された要件定義書のファイルパス
+        """
+        print()
+        log(f"\033[32m魔法術式を構築しました: {output_file_path}\033[0m")  # 要件定義書の生成完了メッセージを緑色で表示
 
     def __str__(self) -> str:
         return f"{self.name}({self.magic_info.magic_layer})"
