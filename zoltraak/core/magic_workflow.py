@@ -93,7 +93,7 @@ class MagicWorkflow:
         is_called = False
         for converter in self.converters:
             if layer in converter.acceptable_layers and layer == self.magic_info.magic_layer:
-                log(self.get_log(str(converter) + " convert layer = " + str(layer)))
+                log_i(self.get_log(str(converter) + " convert layer = " + str(layer)))
                 converter.prepare()
                 self.run_converter(converter)
                 is_called = True
