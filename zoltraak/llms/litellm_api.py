@@ -1,6 +1,7 @@
 import os
 from collections import defaultdict
-from typing import ClassVar
+from contextlib import suppress
+from typing import Any, ClassVar
 
 import anyio
 import litellm
@@ -49,6 +50,24 @@ TPM_GEMINI_PRO = 10000  # 1分あたりのトークン数(MAX: 32,000)
 TPM_ANTHROPIC_CLAUDE = 100000  # 1分あたりのトークン数(MAX: ？？)
 
 
+def flexible_run(async_func: callable, *args, **kwargs) -> Any:
+    """
+    コンテキストに応じて適切な方法で非同期関数を実行する
+    """
+    try:
+        with suppress(RuntimeError):
+            # 現在のイベントループでのタスクを取得しようとする
+            anyio.get_current_task()
+            return anyio.from_thread.run(async_func, *args, **kwargs)
+
+        # イベントループが存在しない場合は、新しいイベントループを作成して非同期関数を実行する
+        return anyio.run(async_func, *args, **kwargs)
+    except Exception as e:
+        # エラーハンドリング
+        print(f"Error executing async function: {e}")
+        raise
+
+
 def generate_response(
     model: str,
     prompt: str,
@@ -57,7 +76,7 @@ def generate_response(
     *,
     is_async: bool = False,
 ) -> str:
-    return anyio.run(
+    return flexible_run(
         generate_response_async,
         model,
         prompt,
@@ -100,7 +119,8 @@ class LitellmApi:
 
     ## 同期⇒非同期
     同期関数から非同期関数を実行する際には、anyio.run()を使用します。
-    これにより、同期コードの中で非同期関数を簡単に実行できます。
+    ただし、anyio.run()で実行されたイベントループから別のanyio.run()を呼んではいけない。
+    flexible_run()を使うことで、イベントループの状態に応じて適切な方法で非同期関数を実行できます。
 
     ## 間違わないための理解ポイント：
     awaitは非同期関数内で使う必要がある。非同期関数を呼び出すときは、awaitを忘れない。
@@ -205,9 +225,12 @@ class LitellmApi:
         if not await anyio.to_thread.run_sync(self._validate_input, prompt, max_tokens):
             return ""
 
-        # Async call
-        log("is_async=", is_async)
-        return await self._generate_async(model, prompt, max_tokens, temperature)
+        log("is_async=%s", is_async)
+        if is_async:
+            # Async call
+            return await self._generate_async(model, prompt, max_tokens, temperature)
+        # Sync call
+        return await anyio.to_thread.run_sync(self._generate_sync, model, prompt, max_tokens, temperature)
 
     def _validate_input(self, prompt: str, max_tokens: int) -> bool:
         """Validate input parameters."""

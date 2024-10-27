@@ -68,6 +68,7 @@ class CodeBaseGenerator(BaseConverter):
         info_structure_file_path = os.path.join(os.path.dirname(code_file_path), "info_structure.md")
 
         if self.magic_info.magic_layer is MagicLayer.LAYER_6_CODEBASE_GEN:
+            # MagicLayer.LAYER_6_CODEBASE_GEN
             # ソースファイル => 詳細設計書
             source_file_path = code_file_path
             target_file_path = cade_base_file_path

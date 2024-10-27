@@ -120,6 +120,7 @@ class MagicWorkflow:
 
             # 非同期処理を実行
             anyio.run(self.process_source_target_sets, converter, source_target_set_list, progress_bar)
+            log("process_source_target_sets are completed")
 
             progress_bar.close()
 
