@@ -5,8 +5,7 @@ from instant_prompt_box import InstantPromptBox
 
 import zoltraak.llms.litellm_api as litellm
 from zoltraak import settings
-from zoltraak.converter.base_converter import BaseConverter
-from zoltraak.core.prompt_manager import PromptEnum, PromptManager
+from zoltraak.core.prompt_manager import PromptEnum
 from zoltraak.schema.schema import MagicInfo
 from zoltraak.utils.file_util import FileUtil
 from zoltraak.utils.log_util import log, log_inout
@@ -14,89 +13,89 @@ from zoltraak.utils.prompt_import import load_prompt
 from zoltraak.utils.subprocess_util import SubprocessUtil
 
 
-class TargetCodeGenerator(BaseConverter):
-    def __init__(self, magic_info: MagicInfo, prompt_manager: PromptManager):
-        super().__init__(magic_info, prompt_manager)
+class TargetCodeGenerator:
+    def __init__(self, magic_info: MagicInfo):
+        self.magic_info = magic_info
         self.file_info = magic_info.file_info
         self.first_code = ""
         self.last_code = ""
         self.last_exception = None
 
-    @log_inout
-    def generate_target_code(self) -> str:
-        """
-        ソースファイルからターゲットファイルを生成するメソッド
-        """
-        # 1. 準備
-        create_domain_grimoire, target_dir = self.prepare_generation()
+    # @log_inout
+    # def generate_target_code(self) -> str:
+    #     """
+    #     ソースファイルからターゲットファイルを生成するメソッド
+    #     """
+    #     # 1. 準備
+    #     create_domain_grimoire, target_dir = self.prepare_generation()
 
-        # 2. ソースファイルの読み込みと変数の作成
-        source_content, source_file_name, variables = self.load_source_and_create_variables()
+    #     # 2. ソースファイルの読み込みと変数の作成
+    #     source_content, source_file_name, variables = self.load_source_and_create_variables()
 
-        # 3. プロンプトの読み込みとコード生成
-        self.magic_info.prompt_final, code = self.load_prompt_and_generate_code(create_domain_grimoire, variables)
+    #     # 3. プロンプトの読み込みとコード生成
+    #     self.magic_info.prompt_final, code = self.load_prompt_and_generate_code(create_domain_grimoire, variables)
 
-        # 4. 生成されたコードの処理
-        self.process_generated_code(code)
+    #     # 4. 生成されたコードの処理
+    #     self.process_generated_code(code)
 
-        # 5. 結果の出力
-        self.output_results()
+    #     # 5. 結果の出力
+    #     self.output_results()
 
-        return self.file_info.target_file_path
+    #     return self.file_info.target_file_path
 
-    @log_inout
-    def prepare_generation(self):
-        """
-        ターゲットコード生成の準備を行うメソッド
-        """
-        # target_file_pathからdevと.mdを省いて、generated/ の下につなげたものをtarget_dirに設定
-        self.file_info.py_target_dir = (
-            f"generated/{os.path.splitext(os.path.basename(self.file_info.target_file_path))[0]}"
-        )
+    # @log_inout
+    #     def prepare_generation(self):
+    #         """
+    #         ターゲットコード生成の準備を行うメソッド
+    #         """
+    #         # target_file_pathからdevと.mdを省いて、generated/ の下につなげたものをtarget_dirに設定
+    #         self.file_info.py_target_dir = (
+    #             f"generated/{os.path.splitext(os.path.basename(self.file_info.target_file_path))[0]}"
+    #         )
 
-        self.print_step2_info(self.magic_info.grimoire_architect, self.file_info.py_target_dir)  # ステップ2の情報を出力
+    #         self.print_step2_info(self.magic_info.grimoire_architect, self.file_info.py_target_dir)
 
-        if not self.file_info.past_source_file_path:  # 過去のソースファイルパスが指定されている場合
-            self.save_current_source_as_past()  # - 現在のソースファイルを過去のソースファイルとして保存
+    #         if not self.file_info.past_source_file_path:  # 過去のソースファイルパスが指定されている場合
+    #             self.save_current_source_as_past()  # - 現在のソースファイルを過去のソースファイルとして保存
 
-        return self.magic_info.grimoire_architect, self.file_info.py_target_dir
+    #         return self.magic_info.grimoire_architect, self.file_info.py_target_dir
 
-    def print_step2_info(self, create_domain_grimoire, target_dir):
-        """
-        ステップ2の情報を出力するメソッド
-        """
-        log(
-            f"""
+    #     def print_step2_info(self, create_domain_grimoire, target_dir):
+    #         """
+    #         ステップ2の情報を出力するメソッド
+    #         """
+    #         log(
+    #             f"""
 
-==============================================================
-ステップ2. 魔法術式を用いて領域術式を実行する
-\033[32m領域術式\033[0m                      : {create_domain_grimoire}
-\033[32m実行術式\033[0m                      : {self.file_info.target_file_path}
-\033[32m領域対象\033[0m (ディレクトリパス)    : {target_dir}
-==============================================================
-        """
-        )
+    # ==============================================================
+    # ステップ2. 魔法術式を用いて領域術式を実行する
+    # \033[32m領域術式\033[0m                      : {create_domain_grimoire}
+    # \033[32m実行術式\033[0m                      : {self.file_info.target_file_path}
+    # \033[32m領域対象\033[0m (ディレクトリパス)    : {target_dir}
+    # ==============================================================
+    #         """
+    #         )
 
-    def load_source_and_create_variables(self):
-        """
-        ソースファイルの読み込みと変数の作成を行うメソッド
-        """
-        source_content = self.read_source_file()  # ソースファイルの内容を読み込む
-        source_file_name = self.get_source_file_name()  # ソースファイルのファイル名（拡張子なし）を取得
-        variables = self.create_variables_dict(source_content, source_file_name)  # 変数の辞書を作成
+    # def load_source_and_create_variables(self):
+    #     """
+    #     ソースファイルの読み込みと変数の作成を行うメソッド
+    #     """
+    #     source_content = self.read_source_file()  # ソースファイルの内容を読み込む
+    #     source_file_name = self.get_source_file_name()  # ソースファイルのファイル名（拡張子なし）を取得
+    #     variables = self.create_variables_dict(source_content, source_file_name)  # 変数の辞書を作成
 
-        return source_content, source_file_name, variables
+    #     return source_content, source_file_name, variables
 
-    def load_prompt_and_generate_code(self, create_domain_grimoire, variables):
-        """
-        プロンプトの読み込みとコード生成を行うメソッド
-        """
-        prompt = self.load_prompt_with_variables(
-            create_domain_grimoire, variables
-        )  # 領域術式（要件定義書）からプロンプトを読み込み、変数を埋め込む
-        code = self.generate_code(prompt)
+    # def load_prompt_and_generate_code(self, create_domain_grimoire, variables):
+    #     """
+    #     プロンプトの読み込みとコード生成を行うメソッド
+    #     """
+    #     prompt = self.load_prompt_with_variables(
+    #         create_domain_grimoire, variables
+    #     )  # 領域術式（要件定義書）からプロンプトを読み込み、変数を埋め込む
+    #     code = self.generate_code(prompt)
 
-        return prompt, code
+    #     return prompt, code
 
     def process_generated_code(self, code) -> str:
         """
@@ -216,14 +215,13 @@ class TargetCodeGenerator(BaseConverter):
         max_try_count = 3
         for i in range(max_try_count):
             if self.try_execute_generated_code_one(code):
-                log(f"コードの修正が完了しました。try{i}")
                 return True
 
             fix_code_prompt = InstantPromptBox.zoltraak.zoltraak_prompt_fix_code(
                 code=code, error_message=str(self.last_exception)
             )
             code = self.get_fixed_code(code, fix_code_prompt)
-            log(f"修正したコードを再実行します。try{i}")
+            log(f"修正したコードを再実行します。retry{i}")
         log(f"{max_try_count}回トライしましたが、エラーが解消できませんでした。スマート推論を試みます。")
         return self.try_execute_generated_code_smart(code)
 
@@ -239,13 +237,13 @@ class TargetCodeGenerator(BaseConverter):
                 code=code, error_message=str(self.last_exception), error_reason=error_reason
             )
             code = self.get_fixed_code(code, fix_code_prompt)
-            log(f"修正したコードを再実行します(smart)。try{i}")
+            log(f"修正したコードを再実行します(smart)。retry{i}")
 
             if self.try_execute_generated_code_one(code):
                 return True
 
         log(
-            f"{max_try_count}回トライしましたが、エラーが解消できませんでした(smart)。コードを確認してください。 %s",
+            f"{max_try_count}回のスマート推論でもエラーが解消できませんでした。コードを確認してください。 %s",
             self.file_info.target_file_path,
         )
         return False

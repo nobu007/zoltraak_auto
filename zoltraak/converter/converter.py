@@ -2,8 +2,6 @@ import os
 
 from zoltraak.converter.base_converter import BaseConverter
 from zoltraak.core.prompt_manager import PromptEnum, PromptManager
-from zoltraak.gen_markdown import generate_md_from_prompt
-from zoltraak.gencode import TargetCodeGenerator
 from zoltraak.schema.schema import MagicInfo, MagicLayer
 from zoltraak.utils.file_util import FileUtil
 from zoltraak.utils.log_util import log, log_head, log_inout, log_w
@@ -61,12 +59,16 @@ class MarkdownToPythonConverter(BaseConverter):
 
         # step2: 要件定義書を更新
         if self.magic_info.magic_layer is MagicLayer.LAYER_4_REQUIREMENT_GEN:
-            file_info.update_source_target(file_info.md_file_path, requirements_md_file_path)
+            file_info.update_source_target(
+                file_info.md_file_path, requirements_md_file_path, file_info.request_file_path
+            )
             file_info.update_hash()
 
         # step3: Pythonコードを作成
         if self.magic_info.magic_layer is MagicLayer.LAYER_5_CODE_GEN:
-            file_info.update_source_target(requirements_md_file_path, file_info.py_file_path)
+            file_info.update_source_target(
+                requirements_md_file_path, file_info.py_file_path, file_info.request_file_path
+            )
             file_info.update_hash()
 
     @log_inout
@@ -84,7 +86,7 @@ class MarkdownToPythonConverter(BaseConverter):
         """要件定義書(md_file) => my or pyの１ファイルを変換する"""
         if FileUtil.has_content(self.magic_info.file_info.target_file_path):
             return self.handle_existing_target_file_py()
-        return self.handle_new_target_file_py()
+        return self.handle_new_target_file()
 
     @log_inout
     def handle_existing_target_file_py(self) -> str:  # noqa: PLR0911
@@ -99,48 +101,26 @@ class MarkdownToPythonConverter(BaseConverter):
                 # TODO: 次処理に進むのプロンプトなし時だけなのか？全体に薄く適用するformatterみたいなケースは不要？
                 if file_info.source_hash and file_info.source_hash == embedded_hash:
                     # 重要: is_same_promptはpast_promptとself.magic_infoを比較するため、ここで設定する必要がある
-                    PromptEnum.INPUT.set_current_prompt(self.magic_info.prompt_input, self.magic_info)
+                    PromptEnum.INPUT.set_current_prompt(self.magic_info.prompt_final, self.magic_info)
                     if self.prompt_manager.is_same_prompt(
-                        self.magic_info, PromptEnum.INPUT
+                        self.magic_info, PromptEnum.FINAL
                     ):  # -- 前回と同じプロンプトの場合
-                        if self.is_same_target_as_past():
-                            log("過去のターゲットファイルと同一のためコード生成をスキップします。")
-                            self.magic_info.history_info += " ->コード生成をスキップ"
-                            return file_info.target_file_path
-                        log(
-                            f"prompt_inputの適用が完了しました。コード生成プロセスを開始します。{file_info.target_file_path}"
-                        )
-                        self.magic_info.history_info += " ->コード生成開始"
-                        SubprocessUtil.run(["python", file_info.target_file_path], check=False)
-                        log("コード生成プロセスが完了しました。")
-                        self.magic_info.history_info += " ->コード生成完了"
-                        return file_info.target_file_path  # TODO: サブプロセスで作った別ファイルの情報は不要？
+                        log("過去のターゲットファイルと同一のためコード生成をスキップします。")
+                        self.magic_info.history_info += " ->コード生成をスキップ"
+                        return file_info.target_file_path
 
-                    # プロンプトがある場合はプロンプトを再適用してtargetを更新
-                    self.magic_info.history_info += " ->プロンプトを再適用"
-                    # promptをファイルに保存
-                    self.save_prompt(self.magic_info.prompt_input, PromptEnum.INPUT)
-                    SubprocessUtil.run(
-                        [
-                            "zoltraak",
-                            "-n",
-                            file_info.canonical_name,
-                            "-p",
-                            self.magic_info.prompt_input,
-                            "-ml",
-                            MagicLayer.LAYER_5_CODE_GEN,
-                            "-mle",
-                            MagicLayer.LAYER_5_CODE_GEN,
-                            "-mm",
-                            "grimoire_only",
-                        ],
-                        check=False,
-                    )
-                    # target に埋め込まれたハッシュがsource (最新)に一致してたらスキップ
+                    # 前回のプロンプトと異なる場合は再適用してコード生成
+                    output_file_path = self.handle_existing_target_file()
+                    log(f"prompt_inputの適用が完了しました。コード生成プロセスを開始します。{output_file_path}")
+                    self.magic_info.history_info += " ->コード生成開始"
+                    SubprocessUtil.run(["python", output_file_path], check=False)
+                    log("コード生成プロセスが完了しました。")
+                    self.magic_info.history_info += " ->コード生成完了"
+                    return file_info.target_file_path  # TODO: サブプロセスで作った別ファイルの情報は不要？
+
                     # TODO: ハッシュ運用検討
                     # source が同じでもコンパイラやプロンプトの更新でtarget が変わる可能性もある？
                     # どこかにtarget のinput全部を詰め込んだハッシュが必要？
-                    return file_info.target_file_path
 
                 # file_info.source_hash != embedded_hash または promptで修正要求がある場合
                 # source が変わってたらtarget を作り直す
@@ -157,29 +137,17 @@ class MarkdownToPythonConverter(BaseConverter):
         self.magic_info.history_info += " ->再作成(想定外)"
         return self.handle_new_target_file_py()
 
-    @log_inout
-    def handle_new_target_file_py(self) -> str:
-        """ソースコード(py_file)を新規作成する"""
-        file_info = self.magic_info.file_info
-        log(
-            f"""
-高級言語コンパイル中: {file_info.target_file_path}は新しいファイルです。少々お時間をいただきます。
-{file_info.source_file_path} -> {file_info.target_file_path}
-                """
-        )
-        target = TargetCodeGenerator(self.magic_info, self.prompt_manager)
-        return target.generate_target_code()
 
-    @log_inout
-    def handle_new_target_file_md(self) -> str:
-        """要件定義書(md_file)を新規作成する
-        TODO: BaseConverter.handle_new_target_file() に統合する"""
-        file_info = self.magic_info.file_info
-        log(
-            f"""
-要件定義書執筆中(requirements): {file_info.target_file_path}は新しいファイルです。少々お時間をいただきます。
-{file_info.source_file_path} -> {file_info.target_file_path}
-            """
-        )
-        self.magic_info.history_info += " ->要件定義(requirements)新規作成"
-        return generate_md_from_prompt(self.magic_info)
+#     @log_inout
+#     def handle_new_target_file_md(self) -> str:
+#         """要件定義書(md_file)を新規作成する
+#         TODO: BaseConverter.handle_new_target_file() に統合する"""
+#         file_info = self.magic_info.file_info
+#         log(
+#             f"""
+# 要件定義書執筆中(requirements): {file_info.target_file_path}は新しいファイルです。少々お時間をいただきます。
+# {file_info.source_file_path} -> {file_info.target_file_path}
+#             """
+#         )
+#         self.magic_info.history_info += " ->要件定義(requirements)新規作成"
+#         return self.generate_md_from_prompt(self.magic_info)

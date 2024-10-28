@@ -3,7 +3,7 @@ from typing import ClassVar
 
 from zoltraak import settings
 from zoltraak.core.prompt_manager import PromptEnum, PromptManager
-from zoltraak.gen_markdown import generate_md_from_prompt
+from zoltraak.gencode import TargetCodeGenerator
 from zoltraak.schema.schema import EMPTY_CONTEXT_FILE, MagicInfo, MagicLayer, SourceTargetSet
 from zoltraak.utils.diff_util import DiffUtil
 from zoltraak.utils.file_util import FileUtil
@@ -23,6 +23,22 @@ class BaseConverter:
         structure_file_path
         md_file_path
         py_file_path
+
+    呼び出し構成(通常):
+        prepare()
+        magic_workflow.pre_process()
+        convert()
+            -> handle_existing_target_file() or handle_new_target_file()
+        magic_workflow.post_process()
+
+    呼び出し構成(非同期版):
+        prepare()
+        prepare_generation(): 処理対象のlist[SourceTargetSet]を返す
+        非同期で以下を並列実行
+            magic_workflow.pre_process()
+            convert()
+                -> handle_existing_target_file() or handle_new_target_file()
+            magic_workflow.post_process()
     """
 
     DEF_MAX_PROMPT_SIZE_FOR_DIFF = 5000  # 大きすぎるdiffは破綻しがちなので制限
@@ -365,6 +381,7 @@ class BaseConverter:
 
     @log_inout
     def handle_new_target_file(self):
+        """ターゲットファイル(md_fileまたはpy_file)を新規作成する"""
         file_info = self.magic_info.file_info
         log_change(
             f"新ファイル生成中:\n{file_info.target_file_path}は新しいファイルです。少々お時間をいただきます。",
@@ -372,7 +389,20 @@ class BaseConverter:
             file_info.target_file_path,
         )
         self.magic_info.history_info += " ->新ファイル生成"
-        return generate_md_from_prompt(self.magic_info)
+        if file_info.target_file_path.endswith(".py"):
+            return self.handle_new_target_file_py()
+        return self.generate_md_from_prompt()
+
+    @log_inout
+    def handle_new_target_file_py(self) -> str:
+        """ソースコード(py_file)を新規作成する"""
+        log("高級言語コンパイル中: ソースコード(py_file)を新規作成しています。")
+        output_file_path = self.generate_py_from_prompt()
+
+        log("ソースコード(py_file)を実行しています。")
+        code = FileUtil.read_file(output_file_path)
+        target = TargetCodeGenerator(self.magic_info)
+        return target.process_generated_code(code)
 
     def is_same_source_as_past(self) -> bool:
         file_info = self.magic_info.file_info
@@ -454,6 +484,20 @@ class BaseConverter:
         )  # 生成された要件定義書の内容をファイルに保存
         self.print_generation_result(output_file_path)  # 生成結果を出力
         return output_file_path
+
+    def generate_py_from_prompt(self) -> str:
+        """
+        prompt_finalから任意のpyファイルを生成する関数
+        """
+        code = self.generate_response(
+            prompt_enum=PromptEnum.FINAL,
+            prompt=self.magic_info.prompt_final,
+            max_tokens=settings.max_tokens_generate_code,
+            temperature=settings.temperature_generate_code,
+            model_name=self.magic_info.model_name,
+        )
+        code = code.replace("```python", "").replace("```", "")
+        return FileUtil.write_file(self.magic_info.file_info.target_file_path, code)
 
     def save_md_content(self, md_content, target_file_path) -> str:
         """

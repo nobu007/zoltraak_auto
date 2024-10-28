@@ -29,11 +29,10 @@ from zoltraak.utils.process_text import `normal`
         filesリストの要素を順にループ。各要素は (ディレクトリ名, ファイル名, プロンプト) のタプル
             モジュール記載忘れないように
             全てのファイルは`generate_response(model, prompt, max_tokens, temperature)`をもちいてfor文で然るべき内容を記載
-                <!-- - モデル名を指定: "claude-3-haiku-20240307" -->
                 - モデル名を指定: "gemini/gemini-1.5-flash"
                 - プロンプト: readme_content + 改行 + "上記の内容をもとにして" + prompt
-                - 最大トークン数を指定: 1000
-                - 温度パラメータを指定: 0.7
+                - 最大トークン数を指定: 12800
+                - 温度パラメータを指定: 1.0
             出力結果は normal(response, "python")   にて加工して
         フォーマットしたレスポンスをファイルに書き込む
 3. 生成したコードは即座に実行可能な状態にすること

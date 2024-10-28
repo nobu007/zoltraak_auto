@@ -2,7 +2,7 @@ import os
 import re
 from enum import Enum
 
-from zoltraak.schema.schema import MagicInfo
+from zoltraak.schema.schema import MagicInfo, MagicLayer
 from zoltraak.utils.diff_util import DiffUtil
 from zoltraak.utils.file_util import FileUtil
 from zoltraak.utils.log_util import log, log_e, log_inout
@@ -103,15 +103,31 @@ class PromptManager:
         - canonical_name(=source_org)
         - プロンプト(ユーザ要求 or ユーザ要求記述書)
         - コンテキスト(プロンプトに含める設計)
-        - グリモア(compiler, formatter)
+        - グリモア(compiler, formatter, architect)
         """
         compiler_path = magic_info.get_compiler_path()
         formatter_path = magic_info.get_formatter_path()
+        architect_path = magic_info.get_architect_path()
         language = magic_info.language
+        file_info = magic_info.file_info
 
-        prompt_final = self.create_prompt(
-            magic_info.prompt_goal, compiler_path, formatter_path, language, magic_info.file_info.destiny_file_path
-        )  # プロンプトを作成
+        if magic_info.magic_layer == MagicLayer.LAYER_5_CODE_GEN:
+            # コード生成時はarchitectを利用する
+            source_content = FileUtil.read_file(file_info.source_file_path)
+            prompt_final = self.create_prompt_architect(
+                source_content=source_content,
+                architect_path=architect_path,
+                # source_file_nameは冒頭のdef_と拡張子の.mdが入るのでcanonical_nameを利用
+                source_file_name=file_info.canonical_name,
+                source_file_path=file_info.source_file_path,
+                destiny_file_path=magic_info.file_info.destiny_file_path,
+            )  # プロンプトを作成
+
+        else:
+            # 通常はcompilerを利用する
+            prompt_final = self.create_prompt(
+                magic_info.prompt_goal, compiler_path, formatter_path, language, magic_info.file_info.destiny_file_path
+            )  # プロンプトを作成
         log("prompt_final=\n%s\n...\n%s", prompt_final[:50], prompt_final[-5:])
         magic_info.prompt_final = prompt_final
         return prompt_final
@@ -121,7 +137,7 @@ class PromptManager:
         self, goal_prompt: str, compiler_path: str, formatter_path: str, language: str, destiny_file_path: str
     ):
         """
-        LLMへの最終的なプロンプト(prompt_final)を生成を作成する関数
+        LLMへの最終的なプロンプト(prompt_final)を生成を作成する関数(compiler版)
 
         Returns:
             str: 作成されたプロンプト
@@ -134,6 +150,45 @@ class PromptManager:
             prompt_final += "\n\n"
         if os.path.exists(formatter_path):
             prompt_final = self.apply_fomatter(prompt_final, formatter_path, language)
+
+        # destiny_content
+        destiny_content = FileUtil.read_file(destiny_file_path)
+        prompt_final = (
+            "#### 前提コンテキスト(この内容は重要ではないですが、緩く全体的な判断に活用してください) ####\n"
+            + destiny_content
+            + "#### 前提コンテキスト終了 ####\n\n"
+            + prompt_final
+        )
+        log("len(prompt_final)=%d", len(prompt_final))
+
+        return prompt_final
+
+    @log_inout
+    def create_prompt_architect(
+        self,
+        source_content: str,
+        architect_path: str,
+        source_file_name: str,
+        source_file_path: str,
+        destiny_file_path: str,
+    ):
+        """
+        LLMへの最終的なプロンプト(prompt_final)を生成を作成する関数(architect版)
+
+        Returns:
+            str: 作成されたプロンプト
+        """
+
+        prompt_final = source_content
+        if os.path.isfile(architect_path):
+            # コンパイラが存在する場合、コンパイラベースでプロンプトを取得
+            replace_map = {
+                "source_content": source_content,
+                "source_file_name": source_file_name,
+                "source_file_path": source_file_path,
+            }
+            prompt_final = FileUtil.read_grimoire(file_path=architect_path, replace_map=replace_map)
+            prompt_final += "\n\n"
 
         # destiny_content
         destiny_content = FileUtil.read_file(destiny_file_path)

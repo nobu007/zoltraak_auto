@@ -44,6 +44,7 @@ class FileUtil:
         requirements_content: str = "",
         source_content: str = "",
         target_content: str = "",
+        replace_map: dict[str, str] | None = None,
     ) -> str:
         # グリモアをpromptとlanguageとcontextをreplaceして読み込む
         content = FileUtil.read_file(file_path)
@@ -52,6 +53,11 @@ class FileUtil:
         content = content.replace("{requirements_content}", requirements_content)
         content = content.replace("{source_content}", source_content)
         content = content.replace("{target_content}", target_content)
+
+        # 変数を置換する
+        if replace_map:
+            for key, value in replace_map.items():
+                content = content.replace(f"[{key}]", value)
         log(f"read_grimoire content[:100]:\n {content[:100]}")
         return content
 
