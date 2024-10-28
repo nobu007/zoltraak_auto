@@ -336,7 +336,7 @@ class MagicWorkflow:
                 )
             )
             file_info.target_file_path = output_file_path_abs
-            log(self.get_log(f"target_file_pathが更新されました。{target_file_path_abs} -> {output_file_path_abs}"))
+            log_change(self.get_log("target_file_pathが更新されました。"), target_file_path_abs, output_file_path_abs)
         else:
             log(self.get_log(f"output_file_pathコピー不要です。 :  {output_file_path_abs}"))
         return target_file_path_abs
