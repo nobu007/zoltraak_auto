@@ -129,7 +129,7 @@ class FileUtil:
             log_i("=" * 80)
 
     @staticmethod
-    def find_files(root_path: str, ext: str = ".py") -> list[str]:
+    def find_files(root_path: str, ext: str = ".py") -> tuple[list[str], list[str]]:
         """Find files in the root_path
 
         Args:
@@ -139,11 +139,13 @@ class FileUtil:
             list[str]: list of file paths
         """
         file_paths = []
+        dir_paths = []
         if os.path.isdir(root_path):  # noqa: PTH112
             for path in pathlib.Path(root_path).glob(f"**/*{ext}"):
                 if path.is_file():
                     log(path)
                     file_paths.append(str(path.resolve()))
-            return file_paths
+                elif path.is_dir():
+                    dir_paths.append(str(path.resolve()))
 
-        return file_paths
+        return file_paths, dir_paths

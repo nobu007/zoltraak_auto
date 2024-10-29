@@ -39,7 +39,9 @@ class FileRemover(BaseConverter):
         )
 
         # step2: ファイルリストを取得
-        file_paths = FileUtil.find_files(file_info.target_dir, "")  # 拡張子が空文字列の場合は全ファイルを取得
+        file_paths, dir_paths = FileUtil.find_files(
+            file_info.target_dir, ""
+        )  # 拡張子が空文字列の場合は全ファイルを取得
 
         # step3: ファイルリストとファイル構造定義書を比較して、不要ファイルを削除
         self.magic_info.history_info += " ->クリーンアップ(対象なしでスキップ)"
@@ -53,7 +55,15 @@ class FileRemover(BaseConverter):
                 remove_count += 1
                 self.magic_info.history_info = f"クリーンアップ(削除ファイル数: {remove_count})"
 
-                removed_file_paths_set.append(SourceTargetSet(source_file_path=file_path, target_file_path=file_path))
+                # 無駄な処理が発生するので追加しない
+                # removed_file_paths_set.append(SourceTargetSet(source_file_path=file_path, target_file_path=file_path))
+
+        # step4: フォルダリストから空フォルダを削除
+        for dir_path in sorted(dir_paths, reverse=True):  # 末端から削除するためソート
+            if not os.listdir(dir_path):
+                log("remove dir_path= %s", dir_path)
+                os.rmdir(dir_path)  # noqa: PTH106, TH106
+
         return removed_file_paths_set
 
     @log_inout
