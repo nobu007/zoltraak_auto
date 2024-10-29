@@ -389,7 +389,7 @@ class BaseConverter:
             file_info.target_file_path,
         )
         self.magic_info.history_info += " ->新ファイル生成"
-        if file_info.target_file_path.endswith(".py"):
+        if self.magic_info.magic_layer == MagicLayer.LAYER_5_CODE_GEN and file_info.target_file_path.endswith(".py"):
             return self.handle_new_target_file_py()
         return self.generate_md_from_prompt()
 

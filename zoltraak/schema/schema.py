@@ -167,6 +167,7 @@ class FileInfo(BaseModel):
     # ルートディレクトリ
     work_dir: str = Field(default=os.getcwd(), description="作業ディレクトリ")
     target_dir: str = Field(default="./generated", description="出力先のルートディレクトリ")
+    final_dir: str = Field(default="./generated_final", description="出力先のルートディレクトリ(修正版)")
     py_target_dir: str = Field(default="./generated/xxxx", description="python出力先のディレクトリ")
     past_dir: str = Field(default="./past", description="過去の出力先のルートディレクトリ")
     past_source_dir: str = Field(default="./past/source", description="過去のソースフォルダ")

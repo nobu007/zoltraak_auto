@@ -156,7 +156,7 @@ class PromptManager:
         prompt_final = (
             "#### 前提コンテキスト(この内容は重要ではないですが、緩く全体的な判断に活用してください) ####\n"
             + destiny_content
-            + "#### 前提コンテキスト終了 ####\n\n"
+            + "\n#### 前提コンテキスト終了 ####\n\n"
             + prompt_final
         )
         log("len(prompt_final)=%d", len(prompt_final))

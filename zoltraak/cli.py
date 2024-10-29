@@ -302,6 +302,7 @@ def process_markdown_file(params: ZoltraakParams) -> MagicInfo:
     magic_info.file_info.update_work_dir()
     magic_info.file_info.update(canonical_name)
     magic_info.file_info.target_dir = output_dir_abs
+    magic_info.file_info.final_dir = output_dir_abs + "_final"
 
     # その他
     magic_info.success_message = ""  # 後で設定する
