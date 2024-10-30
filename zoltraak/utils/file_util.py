@@ -107,12 +107,14 @@ class FileUtil:
         file_path_list = []
         for file_path_rel in structure_file_content.split("\n"):
             log("check file_path_rel= %s", file_path_rel)
-            file_path = os.path.abspath(os.path.join(base_dir, canonical_name, file_path_rel))
-            if os.path.isfile(file_path):
+            file_path = os.path.abspath(os.path.join(base_dir, file_path_rel))
+            if canonical_name not in file_path:
+                # canonical_nameが入ってない場合は付与
+                file_path = os.path.abspath(os.path.join(base_dir, canonical_name, file_path_rel))
+            if "```" not in file_path:
+                # plaintxtの囲み部分でなければ採用（チェック時に存在しなくても登録が必要）
                 file_path_list.append(file_path)
                 log("append file_path= %s", file_path)
-            else:
-                log("not exist= %s", file_path)
         return file_path_list
 
     @staticmethod

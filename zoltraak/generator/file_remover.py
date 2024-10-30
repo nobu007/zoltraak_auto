@@ -90,6 +90,13 @@ class FileRemover(BaseConverter):
         file_path="./src/utils/file_util_test.py" は削除対象ではない
         file_path="./utils/file_util.py" は削除対象
         """
+        # ただし、次の例外ワードを含むファイルは削除しない
+        not_remove_word_list = ["info_structure.md"]
+        for not_remove_word in not_remove_word_list:
+            if not_remove_word in file_path:
+                return False
+
+        # 削除判定メイン処理
         for code_file_path in code_file_path_list:  # noqa: SIM110
             code_file_path_without_ext = os.path.splitext(code_file_path)[0]
             if code_file_path_without_ext in file_path:

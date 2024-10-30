@@ -2,7 +2,7 @@
 
 plain txt で省略なしのディレクトリ、ファイル構成のみを記載してください。
 
-## ゴール:
+## ゴール
 
 <goal_prompt>
 {prompt}
@@ -11,7 +11,7 @@ plain txt で省略なしのディレクトリ、ファイル構成のみを記�
 ## 1. ファイル・フォルダ構成
 
 - plain txt で省略なしのディレクトリ、ファイル構成
-- ルートディレクトリから下層のディレクトリの中の複数ファイル名まで網羅的に記載（内容は必要なし）
+- ルートディレクトリ(通常は generated)から下層のディレクトリの中の複数ファイル名まで網羅的に記載（内容は必要なし）
 - 空のディレクトリを作らない
 
 ## 2. 注意点
@@ -23,12 +23,16 @@ plain txt で省略なしのディレクトリ、ファイル構成のみを記�
 ## 3. サンプル
 
 次のようにファイルパスのみを列記してください。
-後ほどプログラムでファイルリストを使って一括処理します。
+後ほどプログラムでファイルリストを使って一括処理するのでミスなく正確にお願いします。
 
-```
-InstantPromptBox/README.md
-InstantPromptBox/pyproject.toml
-InstantPromptBox/prompts/zoltraak/zoltraak_prompt_aaaa.md
-InstantPromptBox/prompts/zoltraak/zoltraak_prompt_aaaa.py
-InstantPromptBox/src/main.py
+XXXX はシステムを一意に識別するための canonical_name です。
+YYYY は python パッケージなどの最上位のサブフォルダです。
+
+```plaintext
+XXXX/pyproject.toml
+XXXX/README.md
+XXXX/YYYY/pyproject.toml
+XXXX/YYYY/prompts/zoltraak/zoltraak_prompt_aaaa.md
+XXXX/YYYY/prompts/zoltraak/zoltraak_prompt_aaaa.py
+XXXX/YYYY/src/main.py
 ```
