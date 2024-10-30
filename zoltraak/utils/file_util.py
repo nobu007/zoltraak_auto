@@ -68,6 +68,13 @@ class FileUtil:
         return file_path_abs
 
     @staticmethod
+    def write_prompt(md_content: str, file_path_abs: str) -> str:
+        # 空のコンテンツは書かない
+        if md_content:
+            FileUtil.write_file(file_path_abs, md_content)
+        return file_path_abs
+
+    @staticmethod
     def read_md_recursive(file_path: str) -> str:
         """mdファイルを再帰的に読み込む"""
         log("file_path=%s", file_path)

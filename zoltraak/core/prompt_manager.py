@@ -60,7 +60,7 @@ class PromptManager:
         os.makedirs(os.path.dirname(prompt_output_path), exist_ok=True)
 
         # プロンプトを保存
-        FileUtil.write_file(prompt_output_path, prompt)
+        FileUtil.write_prompt(prompt, prompt_output_path)
         log("プロンプトを保存しました↓ %s:\n%s", prompt_enum, prompt_output_path)
 
     @log_inout
