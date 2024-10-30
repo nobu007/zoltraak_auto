@@ -37,19 +37,29 @@ class FileRemover(BaseConverter):
         code_file_path_list = FileUtil.read_structure_file_content(
             file_info.structure_file_path, file_info.target_dir, file_info.canonical_name
         )
+        code_file_path_final_list = FileUtil.read_structure_file_content(
+            file_info.structure_file_path, file_info.final_dir, file_info.canonical_name
+        )
 
-        # step2: ファイルリストを取得
-        file_paths, dir_paths = FileUtil.find_files(
-            file_info.target_dir, ""
-        )  # 拡張子が空文字列の場合は全ファイルを取得
+        # step2: ファイルリストとファイル構造定義書を比較して、不要ファイルを削除
+        removed_file_paths_set = self.remove_dirs(file_info.target_dir, code_file_path_list)
+        removed_dir_paths_set = self.remove_dirs(file_info.final_dir, code_file_path_final_list)
+        return removed_file_paths_set + removed_dir_paths_set
 
-        # step3: ファイルリストとファイル構造定義書を比較して、不要ファイルを削除
+    @log_inout
+    def remove_dirs(self, root_dir: str, code_file_path_list: list[str]) -> list[str]:
+        """指定フォルダ配下をルールに従って削除する"""
+
+        # ファイル,フォルダリストを取得
+        file_paths, dir_paths = FileUtil.find_files(root_dir, "")  # 拡張子が空文字列の場合は全ファイルを取得
+
+        # ファイルリストとファイル構造定義書を比較して、不要ファイルを削除
         self.magic_info.history_info += " ->クリーンアップ(対象なしでスキップ)"
         remove_count = 0
         removed_file_paths_set = []
         for file_path in tqdm(file_paths, file=sys.stdout):
             log("check file_path= %s", file_path)
-            if file_path not in code_file_path_list:
+            if FileRemover.should_remove_file(file_path, code_file_path_list):
                 log("remove file_path= %s", file_path)
                 os.remove(file_path)
                 remove_count += 1
@@ -65,6 +75,26 @@ class FileRemover(BaseConverter):
                 os.rmdir(dir_path)  # noqa: PTH106, TH106
 
         return removed_file_paths_set
+
+    @staticmethod
+    def should_remove_file(file_path: str, code_file_path_list: list[str]):
+        """削除対象かどうかを判定する
+
+        条件： どのコードファイルにも対応していないファイルは削除対象
+        対応とはコードファイルの拡張子を除いた文字列が含まれること
+
+        例：code_file_path_list=["./src/main.py", "./src/utils/file_util.py"]
+        file_path="./src/__init__.py" は削除対象
+        file_path="./src/main.py" は削除対象ではない
+        file_path="./src/main.md" は削除対象ではない
+        file_path="./src/utils/file_util_test.py" は削除対象ではない
+        file_path="./utils/file_util.py" は削除対象
+        """
+        for code_file_path in code_file_path_list:  # noqa: SIM110
+            code_file_path_without_ext = os.path.splitext(code_file_path)[0]
+            if code_file_path_without_ext in file_path:
+                return False
+        return True
 
     @log_inout
     def convert(self) -> str:
