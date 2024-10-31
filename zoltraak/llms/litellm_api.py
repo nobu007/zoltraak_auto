@@ -8,6 +8,7 @@ import litellm
 from litellm import ModelResponse, Router
 from litellm.integrations.custom_logger import CustomLogger
 
+from zoltraak import settings
 from zoltraak.utils.file_util import FileUtil
 from zoltraak.utils.log_util import log, log_w
 
@@ -256,7 +257,14 @@ class LitellmApi:
         )
         return await anyio.to_thread.run_sync(self._process_response, response, prompt)
 
-    def _generate_sync(self, model: str, prompt: str, max_tokens: int, temperature: float) -> str:
+    def _generate_sync(
+        self,
+        model: str,
+        prompt: str,
+        max_tokens: int,
+        temperature: float,
+        is_first_try: bool = True,  # noqa: FBT001
+    ) -> str:
         """Handle sync response generation."""
         router = self._get_router(model)
         response = router.completion(
@@ -264,13 +272,19 @@ class LitellmApi:
             messages=[{"content": prompt, "role": "user"}],
             max_tokens=max_tokens,
             temperature=temperature,
+            is_first_try=is_first_try,
         )
         return self._process_response(response, prompt)
 
-    def _process_response(self, response: ModelResponse, prompt: str) -> str:
+    def _process_response(self, response: ModelResponse, prompt: str, is_first_try: bool = True) -> str:  # noqa: FBT001
         """Process and validate response."""
         if not response.choices or not response.choices[0].message or not response.choices[0].message.content:
-            log_w("Invalid response received for prompt: %s", prompt)
+            log_w("Invalid response received.")
+            # 最後の手段で別modelで再度リクエストを送る
+            if is_first_try:
+                log_w("Invalid response is handled by retry with model: %s", self.DEFAULT_MODEL_CLAUDE)
+                return self._generate_sync(self.DEFAULT_MODEL_CLAUDE, prompt, settings.max_tokens_any, 1.0, False)
+            log_w("Invalid response is not recovered. prompt: %s", prompt)
             return ""
         return response.choices[0].message.content.strip()
 
