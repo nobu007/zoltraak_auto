@@ -10,7 +10,7 @@ from litellm.integrations.custom_logger import CustomLogger
 
 from zoltraak import settings
 from zoltraak.utils.file_util import FileUtil
-from zoltraak.utils.log_util import log, log_w
+from zoltraak.utils.log_util import log, log_head, log_w
 
 
 class ModelStatsLogger(CustomLogger):
@@ -255,6 +255,7 @@ class LitellmApi:
             max_tokens=max_tokens,
             temperature=temperature,
         )
+        log_head("prompt", prompt, 1000)
         return await anyio.to_thread.run_sync(self._process_response, response, prompt)
 
     def _generate_sync(
@@ -285,7 +286,9 @@ class LitellmApi:
                 return self._generate_sync(self.DEFAULT_MODEL_CLAUDE, prompt, settings.max_tokens_any, 1.0, False)
             log_w("Invalid response is not recovered. prompt: %s", prompt)
             return ""
-        return response.choices[0].message.content.strip()
+        response_text = response.choices[0].message.content.strip()
+        log_head("response_text", response_text, 1000)
+        return response_text
 
     def show_stats(self) -> None:
         """Display usage statistics."""

@@ -101,8 +101,6 @@ class TargetCodeGenerator:
         """
         生成されたコードの処理を行うメソッド
         """
-        self.write_code_to_target_file(code)  # 生成されたコードをターゲットファイルに書き込む
-
         log(f"source_hash: {self.file_info.source_hash}")
         if self.file_info.source_hash is not None:  # ソースファイルのハッシュ値が指定されている場合
             self.append_source_hash_to_target_file()  # - ソースファイルのハッシュ値をターゲットファイルに追記
@@ -110,7 +108,7 @@ class TargetCodeGenerator:
         if self.file_info.target_file_path.endswith(".py"):  # ターゲットファイルがPythonファイルの場合
             self.try_execute_generated_code(code)  # - 生成されたコードを実行
             return self.file_info.target_file_path
-        # ターゲットファイルがマークダウンファイルの場合
+        # ターゲットファイルがpy以外の場合
         return self.file_info.target_file_path
 
     def output_results(self):
@@ -167,14 +165,14 @@ class TargetCodeGenerator:
         )
         return code.replace("```python", "").replace("```", "")
 
-    def write_code_to_target_file(self, code):
-        """
-        生成されたコードをターゲットファイルに書き込むメソッド
-        """
-        os.makedirs(os.path.dirname(self.file_info.target_file_path), exist_ok=True)
-        with open(self.file_info.target_file_path, "w", encoding="utf-8") as target_file:
-            target_file.write(code)
-        log(f"ターゲットファイルにコードを書き込みました: {self.file_info.target_file_path}")
+    # def write_code_to_target_file(self, code):
+    #     """
+    #     生成されたコードをターゲットファイルに書き込むメソッド
+    #     """
+    #     os.makedirs(os.path.dirname(self.file_info.target_file_path), exist_ok=True)
+    #     with open(self.file_info.target_file_path, "w", encoding="utf-8") as target_file:
+    #         target_file.write(code)
+    #     log(f"ターゲットファイルにコードを書き込みました: {self.file_info.target_file_path}")
 
     def append_source_hash_to_target_file(self):
         """
@@ -215,13 +213,14 @@ class TargetCodeGenerator:
         max_try_count = 3
         for i in range(max_try_count):
             if self.try_execute_generated_code_one(code):
+                log(f"コード実行に成功しました。try{i}")
                 return True
 
             fix_code_prompt = InstantPromptBox.zoltraak.zoltraak_prompt_fix_code(
                 code=code, error_message=str(self.last_exception)
             )
             code = self.get_fixed_code(code, fix_code_prompt)
-            log(f"修正したコードを再実行します。retry{i}")
+            log(f"修正したコードを再実行します。try{i}")
         log(f"{max_try_count}回トライしましたが、エラーが解消できませんでした。スマート推論を試みます。")
         return self.try_execute_generated_code_smart(code)
 
@@ -237,9 +236,10 @@ class TargetCodeGenerator:
                 code=code, error_message=str(self.last_exception), error_reason=error_reason
             )
             code = self.get_fixed_code(code, fix_code_prompt)
-            log(f"修正したコードを再実行します(smart)。retry{i}")
+            log(f"修正したコードを再実行します(スマート推論)。retry{i}")
 
             if self.try_execute_generated_code_one(code):
+                log(f"コード実行に成功しました(スマート推論)。try{i}")
                 return True
 
         log(

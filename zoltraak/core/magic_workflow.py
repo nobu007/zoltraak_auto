@@ -151,13 +151,15 @@ class MagicWorkflow:
     ):
         log_progress(progress_bar)
 
-        # 非同期用に入出力情報の格納先をコピー
+        # 非同期用のオブジェクトをコピー
         converter_copy = copy.copy(converter)
         magic_info_copy = copy.copy(converter_copy.magic_info)
         file_info_copy = copy.copy(magic_info_copy.file_info)
         self.magic_workflow_info.magic_info_list.append(magic_info_copy)
+        # コピーしたオブジェクト間の参照関係を設定
         converter_copy.magic_info = magic_info_copy
-        converter_copy.magic_info.file_info = file_info_copy
+        magic_info_copy.file_info = file_info_copy
+        # SourceTargetSetをコピーに反映
         file_info_copy.update_source_target(
             source_target_set.source_file_path,
             source_target_set.target_file_path,
@@ -215,7 +217,7 @@ class MagicWorkflow:
         context_file_path = file_info.context_file_path
         if FileUtil.has_content(context_file_path):
             context_content = FileUtil.read_file(context_file_path)
-            log(self.get_log(f"コンテキストファイル読込:  {file_info.context_file_path}"))
+            log(self.get_log(f"コンテキストファイル読込:  {context_file_path}"))
             prompt_goal += f"\n\n<<背景情報>>\n{context_content}"
 
         # prompt_goalを更新
