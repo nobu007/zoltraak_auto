@@ -237,8 +237,8 @@ class MagicWorkflow:
         # プロンプトを保存（実行時にも保存するが、prompt_finalとかが保存できないので、ここでも保存）
         self.prompt_manager.save_prompts(magic_info)
 
-        # target_file_pathにコピーを配置
-        self.copy_output_to_target(magic_info)
+        # target_file_pathにコピーを配置(非同期実行のoutputが未設定なので無効化 TODO: 非同期の結果をoutputに設定)
+        # self.copy_output_to_target(magic_info)
 
         # 過去のファイルを保存
         self.copy_past_files(magic_info)
