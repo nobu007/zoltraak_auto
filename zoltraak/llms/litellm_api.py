@@ -272,9 +272,8 @@ class LitellmApi:
             messages=[{"content": prompt, "role": "user"}],
             max_tokens=max_tokens,
             temperature=temperature,
-            is_first_try=is_first_try,
         )
-        return self._process_response(response, prompt)
+        return self._process_response(response=response, prompt=prompt, is_first_try=is_first_try)
 
     def _process_response(self, response: ModelResponse, prompt: str, is_first_try: bool = True) -> str:  # noqa: FBT001
         """Process and validate response."""
