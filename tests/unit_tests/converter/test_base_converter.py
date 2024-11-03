@@ -23,7 +23,7 @@ ALL_MOCK_UPDATE_TARGET_FILE_FROM_SOURCE_DIFF = (
     "zoltraak.converter.base_converter.BaseConverter.update_target_file_from_source_diff"
 )
 MOCK_HANDLE_NEW_TARGET_FILE = "zoltraak.converter.base_converter.BaseConverter.handle_new_target_file"
-MOCK_GENERATE_MD_FROM_PROMPT = "zoltraak.converter.base_converter.generate_md_from_prompt"
+MOCK_GENERATE_MD_FROM_PROMPT = "zoltraak.converter.base_converter.BaseConverter.generate_md_from_prompt"
 
 # キーワード定義
 PROMPT_KEYWORD = "<<追加指示>>"

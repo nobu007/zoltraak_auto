@@ -19,8 +19,6 @@ from zoltraak.utils.file_util import FileUtil
 #    a. MOCK_(関数名): 単独のテストだけに使用するモック
 #    a. ALL_MOCK_(関数名)： 全てのテストで使用するモック
 MOCK_GENERATE_TARGET_CODE = "zoltraak.gencode.TargetCodeGenerator.generate_target_code"
-MOCK_GENERATE_MD_FROM_PROMPT = "zoltraak.md_generator.generate_md_from_prompt_recursive"
-MOCK_GENERATE_MD_FROM_PROMPT2 = "zoltraak.gen_markdown.generate_md_from_prompt"
 PROMPT_KEYWORD = "zoltraakシステムは曖昧なユーザー入力を"
 
 # キーワード定義
