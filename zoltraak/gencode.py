@@ -174,6 +174,17 @@ class TargetCodeGenerator:
         """
         ソースファイルのハッシュ値をターゲットファイルに追記するメソッド
         """
+        # 過去のハッシュ値を削除
+        with open(self.file_info.target_file_path, "r+", encoding="utf-8") as target_file:
+            lines = target_file.readlines()
+            if lines and lines[-1].startswith("# HASH:"):
+                lines = lines[:-1]  # 最後の行がハッシュ値の場合、削除
+                if lines and lines[-1] == "\n":  # 削除後に空白行が残っている場合、空白行も削除
+                    lines = lines[:-1]
+            target_file.seek(0)
+            target_file.truncate()
+            target_file.writelines(lines)
+
         log(f"source_hash: {self.file_info.source_hash}")
         if self.file_info.source_hash:  # ソースファイルのハッシュ値が指定されている場合
             with open(self.file_info.target_file_path, "a", encoding="utf-8") as target_file:
