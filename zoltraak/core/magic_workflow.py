@@ -140,8 +140,31 @@ class MagicWorkflow:
     async def process_source_target_sets(
         self, converter: BaseConverter, source_target_set_list: list[SourceTargetSet], progress_bar: tqdm
     ):
-        tasks = []
+        # 同一のターゲットファイルのソースファイルをマージする
+        target_source_map = {}
+        target_context_map = {}
         for source_target_set in source_target_set_list:
+            target = source_target_set.target_file_path
+            source = source_target_set.source_file_path
+            context = source_target_set.context_file_path
+            if target in target_source_map:
+                target_source_map[target] += "\n\n" + source
+            else:
+                target_source_map[target] = source
+            target_context_map[target] = context  # コンテキストファイルは最後のものを使う
+
+        # マージしたソースファイルをSourceTargetSetに戻す
+        source_target_set_list_merged = []
+        for target, source in target_source_map.items():
+            source_target_set = SourceTargetSet()
+            source_target_set.source_file_path = source
+            source_target_set.target_file_path = target
+            source_target_set.context_file_path = target_context_map[target]
+            source_target_set_list_merged.append(source_target_set)
+
+        # 非同期処理を実行
+        tasks = []
+        for source_target_set in source_target_set_list_merged:
             task = self.process_single_set(converter, source_target_set, progress_bar)
             tasks.append(task)
         tqdm_asyncio.as_completed(await asyncio.gather(*tasks, return_exceptions=True))

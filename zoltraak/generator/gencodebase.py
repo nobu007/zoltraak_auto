@@ -25,7 +25,8 @@ class CodeBaseGenerator(BaseConverter):
         self.acceptable_layers = [
             MagicLayer.LAYER_6_CODEBASE_GEN,
             MagicLayer.LAYER_7_INFO_STRUCTURE_GEN,
-            MagicLayer.LAYER_8_CODE_GEN,
+            MagicLayer.LAYER_8_INFO_STRUCTURE_GEN,
+            MagicLayer.LAYER_9_CODE_GEN,
         ]
         self.name = "CodeBaseGenerator"
 
@@ -76,19 +77,26 @@ class CodeBaseGenerator(BaseConverter):
             self.magic_info.grimoire_compiler = "dev_obj_file.md"
         elif self.magic_info.magic_layer is MagicLayer.LAYER_7_INFO_STRUCTURE_GEN:
             # MagicLayer.LAYER_7_INFO_STRUCTURE_GEN
-            # 詳細設計書 => 情報構造体
+            # 詳細設計書 => 情報構造体要素
             source_file_path = code_base_file_path
+            target_file_path = code_base_file_path + "_info_structure.md"
+            context_file_path = info_structure_file_path
+            self.magic_info.grimoire_compiler = "dev_info_structure.md"
+        elif self.magic_info.magic_layer is MagicLayer.LAYER_8_INFO_STRUCTURE_GEN:
+            # MagicLayer.LAYER_8_INFO_STRUCTURE_GEN
+            # 情報構造体要素 => 情報構造体
+            source_file_path = code_base_file_path + "_info_structure.md"
             target_file_path = info_structure_file_path
             context_file_path = self.magic_info.file_info.request_file_path
-            self.magic_info.grimoire_compiler = "dev_obj_modify.md"
-        elif self.magic_info.magic_layer is MagicLayer.LAYER_8_CODE_GEN:
-            # MagicLayer.LAYER_8_CODE_GEN
+            self.magic_info.grimoire_compiler = "dev_info_structure_final.md"
+        elif self.magic_info.magic_layer is MagicLayer.LAYER_9_CODE_GEN:
+            # MagicLayer.LAYER_9_CODE_GEN
             # 情報構造体 => 最終コード（再作成）
             code_file_path_rel = os.path.relpath(code_file_path, self.magic_info.file_info.target_dir)
             code_file_path_final = os.path.join(self.magic_info.file_info.final_dir, code_file_path_rel)
-            source_file_path = info_structure_file_path
+            source_file_path = code_base_file_path
             target_file_path = code_file_path_final
-            context_file_path = self.magic_info.file_info.request_file_path
+            context_file_path = info_structure_file_path
             self.magic_info.grimoire_compiler = "dev_obj_final.md"
         else:
             # 呼ばれないはず

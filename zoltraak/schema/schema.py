@@ -53,9 +53,10 @@ class MagicLayer(str, Enum):
     LAYER_4_REQUIREMENT_GEN = "layer_4_requirement_gen"  # 要件定義書 => 要件定義書(requirements)
     LAYER_5_CODE_GEN = "layer_5_code_gen"  # 要件定義書(requirements) => Pythonコード（ファイル生成用）＋最終コード
     LAYER_6_CODEBASE_GEN = "layer_6_codebase_gen"  # 最終コード => コードベース
-    LAYER_7_INFO_STRUCTURE_GEN = "layer_7_info_structure_gen"  # コードベース => 情報構造体
-    LAYER_8_CODE_GEN = "layer_8_code_gen"  #  情報構造体 => 最終コード（再作成）
-    LAYER_9_CLEAN_UP = "layer_9_clean_up"  # ファイル構造定義書 => 不要ファイル削除
+    LAYER_7_INFO_STRUCTURE_GEN = "layer_7_info_structure_gen"  # コードベース => 情報構造体(個別)
+    LAYER_8_INFO_STRUCTURE_GEN = "layer_8_info_structure_gen"  # 情報構造体(個別) => 情報構造体
+    LAYER_9_CODE_GEN = "layer_9_code_gen"  #  情報構造体 => 最終コード（再作成）
+    LAYER_10_CLEAN_UP = "layer_10_clean_up"  # ファイル構造定義書 => 不要ファイル削除
 
     def __str__(self):
         return self.__repr__()
