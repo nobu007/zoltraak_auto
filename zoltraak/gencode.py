@@ -5,7 +5,6 @@ from instant_prompt_box import InstantPromptBox
 
 import zoltraak.llms.litellm_api as litellm
 from zoltraak import settings
-from zoltraak.core.prompt_manager import PromptEnum
 from zoltraak.schema.schema import MagicInfo
 from zoltraak.utils.file_util import FileUtil
 from zoltraak.utils.log_util import log, log_inout
@@ -101,9 +100,7 @@ class TargetCodeGenerator:
         """
         生成されたコードの処理を行うメソッド
         """
-        log(f"source_hash: {self.file_info.source_hash}")
-        if self.file_info.source_hash is not None:  # ソースファイルのハッシュ値が指定されている場合
-            self.append_source_hash_to_target_file()  # - ソースファイルのハッシュ値をターゲットファイルに追記
+        self.append_source_hash_to_target_file()  # - ソースファイルのハッシュ値をターゲットファイルに追記
 
         if self.file_info.target_file_path.endswith(".py"):  # ターゲットファイルがPythonファイルの場合
             self.try_execute_generated_code(code)  # - 生成されたコードを実行
@@ -156,31 +153,32 @@ class TargetCodeGenerator:
         log("create_domain_grimoire=%s", create_domain_grimoire)
         return load_prompt(create_domain_grimoire, variables)
 
-    def generate_code(self, prompt):
-        code = self.generate_response(
-            prompt_enum=PromptEnum.FINAL,
-            prompt=prompt,
-            max_tokens=settings.max_tokens_generate_code,
-            temperature=settings.temperature_generate_code,
-        )
-        return code.replace("```python", "").replace("```", "")
+    # def generate_code(self, prompt):
+    #     code = self.generate_response(
+    #         prompt_enum=PromptEnum.FINAL,
+    #         prompt=prompt,
+    #         max_tokens=settings.max_tokens_generate_code,
+    #         temperature=settings.temperature_generate_code,
+    #     )
+    #     return code.replace("```python", "").replace("```", "")
 
-    # def write_code_to_target_file(self, code):
-    #     """
-    #     生成されたコードをターゲットファイルに書き込むメソッド
-    #     """
-    #     os.makedirs(os.path.dirname(self.file_info.target_file_path), exist_ok=True)
-    #     with open(self.file_info.target_file_path, "w", encoding="utf-8") as target_file:
-    #         target_file.write(code)
-    #     log(f"ターゲットファイルにコードを書き込みました: {self.file_info.target_file_path}")
+    def write_code_to_target_file(self, target_file_path: str) -> None:
+        """
+        生成されたコードをターゲットファイルに書き込むメソッド
+        """
+        FileUtil.write_file(file_path=target_file_path, content=self.last_code)
+        log(f"ターゲットファイルにコードを書き込みました: {target_file_path}")
+        self.append_source_hash_to_target_file()  # - ソースファイルのハッシュ値をターゲットファイルに追記
 
     def append_source_hash_to_target_file(self):
         """
         ソースファイルのハッシュ値をターゲットファイルに追記するメソッド
         """
-        with open(self.file_info.target_file_path, "a", encoding="utf-8") as target_file:
-            target_file.write(f"\n# HASH: {self.file_info.source_hash}\n")
-        log(f"ターゲットファイルにハッシュ値を埋め込みました: {self.file_info.source_hash}")
+        log(f"source_hash: {self.file_info.source_hash}")
+        if self.file_info.source_hash:  # ソースファイルのハッシュ値が指定されている場合
+            with open(self.file_info.target_file_path, "a", encoding="utf-8") as target_file:
+                target_file.write(f"\n# HASH: {self.file_info.source_hash}\n")
+            log(f"ターゲットファイルにハッシュ値を埋め込みました: {self.file_info.source_hash}")
 
     @log_inout
     def try_execute_generated_code_one(self, code) -> bool:

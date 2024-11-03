@@ -18,7 +18,8 @@ class ModelStatsLogger(CustomLogger):
         self.stats = defaultdict(lambda: {"count": 0, "total_tokens": 0, "start_time": None, "end_time": None})
 
     def log_success_event(self, kwargs, response_obj, start_time, end_time):
-        log_w("log_success_event start_time=%s, end_time=%s", start_time, end_time)
+        duration_time = end_time - start_time
+        log_w("log_success_event duration_time=%s", duration_time)
         model = kwargs["model"]
         if response_obj and "usage" in response_obj:
             tokens = response_obj["usage"].get("total_tokens", 0)

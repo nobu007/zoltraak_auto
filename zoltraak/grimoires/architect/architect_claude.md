@@ -20,7 +20,7 @@ from zoltraak.utils.process_text import `normal`
     ]
     ```
     補足説明:
-    ・dirname: ディレクトリ名(root_dirからの相対パス)
+    ・dirname: ディレクトリ名(root_dirからの相対パス)※ファイル名を含まない
     ・filename: ファイル名(拡張子あり)
     ・prompt: ファイル作成のためのプロンプト
     prompt部分は最重要かつ複雑なので順を追って説明する。注意深く正確な作業をお願いしたい。

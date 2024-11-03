@@ -389,7 +389,7 @@ class BaseConverter:
             file_info.target_file_path,
         )
         self.magic_info.history_info += " ->新ファイル生成"
-        if self.magic_info.magic_layer == MagicLayer.LAYER_5_CODE_GEN and file_info.target_file_path.endswith(".py"):
+        if file_info.target_file_path.endswith(".py"):
             return self.handle_new_target_file_py()
         return self.generate_md_from_prompt()
 
@@ -399,10 +399,13 @@ class BaseConverter:
         log("高級言語コンパイル中: ソースコード(py_file)を新規作成しています。")
         output_file_path = self.generate_py_from_prompt()
 
-        log("ソースコード(py_file)を作成しました。実行を開始します。")
-        code = FileUtil.read_file(output_file_path)
-        target = TargetCodeGenerator(self.magic_info)
-        return target.process_generated_code(code)
+        if self.magic_info.magic_layer == MagicLayer.LAYER_5_CODE_GEN:
+            log("ソースコード(py_file)を作成しました。実行を開始します。")
+            code = FileUtil.read_file(output_file_path)
+            target = TargetCodeGenerator(self.magic_info)
+            output_file_path = target.process_generated_code(code)
+            target.write_code_to_target_file(output_file_path)
+        return output_file_path
 
     def is_same_source_as_past(self) -> bool:
         file_info = self.magic_info.file_info

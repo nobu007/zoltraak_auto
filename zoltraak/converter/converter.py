@@ -2,6 +2,7 @@ import os
 
 from zoltraak.converter.base_converter import BaseConverter
 from zoltraak.core.prompt_manager import PromptEnum, PromptManager
+from zoltraak.gencode import TargetCodeGenerator
 from zoltraak.schema.schema import MagicInfo, MagicLayer
 from zoltraak.utils.file_util import FileUtil
 from zoltraak.utils.log_util import log, log_head, log_inout, log_w
@@ -85,7 +86,12 @@ class MarkdownToPythonConverter(BaseConverter):
     def convert_one_md_py(self) -> str:
         """要件定義書(md_file) => my or pyの１ファイルを変換する"""
         if FileUtil.has_content(self.magic_info.file_info.target_file_path):
-            return self.handle_existing_target_file_py()
+            output_file_path = self.handle_existing_target_file_py()
+            target = TargetCodeGenerator(self.magic_info)
+            target.last_code = FileUtil.read_file(output_file_path)  # converterの更新結果を最終コードとして採用
+            # TODO: このタイミングでprocess_generated_code()する？
+            target.write_code_to_target_file(output_file_path)  # HASHを埋め込む
+            return output_file_path
         return self.handle_new_target_file()
 
     @log_inout
