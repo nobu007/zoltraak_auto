@@ -1,7 +1,7 @@
 import os
 from collections import defaultdict
 from contextlib import suppress
-from typing import Any, ClassVar
+from typing import Any
 
 import anyio
 import litellm
@@ -41,15 +41,30 @@ litellm.callbacks = [logger_]
 DEFAULT_MODEL_GEMINI = "gemini/gemini-1.5-flash-latest"
 DEFAULT_MODEL_CLAUDE = "claude-3-5-sonnet-20240620"
 
-# https://ai.google.dev/gemini-api/docs/models/gemini?hl=ja
-RPM_GEMINI_FLASH = 100  # 1分あたりのリクエスト数(MAX: 1500)
+# https://ai.google.dev/pricing#1_5flash
+RPM_GEMINI_FLASH = 12  # 1分あたりのリクエスト数(MAX: 15)
 RPM_GEMINI_PRO = 2  # 1分あたりのリクエスト数(MAX: 1500)
 RPM_ANTHROPIC_CLAUDE = 1  # 1分あたりのリクエスト数
 RPM_OTHER = 1  # 1分あたりのリクエスト数
 
-TPM_GEMINI_FLASH = 200000  # 1分あたりのトークン数(MAX: 100万)
+TPM_GEMINI_FLASH = 300000  # 1分あたりのトークン数(MAX: 100万)
 TPM_GEMINI_PRO = 10000  # 1分あたりのトークン数(MAX: 32,000)
-TPM_ANTHROPIC_CLAUDE = 100000  # 1分あたりのトークン数(MAX: ？？)
+TPM_ANTHROPIC_CLAUDE = 100000  # 1分あたりのトークン数(MAX: ??)
+TPM_OTHER = 1  # 1分あたりのトークン数
+
+# Rate limits
+RPM_LIMITS: dict = {
+    "gemini_flash": RPM_GEMINI_FLASH,
+    "gemini_pro": RPM_GEMINI_PRO,
+    "anthropic_claude": RPM_ANTHROPIC_CLAUDE,
+    "other": RPM_OTHER,
+}
+TPM_LIMITS: dict = {
+    "gemini_flash": TPM_GEMINI_FLASH,
+    "gemini_pro": TPM_GEMINI_PRO,
+    "anthropic_claude": TPM_ANTHROPIC_CLAUDE,
+    "other": TPM_OTHER,
+}
 
 
 def flexible_run(async_func: callable, *args, **kwargs) -> Any:
@@ -133,9 +148,6 @@ class LitellmApi:
     DEFAULT_MODEL_GEMINI = "gemini/gemini-1.5-flash-latest"
     DEFAULT_MODEL_CLAUDE = "claude-3-5-sonnet-20240620"
 
-    # Rate limits
-    RPM_LIMITS: ClassVar[dict[str, int]] = {"gemini_flash": 50, "gemini_pro": 2, "anthropic_claude": 1, "other": 1}
-
     def __init__(self, logger: ModelStatsLogger = logger_):
         self.logger = logger
         self._router: Router | None = None
@@ -168,7 +180,8 @@ class LitellmApi:
             "litellm_params": {
                 "model": primary_model,
                 "api_key": api_key,
-                "rpm": self.RPM_LIMITS["other"],
+                "rpm": RPM_LIMITS["other"],
+                "tpm": TPM_LIMITS["other"],
             },
         }
 
@@ -179,7 +192,8 @@ class LitellmApi:
                     "model": self.DEFAULT_MODEL_GEMINI,
                     "api_key": os.getenv("GEMINI_API_KEY"),
                     "num_retries": 2,
-                    "rpm": self.RPM_LIMITS["gemini_flash"],
+                    "rpm": RPM_LIMITS["gemini_flash"],
+                    "tpm": TPM_LIMITS["gemini_flash"],
                 },
             },
             {
@@ -188,7 +202,8 @@ class LitellmApi:
                     "model": self.DEFAULT_MODEL_GEMINI,
                     "api_key": os.getenv("GEMINI_API_KEY2"),
                     "num_retries": 2,
-                    "rpm": self.RPM_LIMITS["gemini_flash"],
+                    "rpm": RPM_LIMITS["gemini_flash"],
+                    "tpm": TPM_LIMITS["gemini_flash"],
                 },
             },
             {
@@ -197,7 +212,8 @@ class LitellmApi:
                     "model": self.DEFAULT_MODEL_CLAUDE,
                     "api_key": os.getenv("ANTHROPIC_API_KEY"),
                     "num_retries": 2,
-                    "rpm": self.RPM_LIMITS["anthropic_claude"],
+                    "rpm": RPM_LIMITS["anthropic_claude"],
+                    "tpm": TPM_LIMITS["anthropic_claude"],
                 },
             },
         ]
