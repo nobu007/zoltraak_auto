@@ -148,16 +148,31 @@ class MagicWorkflow:
             source = source_target_set.source_file_path
             context = source_target_set.context_file_path
             if target in target_source_map:
-                target_source_map[target] += "\n\n" + source
+                target_source_map[target].append(source)
             else:
-                target_source_map[target] = source
+                target_source_map[target] = [source]
             target_context_map[target] = context  # コンテキストファイルは最後のものを使う
 
         # マージしたソースファイルをSourceTargetSetに戻す
         source_target_set_list_merged = []
         for target, source in target_source_map.items():
             source_target_set = SourceTargetSet()
-            source_target_set.source_file_path = source
+            if len(source) > 1:
+                # 複数のソースファイルをマージ
+                source_file_content_all = ""
+                for source_file_path in source:
+                    source_file_content_all += f"<<<{source_file_path}>>>\n"
+                    source_file_content_all += FileUtil.read_file(source_file_path)
+                    source_file_content_all += "\n\n"
+
+                split_ext = os.path.splitext(source[0])
+                source_file_path_merged = split_ext[0] + "_merged" + split_ext[1]
+                FileUtil.write_file(source_file_path_merged, source_file_content_all)
+                log(self.get_log(f"merge source files = {source}"))
+            else:
+                # 単一のソースファイルはそのまま追加
+                source_file_path_merged = source[0]
+            source_target_set.source_file_path = source_file_path_merged
             source_target_set.target_file_path = target
             source_target_set.context_file_path = target_context_map[target]
             source_target_set_list_merged.append(source_target_set)

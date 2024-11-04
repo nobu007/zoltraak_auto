@@ -34,7 +34,12 @@ class GrimoireUtil:
     def get_valid_compiler(compiler_candidate: str) -> str:
         """有効なcompilerだったらその絶対パスを返す
         無効なら空文字を返す"""
-        return GrimoireUtil.get_valid_markdown(compiler_candidate, settings.compiler_dir)
+        valid_compiler = GrimoireUtil.get_valid_markdown(compiler_candidate, settings.compiler_dir)
+        if valid_compiler:
+            return valid_compiler
+
+        # 有効なコンパイラが見つからなかった場合はdeveloper_dirから探す
+        return GrimoireUtil.get_valid_markdown(compiler_candidate, settings.developer_dir)
 
     @staticmethod
     def get_valid_architect(compiler_candidate: str) -> str:

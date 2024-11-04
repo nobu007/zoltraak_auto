@@ -113,7 +113,7 @@ class CodeBaseGenerator(BaseConverter):
             target_file_path = code_file_path_final
             context_file_path = info_structure_file_path
             if code_file_path.endswith(".md"):
-                self.magic_info.grimoire_compiler = "dev_obj.md"
+                self.magic_info.grimoire_compiler = "dev_markdown.md"
             else:
                 return None
         else:
