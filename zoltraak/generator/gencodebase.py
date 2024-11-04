@@ -60,7 +60,8 @@ class CodeBaseGenerator(BaseConverter):
 
     @log_inout
     def prepare_generation_code_file(self, code_file_path: str) -> SourceTargetSet:
-        # target_file_path(生成済の個々のソースファイルに対応する詳細設計書)
+        # code_file_path: structure_file由来の最終的に生成するべきファイルパス(拡張子はpy or mdを想定)
+        # code_base_file_path: 生成済の個々のソースファイルに対応する詳細設計書のファイルパス
         code_base_file_path = os.path.splitext(code_file_path)[0] + ".md"  # .mdに変更
         if code_base_file_path == code_file_path:
             code_base_file_path += ".md"  # もともと.mdだった場合は.md.mdになる
@@ -97,7 +98,11 @@ class CodeBaseGenerator(BaseConverter):
             source_file_path = code_base_file_path
             target_file_path = code_file_path_final
             context_file_path = info_structure_file_path
-            self.magic_info.grimoire_compiler = "dev_obj_final.md"
+            print("code_file_path=", code_file_path)
+            if code_file_path.endswith(".py"):
+                self.magic_info.grimoire_compiler = "dev_obj_final.md"
+            else:
+                self.magic_info.grimoire_compiler = "dev_obj.md"
         else:
             # 呼ばれないはず
             source_file_path = ""
