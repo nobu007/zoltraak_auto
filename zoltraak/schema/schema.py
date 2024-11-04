@@ -55,8 +55,9 @@ class MagicLayer(str, Enum):
     LAYER_6_CODEBASE_GEN = "layer_6_codebase_gen"  # 最終コード => コードベース
     LAYER_7_INFO_STRUCTURE_GEN = "layer_7_info_structure_gen"  # コードベース => 情報構造体(個別)
     LAYER_8_INFO_STRUCTURE_GEN = "layer_8_info_structure_gen"  # 情報構造体(個別) => 情報構造体
-    LAYER_9_CODE_GEN = "layer_9_code_gen"  #  情報構造体 => 最終コード（再作成）
-    LAYER_10_CLEAN_UP = "layer_10_clean_up"  # ファイル構造定義書 => 不要ファイル削除
+    LAYER_9_CODE_GEN_FINAL = "layer_9_code_gen_final"  #  情報構造体 => 最終コード（再作成）
+    LAYER_10_MD_GEN_FINAL = "layer_10_md_gen_final"  #  情報構造体 => 最終マークダウン（再作成）
+    LAYER_11_CLEAN_UP = "layer_11_clean_up"  # ファイル構造定義書 => 不要ファイル削除
 
     def __str__(self):
         return self.__repr__()
@@ -65,7 +66,13 @@ class MagicLayer(str, Enum):
         return self.value.replace("layer_", "")  # => 1_request_gen
 
     def level(self):
-        layer_level_str = self.value.split("_")[1][0]  # layer_N_XXのNを取得
+        level_str = self.value.replace("layer_", "")
+        parts = level_str.split("_")
+        if len(parts) > 1:
+            layer_level_str = parts[0]  # layer_N_XXのNを取得
+        else:
+            error_message = f"Invalid MagicLayer value: {self.value}"
+            raise ValueError(error_message)
         return int(layer_level_str)
 
     def next(self) -> MagicLayer | None:

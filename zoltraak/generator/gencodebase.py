@@ -26,7 +26,8 @@ class CodeBaseGenerator(BaseConverter):
             MagicLayer.LAYER_6_CODEBASE_GEN,
             MagicLayer.LAYER_7_INFO_STRUCTURE_GEN,
             MagicLayer.LAYER_8_INFO_STRUCTURE_GEN,
-            MagicLayer.LAYER_9_CODE_GEN,
+            MagicLayer.LAYER_9_CODE_GEN_FINAL,
+            MagicLayer.LAYER_10_MD_GEN_FINAL,
         ]
         self.name = "CodeBaseGenerator"
 
@@ -46,8 +47,9 @@ class CodeBaseGenerator(BaseConverter):
         ):
             if os.path.isfile(code_file_path):
                 source_target_set = self.prepare_generation_code_file(code_file_path)
-                self.source_target_set_list.append(source_target_set)
-                log("append source_target_set= %s", source_target_set)
+                if source_target_set:
+                    self.source_target_set_list.append(source_target_set)
+                    log("append source_target_set= %s", source_target_set)
 
         # コンテキストには
         # step2: グリモア更新
@@ -59,7 +61,7 @@ class CodeBaseGenerator(BaseConverter):
         return self.source_target_set_list
 
     @log_inout
-    def prepare_generation_code_file(self, code_file_path: str) -> SourceTargetSet:
+    def prepare_generation_code_file(self, code_file_path: str) -> SourceTargetSet | None:
         # code_file_path: structure_file由来の最終的に生成するべきファイルパス(拡張子はpy or mdを想定)
         # code_base_file_path: 生成済の個々のソースファイルに対応する詳細設計書のファイルパス
         code_base_file_path = os.path.splitext(code_file_path)[0] + ".md"  # .mdに変更
@@ -90,19 +92,30 @@ class CodeBaseGenerator(BaseConverter):
             target_file_path = info_structure_file_path
             context_file_path = self.magic_info.file_info.request_file_path
             self.magic_info.grimoire_compiler = "dev_info_structure_final.md"
-        elif self.magic_info.magic_layer is MagicLayer.LAYER_9_CODE_GEN:
-            # MagicLayer.LAYER_9_CODE_GEN
+        elif self.magic_info.magic_layer is MagicLayer.LAYER_9_CODE_GEN_FINAL:
+            # MagicLayer.LAYER_9_CODE_GEN_FINAL
             # 情報構造体 => 最終コード（再作成）
             code_file_path_rel = os.path.relpath(code_file_path, self.magic_info.file_info.target_dir)
             code_file_path_final = os.path.join(self.magic_info.file_info.final_dir, code_file_path_rel)
             source_file_path = code_base_file_path
             target_file_path = code_file_path_final
             context_file_path = info_structure_file_path
-            print("code_file_path=", code_file_path)
             if code_file_path.endswith(".py"):
                 self.magic_info.grimoire_compiler = "dev_obj_final.md"
             else:
+                return None
+        elif self.magic_info.magic_layer is MagicLayer.LAYER_10_MD_GEN_FINAL:
+            # MagicLayer.LAYER_10_MD_GEN_FINAL
+            # 情報構造体 => 最終マークダウン（再作成）
+            code_file_path_rel = os.path.relpath(code_file_path, self.magic_info.file_info.target_dir)
+            code_file_path_final = os.path.join(self.magic_info.file_info.final_dir, code_file_path_rel)
+            source_file_path = code_base_file_path
+            target_file_path = code_file_path_final
+            context_file_path = info_structure_file_path
+            if code_file_path.endswith(".md"):
                 self.magic_info.grimoire_compiler = "dev_obj.md"
+            else:
+                return None
         else:
             # 呼ばれないはず
             source_file_path = ""

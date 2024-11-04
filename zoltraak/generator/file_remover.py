@@ -23,7 +23,7 @@ class FileRemover(BaseConverter):
         self.magic_info = magic_info
         self.prompt_manager = prompt_manager
         self.acceptable_layers = [
-            MagicLayer.LAYER_10_CLEAN_UP,
+            MagicLayer.LAYER_11_CLEAN_UP,
         ]
         self.name = "FileRemover"
 
