@@ -12,6 +12,9 @@ from zoltraak import settings
 from zoltraak.utils.file_util import FileUtil
 from zoltraak.utils.log_util import log, log_head, log_w
 
+# デバッグ用
+os.environ["LITELLM_LOG"] = "DEBUG"
+
 
 class ModelStatsLogger(CustomLogger):
     def __init__(self):
@@ -38,19 +41,16 @@ logger_ = ModelStatsLogger()
 litellm.callbacks = [logger_]
 
 
-DEFAULT_MODEL_GEMINI = "gemini/gemini-1.5-flash-latest"
-DEFAULT_MODEL_CLAUDE = "claude-3-5-sonnet-20240620"
-
 # https://ai.google.dev/pricing#1_5flash
-RPM_GEMINI_FLASH = 12  # 1分あたりのリクエスト数(MAX: 15)
+RPM_GEMINI_FLASH = 10  # 1分あたりのリクエスト数(MAX: 15)
 RPM_GEMINI_PRO = 2  # 1分あたりのリクエスト数(MAX: 1500)
-RPM_ANTHROPIC_CLAUDE = 1  # 1分あたりのリクエスト数
-RPM_OTHER = 1  # 1分あたりのリクエスト数
+RPM_ANTHROPIC_CLAUDE = 5  # 1分あたりのリクエスト数
+RPM_OTHER = 10  # 1分あたりのリクエスト数
 
 TPM_GEMINI_FLASH = 300000  # 1分あたりのトークン数(MAX: 100万)
 TPM_GEMINI_PRO = 10000  # 1分あたりのトークン数(MAX: 32,000)
 TPM_ANTHROPIC_CLAUDE = 100000  # 1分あたりのトークン数(MAX: ??)
-TPM_OTHER = 1  # 1分あたりのトークン数
+TPM_OTHER = 100000  # 1分あたりのトークン数
 
 # Rate limits
 RPM_LIMITS: dict = {
@@ -146,7 +146,7 @@ class LitellmApi:
 
     # Model constants
     DEFAULT_MODEL_GEMINI = "gemini/gemini-1.5-flash-latest"
-    DEFAULT_MODEL_CLAUDE = "claude-3-5-sonnet-20240620"
+    DEFAULT_MODEL_CLAUDE = "claude-3-haiku-20240307"
 
     def __init__(self, logger: ModelStatsLogger = logger_):
         self.logger = logger
@@ -161,7 +161,9 @@ class LitellmApi:
         model_list = self._create_model_list(model, api_key)
         fallbacks_dict = self._create_fallbacks_dict()
 
-        self._router = Router(model_list=model_list, fallbacks=fallbacks_dict, retry_after=3)
+        self._router = Router(
+            model_list=model_list, fallbacks=fallbacks_dict, retry_after=3, num_retries=2, max_fallbacks=3
+        )
         return self._router
 
     def _get_api_key(self, model: str) -> str:
@@ -191,7 +193,6 @@ class LitellmApi:
                 "litellm_params": {
                     "model": self.DEFAULT_MODEL_GEMINI,
                     "api_key": os.getenv("GEMINI_API_KEY"),
-                    "num_retries": 2,
                     "rpm": RPM_LIMITS["gemini_flash"],
                     "tpm": TPM_LIMITS["gemini_flash"],
                 },
@@ -201,7 +202,6 @@ class LitellmApi:
                 "litellm_params": {
                     "model": self.DEFAULT_MODEL_GEMINI,
                     "api_key": os.getenv("GEMINI_API_KEY2"),
-                    "num_retries": 2,
                     "rpm": RPM_LIMITS["gemini_flash"],
                     "tpm": TPM_LIMITS["gemini_flash"],
                 },
@@ -211,7 +211,6 @@ class LitellmApi:
                 "litellm_params": {
                     "model": self.DEFAULT_MODEL_CLAUDE,
                     "api_key": os.getenv("ANTHROPIC_API_KEY"),
-                    "num_retries": 2,
                     "rpm": RPM_LIMITS["anthropic_claude"],
                     "tpm": TPM_LIMITS["anthropic_claude"],
                 },
@@ -223,11 +222,15 @@ class LitellmApi:
 
     @staticmethod
     def _create_fallbacks_dict() -> list[dict]:
-        """Create fallback configuration."""
+        """Create fallback configuration.
+        Fallbacks are done in-order ["model_a", "model_b", "model_c"], will do 'model_a' first, then 'model_b', etc.
+        https://docs.litellm.ai/docs/routing
+        """
         return [
-            {"main": ["gemini_bkup1", "gemini_bkup2"]},
+            {"main": ["gemini_bkup1", "gemini_bkup2", "claude_bkup"]},
             {"gemini_bkup1": ["claude_bkup"]},
             {"gemini_bkup2": ["claude_bkup"]},
+            {"gemini/gemini-1.5-flash": ["claude_bkup"]},  # 上手くFallbackが効かないので暫定
         ]
 
     async def generate_response(
