@@ -14,6 +14,7 @@ from zoltraak.utils.log_util import log, log_head, log_w
 
 # デバッグ用
 os.environ["LITELLM_LOG"] = "DEBUG"
+litellm.suppress_debug_info = True
 
 
 class ModelStatsLogger(CustomLogger):
@@ -147,6 +148,8 @@ class LitellmApi:
     # Model constants
     DEFAULT_MODEL_GEMINI = "gemini/gemini-1.5-flash-latest"
     DEFAULT_MODEL_CLAUDE = "claude-3-haiku-20240307"
+    DEFAULT_MODEL_GROQ = "groq/llama-3.1-70b-versatile"  # TODO: use "llama-3.2-11b-vision-preview"
+    DEFAULT_MODEL_MISTRAL = "mistral/mistral-large-2407"
 
     def __init__(self, logger: ModelStatsLogger = logger_):
         self.logger = logger
@@ -168,7 +171,12 @@ class LitellmApi:
 
     def _get_api_key(self, model: str) -> str:
         """Get appropriate API key based on model type."""
-        key_mapping = {"claude": "ANTHROPIC_API_KEY", "groq": "GROQ_API_KEY", "gemini": "GEMINI_API_KEY"}
+        key_mapping = {
+            "claude": "ANTHROPIC_API_KEY",
+            "llama-3": "GROQ_API_KEY",  # llama-3を使うのはGroqのみ
+            "gemini": "GEMINI_API_KEY",
+            "mistral": "MISTRAL_API_KEY",
+        }
 
         for model_type, env_var in key_mapping.items():
             if model_type in model:
@@ -215,6 +223,24 @@ class LitellmApi:
                     "tpm": TPM_LIMITS["anthropic_claude"],
                 },
             },
+            {
+                "model_name": "groq_bkup",
+                "litellm_params": {
+                    "model": self.DEFAULT_MODEL_GROQ,
+                    "api_key": os.getenv("GROQ_API_KEY"),
+                    "rpm": RPM_LIMITS["other"],
+                    "tpm": TPM_LIMITS["other"],
+                },
+            },
+            {
+                "model_name": "mistral_bkup",
+                "litellm_params": {
+                    "model": self.DEFAULT_MODEL_MISTRAL,
+                    "api_key": os.getenv("MISTRAL_API_KEY"),
+                    "rpm": RPM_LIMITS["other"],
+                    "tpm": TPM_LIMITS["other"],
+                },
+            },
         ]
 
         # 全モデルを配列に入れて返す
@@ -227,10 +253,11 @@ class LitellmApi:
         https://docs.litellm.ai/docs/routing
         """
         return [
-            {"main": ["gemini_bkup1", "gemini_bkup2", "claude_bkup"]},
-            {"gemini_bkup1": ["claude_bkup"]},
-            {"gemini_bkup2": ["claude_bkup"]},
-            {"gemini/gemini-1.5-flash": ["claude_bkup"]},  # 上手くFallbackが効かないので暫定
+            {"main": ["gemini_bkup1", "gemini_bkup2", "mistral_bkup", "groq_bkup"]},
+            {"gemini_bkup1": ["mistral_bkup", "groq_bkup"]},
+            {"gemini_bkup2": ["mistral_bkup", "groq_bkup"]},
+            {"gemini/gemini-1.5-flash": ["mistral_bkup", "groq_bkup"]},  # 上手くFallbackが効かないので暫定
+            {LitellmApi.DEFAULT_MODEL_GEMINI: ["mistral_bkup", "groq_bkup"]},  # 上手くFallbackが効かないので暫定
         ]
 
     async def generate_response(
