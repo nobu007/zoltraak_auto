@@ -281,7 +281,7 @@ class LitellmApi:
         """Handle async response generation."""
         router = self._get_router(model)
         response = await router.acompletion(
-            model=model,
+            model="main",  # TODO: 正しく更新する。現在はmainグループを常に指定する。
             messages=[{"content": prompt, "role": "user"}],
             max_tokens=max_tokens,
             temperature=temperature,
