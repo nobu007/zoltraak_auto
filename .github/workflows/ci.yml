@@ -46,10 +46,12 @@ jobs:                                                                         # 
           # pytest全体からランダムで選択したテストを実行
           echo "random_index=$random_index"
           poetry run pytest --splits $SPLIT_NUM --group $random_index --durations-path=.test_durations
-        env:                                                                  # --- 環境変数の設定
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}                 # ---- AnthropicのAPIキー（シークレットから取得）
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}                       # ---- GeminiのAPIキー（シークレットから取得）
-          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}                           # ---- GroqのAPIキー（シークレットから取得）
+        env:
+          API_MODELS: ${{ secrets.API_MODELS }}
+          ANTHROPIC_API_KEYS: ${{ secrets.ANTHROPIC_API_KEYS }}
+          GEMINI_API_KEYS: ${{ secrets.GEMINI_API_KEYS }}
+          GROQ_API_KEYS: ${{ secrets.GROQ_API_KEYS }}
+          MISTRAL_API_KEYS: ${{ secrets.MISTRAL_API_KEYS }}
 
       # - name: Run test_sample.py                                              # -- test_sample.pyの実行
       #   if: matrix.python-version == '3.11'                                   # --- Python 3.11の場合のみ実行
