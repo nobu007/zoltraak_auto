@@ -63,15 +63,17 @@ TPM_OTHER = 100000  # 1分あたりのトークン数
 
 # Rate limits
 RPM_LIMITS: dict = {
+    "gemini": RPM_GEMINI_FLASH,
     "gemini_flash": RPM_GEMINI_FLASH,
     "gemini_pro": RPM_GEMINI_PRO,
-    "anthropic_claude": RPM_ANTHROPIC_CLAUDE,
+    "claude": RPM_ANTHROPIC_CLAUDE,
     "other": RPM_OTHER,
 }
 TPM_LIMITS: dict = {
+    "gemini": TPM_GEMINI_FLASH,
     "gemini_flash": TPM_GEMINI_FLASH,
     "gemini_pro": TPM_GEMINI_PRO,
-    "anthropic_claude": TPM_ANTHROPIC_CLAUDE,
+    "claude": TPM_ANTHROPIC_CLAUDE,
     "other": TPM_OTHER,
 }
 
@@ -165,11 +167,12 @@ class LitellmApi:
 
     def _get_router(self, model: str) -> Router:
         """Initialize and return a router with proper configuration."""
+
+        # TODO: primary_modelによって動的にルーターを切り替える必要がありそう
         if self._router:
             return self._router
 
-        api_key = self._get_api_key(model)
-        model_list = self._create_model_list(model, api_key)
+        model_list = self._create_model_list(primary_model=model)
         fallbacks_dict = self._create_fallbacks_dict()
 
         self._router = Router(
@@ -177,81 +180,45 @@ class LitellmApi:
         )
         return self._router
 
-    def _get_api_key(self, model: str) -> str:
-        """Get appropriate API key based on model type."""
-        key_mapping = {
-            "claude": "ANTHROPIC_API_KEY",
-            "llama-3": "GROQ_API_KEY",  # llama-3を使うのはGroqのみ
-            "gemini": "GEMINI_API_KEY",
-            "mistral": "MISTRAL_API_KEY",
-        }
-
-        for model_type, env_var in key_mapping.items():
-            if model_type in model:
-                return os.getenv(env_var, "")
-        return os.getenv("GEMINI_API_KEY", "")  # default fallback
-
-    def _create_model_list(self, primary_model: str, api_key: str) -> list[dict]:
+    def _create_model_list(self, primary_model: str) -> list[dict]:
         """Create model list configuration including fallbacks."""
+        # ベースモデルの設定
         base_model = {
             "model_name": "main",
             "litellm_params": {
                 "model": primary_model,
-                "api_key": api_key,
+                "api_key": "",
                 "rpm": RPM_LIMITS["other"],
                 "tpm": TPM_LIMITS["other"],
             },
         }
 
-        fallback_models = [
-            {
-                "model_name": "gemini_bkup1",
-                "litellm_params": {
-                    "model": self.DEFAULT_MODEL_GEMINI,
-                    "api_key": os.getenv("GEMINI_API_KEY"),
-                    "rpm": RPM_LIMITS["gemini_flash"],
-                    "tpm": TPM_LIMITS["gemini_flash"],
-                },
-            },
-            {
-                "model_name": "gemini_bkup2",
-                "litellm_params": {
-                    "model": self.DEFAULT_MODEL_GEMINI,
-                    "api_key": os.getenv("GEMINI_API_KEY2"),
-                    "rpm": RPM_LIMITS["gemini_flash"],
-                    "tpm": TPM_LIMITS["gemini_flash"],
-                },
-            },
-            {
-                "model_name": "claude_bkup",
-                "litellm_params": {
-                    "model": self.DEFAULT_MODEL_CLAUDE,
-                    "api_key": os.getenv("ANTHROPIC_API_KEY"),
-                    "rpm": RPM_LIMITS["anthropic_claude"],
-                    "tpm": TPM_LIMITS["anthropic_claude"],
-                },
-            },
-            {
-                "model_name": "groq_bkup",
-                "litellm_params": {
-                    "model": self.DEFAULT_MODEL_GROQ,
-                    "api_key": os.getenv("GROQ_API_KEY"),
-                    "rpm": RPM_LIMITS["other"],
-                    "tpm": TPM_LIMITS["other"],
-                },
-            },
-            {
-                "model_name": "mistral_bkup",
-                "litellm_params": {
-                    "model": self.DEFAULT_MODEL_MISTRAL,
-                    "api_key": os.getenv("MISTRAL_API_KEY"),
-                    "rpm": RPM_LIMITS["other"],
-                    "tpm": TPM_LIMITS["other"],
-                },
-            },
-        ]
+        # モデルとAPIキーの設定を動的に生成
+        fallback_models = []
+        model_names = os.getenv("API_MODELS").split(",")
 
-        # 全モデルを配列に入れて返す
+        for model_name in model_names:
+            keys_env_name = f"{model_name.upper()}_API_KEYS"
+            api_keys = os.getenv(keys_env_name)
+            if api_keys:
+                for api_key in api_keys.split(","):
+                    fallback_models.append(  # noqa: PERF401
+                        {
+                            "model_name": f"{model_name}_bkup",
+                            "litellm_params": {
+                                "model": getattr(self, f"DEFAULT_MODEL_{model_name.upper()}", "unknown"),
+                                "api_key": api_key,
+                                "rpm": RPM_LIMITS.get(model_name, RPM_LIMITS["other"]),
+                                "tpm": TPM_LIMITS.get(model_name, TPM_LIMITS["other"]),
+                            },
+                        }
+                    )
+
+                    # プライマリモデルのAPIキーを設定(1つ目のモデルを採用)
+                    if model_name == primary_model and not base_model["litellm_params"]["api_key"]:
+                        base_model["litellm_params"]["api_key"] = api_key
+
+        # 全モデルをリストにして返す
         return [base_model, *fallback_models]
 
     @staticmethod
@@ -260,13 +227,22 @@ class LitellmApi:
         Fallbacks are done in-order ["model_a", "model_b", "model_c"], will do 'model_a' first, then 'model_b', etc.
         https://docs.litellm.ai/docs/routing
         """
-        return [
-            {"main": ["gemini_bkup1", "gemini_bkup2", "mistral_bkup", "groq_bkup"]},
-            {"gemini_bkup1": ["mistral_bkup", "groq_bkup"]},
-            {"gemini_bkup2": ["mistral_bkup", "groq_bkup"]},
-            {"gemini/gemini-1.5-flash": ["mistral_bkup", "groq_bkup"]},  # 上手くFallbackが効かないので暫定
-            {LitellmApi.DEFAULT_MODEL_GEMINI: ["mistral_bkup", "groq_bkup"]},  # 上手くFallbackが効かないので暫定
-        ]
+        model_names = os.getenv("API_MODELS").split(",")
+
+        # フォールバックリストを作成
+
+        fallback_models = []
+        for model in model_names:
+            fallback_models.append(f"{model}_group")  # noqa: PERF401
+        return [{"main": fallback_models}]
+
+        # return [
+        #     {"main": ["gemini_bkup1", "gemini_bkup2", "mistral_bkup", "groq_bkup"]},
+        #     {"gemini_bkup1": ["mistral_bkup", "groq_bkup"]},
+        #     {"gemini_bkup2": ["mistral_bkup", "groq_bkup"]},
+        #     {"gemini/gemini-1.5-flash": ["mistral_bkup", "groq_bkup"]},  # 上手くFallbackが効かないので暫定
+        #     {LitellmApi.DEFAULT_MODEL_GEMINI: ["mistral_bkup", "groq_bkup"]},  # 上手くFallbackが効かないので暫定
+        # ]
 
     async def generate_response(
         self,
