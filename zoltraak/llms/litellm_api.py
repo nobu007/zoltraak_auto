@@ -24,6 +24,14 @@ class ModelStatsLogger(CustomLogger):
     def log_success_event(self, kwargs, response_obj, start_time, end_time):
         duration_time = end_time - start_time
         log_w("log_success_event duration_time=%s", duration_time)
+        return self.update_stats(kwargs, response_obj, start_time, end_time)
+
+    async def async_log_success_event(self, kwargs, response_obj, start_time, end_time):
+        duration_time = end_time - start_time
+        log_w("async_log_success_event duration_time=%s", duration_time)
+        return self.update_stats(kwargs, response_obj, start_time, end_time)
+
+    def update_stats(self, kwargs, response_obj, start_time, end_time):
         model = kwargs["model"]
         if response_obj and "usage" in response_obj:
             tokens = response_obj["usage"].get("total_tokens", 0)
@@ -330,7 +338,9 @@ class LitellmApi:
             # 最後の手段で別modelで再度リクエストを送る
             if is_first_try:
                 log_w("Invalid response is handled by retry with model: %s", self.DEFAULT_MODEL_CLAUDE)
-                return self._generate_sync(self.DEFAULT_MODEL_CLAUDE, prompt, settings.max_tokens_any, 1.0, False)
+                return self._generate_sync(
+                    self.DEFAULT_MODEL_CLAUDE, prompt, settings.max_tokens_claude_haiku, 1.0, False
+                )
             log_w("Invalid response is not recovered. prompt: %s", prompt)
             return ""
         response_text = response.choices[0].message.content.strip()
