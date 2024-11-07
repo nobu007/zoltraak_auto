@@ -215,7 +215,7 @@ class LitellmApi:
                     )
 
                     # プライマリモデルのAPIキーを設定(1つ目のモデルを採用)
-                    if model_name == primary_model and not base_model["litellm_params"]["api_key"]:
+                    if model_name in primary_model and not base_model["litellm_params"]["api_key"]:
                         base_model["litellm_params"]["api_key"] = api_key
 
         # 全モデルをリストにして返す
@@ -300,7 +300,7 @@ class LitellmApi:
         """Handle sync response generation."""
         router = self._get_router(model)
         response = router.completion(
-            model=model,
+            model="main",  # TODO: 正しく更新する。現在はmainグループを常に指定する。
             messages=[{"content": prompt, "role": "user"}],
             max_tokens=max_tokens,
             temperature=temperature,
