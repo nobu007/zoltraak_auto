@@ -1,6 +1,7 @@
 import os
 from collections import defaultdict
 from contextlib import suppress
+from dataclasses import asdict, dataclass
 from typing import Any
 
 import anyio
@@ -76,6 +77,20 @@ TPM_LIMITS: dict = {
     "claude": TPM_ANTHROPIC_CLAUDE,
     "other": TPM_OTHER,
 }
+
+
+@dataclass
+class LitellmParams:
+    model: str
+    api_key: str
+    rpm: str
+    tpm: str
+
+
+@dataclass
+class ModelConfig:
+    model_name: str
+    litellm_params: LitellmParams
 
 
 def flexible_run(async_func: callable, *args, **kwargs) -> Any:
@@ -157,7 +172,7 @@ class LitellmApi:
 
     # Model constants
     DEFAULT_MODEL_GEMINI = "gemini/gemini-1.5-flash-latest"
-    DEFAULT_MODEL_CLAUDE = "claude-3-haiku-20240307"
+    DEFAULT_MODEL_ANTHROPIC = "claude-3-haiku-20240307"
     DEFAULT_MODEL_GROQ = "groq/llama-3.1-70b-versatile"  # TODO: use "llama-3.2-11b-vision-preview"
     DEFAULT_MODEL_MISTRAL = "mistral/mistral-large-2407"
 
@@ -172,26 +187,27 @@ class LitellmApi:
         if self._router:
             return self._router
 
-        model_list = self._create_model_list(primary_model=model)
-        fallbacks_dict = self._create_fallbacks_dict()
+        model_config_list = self._create_model_list(primary_model=model)
+        model_config_list_dict = [asdict(model) for model in model_config_list]
+        fallbacks_dict = self._create_fallbacks_dict(model_config_list)
 
         self._router = Router(
-            model_list=model_list, fallbacks=fallbacks_dict, retry_after=3, num_retries=2, max_fallbacks=3
+            model_list=model_config_list_dict, fallbacks=fallbacks_dict, retry_after=3, num_retries=2, max_fallbacks=3
         )
         return self._router
 
-    def _create_model_list(self, primary_model: str) -> list[dict]:
+    def _create_model_list(self, primary_model: str) -> list[ModelConfig]:
         """Create model list configuration including fallbacks."""
         # ベースモデルの設定
-        base_model = {
-            "model_name": "main",
-            "litellm_params": {
-                "model": primary_model,
-                "api_key": "",
-                "rpm": RPM_LIMITS["other"],
-                "tpm": TPM_LIMITS["other"],
-            },
-        }
+        base_model = ModelConfig(
+            model_name="main",
+            litellm_params=LitellmParams(
+                model=primary_model,
+                api_key="",
+                rpm=RPM_LIMITS["other"],
+                tpm=TPM_LIMITS["other"],
+            ),
+        )
 
         # モデルとAPIキーの設定を動的に生成
         fallback_models = []
@@ -201,47 +217,47 @@ class LitellmApi:
             keys_env_name = f"{model_name.upper()}_API_KEYS"
             api_keys = os.getenv(keys_env_name)
             if api_keys:
-                for api_key in api_keys.split(","):
+                for i, api_key in enumerate(api_keys.split(",")):
                     fallback_models.append(  # noqa: PERF401
-                        {
-                            "model_name": f"{model_name}_bkup",
-                            "litellm_params": {
-                                "model": getattr(self, f"DEFAULT_MODEL_{model_name.upper()}", "unknown"),
-                                "api_key": api_key,
-                                "rpm": RPM_LIMITS.get(model_name, RPM_LIMITS["other"]),
-                                "tpm": TPM_LIMITS.get(model_name, TPM_LIMITS["other"]),
-                            },
-                        }
+                        ModelConfig(
+                            model_name=f"{model_name}_group_{i}",
+                            litellm_params=LitellmParams(
+                                model=getattr(self, f"DEFAULT_MODEL_{model_name.upper()}", "unknown"),
+                                api_key=api_key,
+                                rpm=RPM_LIMITS["other"],
+                                tpm=TPM_LIMITS["other"],
+                            ),
+                        )
                     )
 
                     # プライマリモデルのAPIキーを設定(1つ目のモデルを採用)
-                    if model_name in primary_model and not base_model["litellm_params"]["api_key"]:
-                        base_model["litellm_params"]["api_key"] = api_key
+                    if model_name in primary_model and not base_model.litellm_params.api_key:
+                        base_model.litellm_params.api_key = api_key
 
         # 全モデルをリストにして返す
         return [base_model, *fallback_models]
 
     @staticmethod
-    def _create_fallbacks_dict() -> list[dict]:
+    def _create_fallbacks_dict(model_config_list: list[ModelConfig]) -> list[dict]:
         """Create fallback configuration.
         Fallbacks are done in-order ["model_a", "model_b", "model_c"], will do 'model_a' first, then 'model_b', etc.
         https://docs.litellm.ai/docs/routing
         """
-        model_names = os.getenv("API_MODELS").split(",")
 
         # フォールバックリストを作成
 
         fallback_models = []
-        for model in model_names:
-            fallback_models.append(f"{model}_group")  # noqa: PERF401
+        for model_config in model_config_list:
+            fallback_models.append(model_config.model_name)  # noqa: PERF401
         return [{"main": fallback_models}]
 
+        # サンプル
         # return [
-        #     {"main": ["gemini_bkup1", "gemini_bkup2", "mistral_bkup", "groq_bkup"]},
-        #     {"gemini_bkup1": ["mistral_bkup", "groq_bkup"]},
-        #     {"gemini_bkup2": ["mistral_bkup", "groq_bkup"]},
-        #     {"gemini/gemini-1.5-flash": ["mistral_bkup", "groq_bkup"]},  # 上手くFallbackが効かないので暫定
-        #     {LitellmApi.DEFAULT_MODEL_GEMINI: ["mistral_bkup", "groq_bkup"]},  # 上手くFallbackが効かないので暫定
+        #     {"main": ["gemini_group1", "gemini_group2", "mistral_group", "groq_group"]},
+        #     {"gemini_group1": ["mistral_group", "groq_group"]},
+        #     {"gemini_group2": ["mistral_group", "groq_group"]},
+        #     {"gemini/gemini-1.5-flash": ["mistral_group", "groq_group"]},  # 上手くFallbackが効かないので暫定
+        #     {LitellmApi.DEFAULT_MODEL_GEMINI: ["mistral_group", "groq_group"]},  # 上手くFallbackが効かないので暫定
         # ]
 
     async def generate_response(
@@ -313,9 +329,9 @@ class LitellmApi:
             log_w("Invalid response received.")
             # 最後の手段で別modelで再度リクエストを送る
             if is_first_try:
-                log_w("Invalid response is handled by retry with model: %s", self.DEFAULT_MODEL_CLAUDE)
+                log_w("Invalid response is handled by retry with model: %s", self.DEFAULT_MODEL_ANTHROPIC)
                 return self._generate_sync(
-                    self.DEFAULT_MODEL_CLAUDE, prompt, settings.max_tokens_claude_haiku, 1.0, False
+                    self.DEFAULT_MODEL_ANTHROPIC, prompt, settings.max_tokens_claude_haiku, 1.0, False
                 )
             log_w("Invalid response is not recovered. prompt: %s", prompt)
             return ""
