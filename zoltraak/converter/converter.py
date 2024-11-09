@@ -61,14 +61,14 @@ class MarkdownToPythonConverter(BaseConverter):
         # step2: 要件定義書を更新
         if self.magic_info.magic_layer is MagicLayer.LAYER_4_REQUIREMENT_GEN:
             file_info.update_source_target(
-                file_info.md_file_path, requirements_md_file_path, file_info.request_file_path
+                file_info.md_file_path, requirements_md_file_path, file_info.structure_file_path
             )
             file_info.update_hash()
 
         # step3: Pythonコードを作成
         if self.magic_info.magic_layer is MagicLayer.LAYER_5_CODE_GEN:
             file_info.update_source_target(
-                requirements_md_file_path, file_info.py_file_path, file_info.request_file_path
+                requirements_md_file_path, file_info.py_file_path, file_info.structure_file_path
             )
             file_info.update_hash()
 
