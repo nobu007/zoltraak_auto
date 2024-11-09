@@ -57,21 +57,18 @@ class MarkdownToMarkdownConverter(BaseConverter):
             self.magic_info.grimoire_compiler = "general_prompt.md"
             log("レイヤ1専用のプロンプト: %s", self.magic_info.grimoire_compiler)
             file_info.update_source_target(file_info.prompt_file_path, file_info.request_file_path)
-            file_info.update_hash()
 
         # step3: ファイル構造定義書を作成
         if self.magic_info.magic_layer is MagicLayer.LAYER_2_STRUCTURE_GEN:
             self.magic_info.grimoire_compiler = "structure_full.md"
             log("レイヤ2専用のプロンプト: %s", self.magic_info.grimoire_compiler)
             file_info.update_source_target(file_info.prompt_file_path, file_info.structure_file_path)
-            file_info.update_hash()
 
         # step4: 要件定義書を作成
         if self.magic_info.magic_layer is MagicLayer.LAYER_3_REQUIREMENT_GEN:
             self.magic_info.grimoire_compiler = "dev_obj.md"
             log("レイヤ3専用のプロンプト: %s", self.magic_info.grimoire_compiler)
             file_info.update_source_target(file_info.request_file_path, file_info.md_file_path)
-            file_info.update_hash()
 
     @log_inout
     def convert(self) -> str:

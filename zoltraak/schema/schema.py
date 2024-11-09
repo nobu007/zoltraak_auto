@@ -278,6 +278,9 @@ class FileInfo(BaseModel):
         if not self.output_file_path_history:
             self.output_file_path_history = "(src)" + self.source_file_name
 
+        # hash
+        self.update_hash()
+
     def update_source_target_past(self):
         # work_dirからの相対パス取得
         source_file_path_rel = os.path.relpath(self.source_file_path, self.work_dir)
@@ -302,7 +305,7 @@ class FileInfo(BaseModel):
     def update_hash(self):
         self.source_hash = self.calculate_file_hash(self.source_file_path)
         self.target_hash = self.calculate_file_hash(self.target_file_path)
-        self.target_hash = self.calculate_file_hash(self.target_file_path)
+        self.context_hash = self.calculate_file_hash(self.context_file_path)
         self.past_source_hash = self.calculate_file_hash(self.past_source_file_path)
         self.past_target_hash = self.calculate_file_hash(self.past_target_file_path)
         self.past_context_hash = self.calculate_file_hash(self.past_context_file_path)
