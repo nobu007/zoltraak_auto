@@ -46,12 +46,17 @@ class MagicMode(str, Enum):
         return "\n".join(description_list)
 
 
+# next()メソッドを使って次のレイヤを取得するためのリスト
+MAGIC_LAYER_ORDER = []
+
+
 class MagicLayer(str, Enum):
     LAYER_1_REQUEST_GEN = "layer_1_request_gen"  # 生のprompt => ユーザ要求記述書
     LAYER_2_STRUCTURE_GEN = "layer_2_structure_gen"  # 生のprompt => ファイル構造定義書
     LAYER_3_REQUIREMENT_GEN = "layer_3_requirement_gen"  # ユーザ要求記述書 and ファイル構造定義書 => 要件定義書
     LAYER_4_REQUIREMENT_GEN = "layer_4_requirement_gen"  # 要件定義書 => 要件定義書(requirements)
     LAYER_5_CODE_GEN = "layer_5_code_gen"  # 要件定義書(requirements) => Pythonコード（ファイル生成用）＋最終コード
+    LAYER_5_1_DEPENDENCY_GEN = "layer_5_1_dependency_gen"  # 最終コード => 依存関係情報
     LAYER_6_CODEBASE_GEN = "layer_6_codebase_gen"  # 最終コード => コードベース
     LAYER_7_INFO_STRUCTURE_GEN = "layer_7_info_structure_gen"  # コードベース => 情報構造体(個別)
     LAYER_8_INFO_STRUCTURE_GEN = "layer_8_info_structure_gen"  # 情報構造体(個別) => 情報構造体
@@ -77,12 +82,10 @@ class MagicLayer(str, Enum):
 
     def next(self) -> MagicLayer | None:
         # 次のレベルのレイヤを返す
-        current_layer_level: int = self.level()
-        for layer in MagicLayer:
-            layer_level: int = layer.level()
-            if layer_level > current_layer_level:
-                # 次のレベルのレイヤが見つかったケース
-                return layer
+        current_index = MAGIC_LAYER_ORDER.index(self)
+        next_index = current_index + 1
+        if next_index <= len(MAGIC_LAYER_ORDER) + 1:
+            return MAGIC_LAYER_ORDER[next_index]
         return None
 
     @staticmethod
@@ -104,6 +107,10 @@ class MagicLayer(str, Enum):
                 return layer
         # レイヤが見つからなかったケースのデフォルト値
         return MagicLayer.LAYER_4_REQUIREMENT_GEN
+
+
+# MagicLayer定義が完了後にMAGIC_LAYER_ORDERを作成
+MAGIC_LAYER_ORDER = list(MagicLayer)
 
 
 class ZoltraakParams(BaseModel):
