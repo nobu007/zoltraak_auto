@@ -15,7 +15,7 @@ class DependencyManagerBase:
     def scan_project(self) -> None:
         """プロジェクト全体をスキャンして依存関係を構築"""
         # 除外キーワード(.git配下は対象外など)
-        ignore_keywords = [".git", "__pycache__"]
+        ignore_keywords = [".git", "__pycache__", "__init__.py", "site-packages"]
 
         for file_path in self.project_root.rglob("*.py"):
             if any(keyword in str(file_path) for keyword in ignore_keywords):
@@ -44,24 +44,10 @@ class DependencyManagerBase:
         """個別ファイルの解析"""
         # TODO: 実装
 
-    def _extract_imports(self, tree: ast.AST) -> set[str]:
-        """ASTからimport文を抽出"""
-        imports = set()
-        for node in ast.walk(tree):
-            if isinstance(node, ast.Import):
-                for alias in node.names:
-                    if alias.name in str(self.project_root):
-                        imports.add(alias.name)
-            elif isinstance(node, ast.ImportFrom):
-                module = node.module if node.module else ""
-                for alias in node.names:
-                    full_name = f"{module}.{alias.name}" if module else alias.name
-                    if module in str(self.project_root):
-                        imports.add(full_name)
-        return imports
-
     def _extract_metadata(self, tree: ast.AST) -> dict[str, str]:
-        """ASTからメタデータを抽出"""
+        """ASTからメタデータを抽出
+        TODO: python以外も対応
+        """
         metadata = {}
         for node in ast.walk(tree):
             if isinstance(node, ast.FunctionDef) and node.name == "metadata":

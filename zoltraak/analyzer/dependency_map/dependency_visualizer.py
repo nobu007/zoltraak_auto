@@ -17,8 +17,8 @@ class DependencyVisualizer:
         if focus_file:
             metadata_focus_file = manager.get_metadata(focus_file)
             relevant_files = {focus_file}
-            relevant_files |= metadata_focus_file.dependencies
-            relevant_files |= metadata_focus_file.dependents
+            relevant_files |= metadata_focus_file.include_files
+            relevant_files |= metadata_focus_file.included_files
         else:
             relevant_files = set(manager.metadata.keys())
 
@@ -31,7 +31,7 @@ class DependencyVisualizer:
         # エッジの作成(ノード作成完了後に実行する必要あり)
         for file in relevant_files:
             metadata_file = manager.get_metadata(file)
-            for dep in metadata_file.dependencies & relevant_files:
+            for dep in metadata_file.include_files & relevant_files:
                 graph.add_edge(str(file), str(dep))
 
         # 画像として保存

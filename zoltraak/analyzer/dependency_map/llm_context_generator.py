@@ -12,7 +12,7 @@ class LLMContextGenerator:
         metadata = self.dependency_manager.get_metadata(target_file)
 
         # 関連ファイルを収集
-        related_files = {target_file} | metadata.dependencies
+        related_files = {target_file} | metadata.include_files | metadata.included_files
 
         # コンテキストを構築
         context = [

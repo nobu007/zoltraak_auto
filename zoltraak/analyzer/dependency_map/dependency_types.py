@@ -8,8 +8,8 @@ from typing import TypedDict
 class FileMetadata:
     path: Path
     last_modified: datetime
-    dependencies: set[Path] = field(default_factory=set)
-    dependents: set[Path] = field(default_factory=set)
+    include_files: set[Path] = field(default_factory=set)
+    included_files: set[Path] = field(default_factory=set)
     tags: set[str] = field(default_factory=set)
     category: str = ""
     description: str = ""
