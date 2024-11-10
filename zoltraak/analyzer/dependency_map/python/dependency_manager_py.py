@@ -84,6 +84,18 @@ class DependencyManagerPy(DependencyManagerBase):
         """依存関係の図を生成し、画像ファイルに保存"""
         agraph = nx_agraph.to_agraph(self.nx_graph)
 
+        # ノードの属性を設定
+        # https://networkx.org/documentation/stable/reference/generated/networkx.drawing.nx_pylab.draw_networkx_nodes.html
+        # ノードの形: shape[so^>v<dph8]
+        #   s: square, o: circle, ^: triangle, >: triangle_right, v: triangle_down
+        #   <: triangle_left, d: diamond, p: pentagon, h: hexagon, 8: octagon
+        agraph.node_attr.update(
+            shape="s",  # ノードの形
+            # width="0.8",  # ノードの幅
+            height="0.4",  # ノードの高さ
+            fixedsize="false",  # サイズを固定
+        )
+
         # レイアウトアルゴリズムの選択
         # prog=dot  # 階層的レイアウト（デフォルト）
         # prog=neato  # スプリングモデル
@@ -122,18 +134,6 @@ class DependencyManagerPy(DependencyManagerBase):
         # 個別のノード位置を指定
         # A.get_node("node1").attr["pos"] = "100,100!"  # 特定のノードの位置を固定
         # A.get_node("node2").attr["pos"] = "200,200!"
-
-        # ノードの属性を設定
-        # https://networkx.org/documentation/stable/reference/generated/networkx.drawing.nx_pylab.draw_networkx_nodes.html
-        # ノードの形: shape[so^>v<dph8]
-        #   s: square, o: circle, ^: triangle, >: triangle_right, v: triangle_down
-        #   <: triangle_left, d: diamond, p: pentagon, h: hexagon, 8: octagon
-        agraph.node_attr.update(
-            shape="s",  # ノードの形
-            # width="0.8",  # ノードの幅
-            height="0.8",  # ノードの高さ
-            fixedsize="false",  # サイズを固定
-        )
 
         # 特定のノードをグループ化（サブグラフ作成）
         # subgraph = A.add_subgraph(["node1", "node2"], name="cluster_0")
@@ -182,7 +182,7 @@ class DependencyManagerPy(DependencyManagerBase):
 
         # 除外キーワード(.git配下は対象外など)
         ignore_keywords = [".git", ".pyenv", "__pycache__", "__init__.py", "site-packages", "built-in"]
-        if any(keyword in str(file_path) for keyword in ignore_keywords):
+        if any(keyword in str(file_path) for keyword in ignore_keywords):  # noqa: SIM103
             return False
 
         return True
