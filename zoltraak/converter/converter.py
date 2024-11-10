@@ -1,5 +1,6 @@
 import os
 
+from zoltraak.analyzer.dependency_map.python.dependency_manager_py import DependencyManagerPy
 from zoltraak.converter.base_converter import BaseConverter
 from zoltraak.core.prompt_manager import PromptEnum, PromptManager
 from zoltraak.gencode import TargetCodeGenerator
@@ -35,6 +36,9 @@ class MarkdownToPythonConverter(BaseConverter):
     <LAYER_5>
       source => requirements/md_file_path
       target => py_file_path
+    <LAYER_5.1>
+      source => structure_file_path
+      target => dependency_file_path
     """
 
     def __init__(self, magic_info: MagicInfo, prompt_manager: PromptManager):
@@ -44,6 +48,7 @@ class MarkdownToPythonConverter(BaseConverter):
         self.acceptable_layers = [
             MagicLayer.LAYER_4_REQUIREMENT_GEN,
             MagicLayer.LAYER_5_CODE_GEN,
+            MagicLayer.LAYER_5_1_DEPENDENCY_GEN,
         ]
         self.name = "MarkdownToPythonConverter"
 
@@ -70,15 +75,22 @@ class MarkdownToPythonConverter(BaseConverter):
                 requirements_md_file_path, file_info.py_file_path, file_info.structure_file_path
             )
 
+        # step4: dependencyファイルを作成
+        if self.magic_info.magic_layer is MagicLayer.LAYER_5_1_DEPENDENCY_GEN:
+            file_info.update_source_target(file_info.structure_file_path, file_info.dependency_file_path)
+
     @log_inout
     def convert(self) -> str:
         """要件定義書(md_file) => Pythonコード"""
 
-        # step4: 変換処理
+        # LAYER_4_REQUIREMENT_GEN
         if self.magic_info.magic_layer is MagicLayer.LAYER_4_REQUIREMENT_GEN:
             return self.convert_one()
         # MagicLayer.LAYER_5_CODE_GEN
-        return self.convert_one_md_py()
+        if self.magic_info.magic_layer is MagicLayer.LAYER_5_CODE_GEN:
+            return self.convert_one_md_py()
+        # MagicLayer.LAYER_5_1_DEPENDENCY_GEN
+        return self.convert_one_dependency()
 
     @log_inout
     def convert_one_md_py(self) -> str:
@@ -91,6 +103,14 @@ class MarkdownToPythonConverter(BaseConverter):
             target.write_code_to_target_file(output_file_path)  # HASHを埋め込む
             return output_file_path
         return self.handle_new_target_file()
+
+    @log_inout
+    def convert_one_dependency(self) -> str:
+        """dependencyファイルを作成"""
+        dm = DependencyManagerPy(self.magic_info.file_info.target_dir)
+        dm.scan_project()
+        dm.write_dependency_file(self.magic_info.file_info.dependency_file_path)
+        return self.magic_info.file_info.dependency_file_path
 
     @log_inout
     def handle_existing_target_file_py(self) -> str:  # noqa: PLR0911

@@ -2,6 +2,7 @@ import ast
 from pathlib import Path
 
 import networkx as nx
+from networkx.drawing import nx_agraph
 
 from zoltraak.analyzer.dependency_map.dependency_types import FileMetadata
 
@@ -39,6 +40,10 @@ class DependencyManagerBase:
         """ファイルのメタデータを取得"""
         default_metadata = FileMetadata(path=file_path, last_modified=None)
         return self.metadata.get(file_path, default_metadata)
+
+    def write_dependency_file(self, output_path_dot: str) -> None:
+        print("write_dependency_file output_path_dot=", output_path_dot)
+        nx_agraph.write_dot(self.nx_graph, output_path_dot)
 
     def _analyze_file(self, file_path: Path) -> None:
         """個別ファイルの解析"""

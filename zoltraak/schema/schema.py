@@ -147,6 +147,7 @@ DEFAULT_REQUEST_FILE = "REQUEST.md"
 DEFAULT_STRUCTURE_FILE = "STRUCTURE.md"
 DEFAULT_MD_FILE = "ARCHITECTURE.md"
 DEFAULT_PY_FILE = "ARCHITECTURE.py"
+DEFAULT_DEPENDENCY_FILE = "DEPENDENCY.md"
 EMPTY_CONTEXT_FILE = "EMPTY_CONTEXT.md"
 
 
@@ -178,6 +179,10 @@ class FileInfo(BaseModel):
         description="要件定義書のmdファイル(絶対パス)",
     )
     py_file_path: str = Field(default=os.path.abspath(DEFAULT_PY_FILE), description="処理対象のpyファイル(絶対パス)")
+    dependency_file_path: str = Field(
+        default=os.path.abspath(DEFAULT_DEPENDENCY_FILE),
+        description="依存関係情報を保存するファイル(絶対パス)",
+    )
 
     # ルートディレクトリ
     work_dir: str = Field(default=os.getcwd(), description="作業ディレクトリ")
@@ -245,6 +250,7 @@ class FileInfo(BaseModel):
         self.structure_file_path = "structure_" + canonical_name + ".md"
         self.md_file_path = canonical_name + ".md"
         self.py_file_path = canonical_name + ".py"
+        self.dependency_file_path = "dependency_" + canonical_name + ".dot"
 
     def update_path_abs(self):
         if self.destiny_file_path:
@@ -259,6 +265,8 @@ class FileInfo(BaseModel):
             self.md_file_path = os.path.abspath(self.md_file_path)
         if self.py_file_path:
             self.py_file_path = os.path.abspath(self.py_file_path)
+        if self.dependency_file_path:
+            self.dependency_file_path = os.path.abspath(self.dependency_file_path)
 
     def update_source_target(self, source_file_path, target_file_path, context_file_path=EMPTY_CONTEXT_FILE):
         # source_file_path, source_file_path を更新する処理(path系のトリガー)
