@@ -38,6 +38,8 @@ python = ">=3.10,<3.13"
 python-dotenv = "^1.0.1"
 rich = "^13.8.1"
 anyio = "^4.6.2"
+networkx="^3.4.2"
+pygraphviz="^1.14"
 
 [tool.poetry.group.test]
 optional = true
