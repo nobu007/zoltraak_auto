@@ -1,15 +1,19 @@
+import os
 import pprint
 from pathlib import Path
 
+import zoltraak
 from zoltraak.analyzer.dependency_map.change_impact_analyzer import ChangeImpactAnalyzer
 from zoltraak.analyzer.dependency_map.dependency_visualizer import DependencyVisualizer
 from zoltraak.analyzer.dependency_map.llm_context_generator import LLMContextGenerator
 from zoltraak.analyzer.dependency_map.python.dependency_manager_py import DependencyManagerPy
 
 
-def handle_file_change(file_path: Path, new_content: str):
+def handle_file_change(file_path: Path, new_content: str, root_dir: str = ""):
     # 依存関係マネージャーを初期化
-    dm = DependencyManagerPy(Path.cwd())
+    if not root_dir:
+        root_dir = Path.cwd()
+    dm = DependencyManagerPy(root_dir)
     dm.scan_project()
 
     # 変更の影響を分析
@@ -28,6 +32,8 @@ def handle_file_change(file_path: Path, new_content: str):
 
 
 if __name__ == "__main__":
+    zoltraak_dir = os.path.dirname(zoltraak.__file__)
+
     file_path_ = __file__
     print("file_path_=", file_path_)
     # 実験: ファイル変更をシミュレート
@@ -35,6 +41,6 @@ if __name__ == "__main__":
     with open(file_path_, encoding="utf-8") as f:
         new_content_ = f.read()
         new_content_ = new_content_.replace("DependencyManagerPy", "DependencyManagerJava")
-    result = handle_file_change(file_path_, new_content_)
+    result = handle_file_change(file_path_, new_content_, zoltraak_dir)
     print("result=")
-    print(pprint.pformat(result))
+    print("len=", len(pprint.pformat(result)))
