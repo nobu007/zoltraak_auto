@@ -13,6 +13,7 @@ from zoltraak.converter.converter import MarkdownToPythonConverter
 from zoltraak.converter.md_converter import MarkdownToMarkdownConverter
 from zoltraak.core.prompt_manager import PromptManager
 from zoltraak.generator.file_remover import FileRemover
+from zoltraak.generator.gencode import CodeGenerator
 from zoltraak.generator.gencodebase import CodeBaseGenerator
 from zoltraak.schema.schema import FileInfo, MagicInfo, MagicLayer, MagicMode, MagicWorkflowInfo, SourceTargetSet
 from zoltraak.utils.file_util import FileUtil
@@ -43,7 +44,12 @@ class MagicWorkflow:
     @log_inout
     def create_converters(self, magic_info: MagicInfo, prompt_manager: PromptManager) -> None:
         self.converters.append(MarkdownToMarkdownConverter(magic_info, prompt_manager))
-        self.converters.append(MarkdownToPythonConverter(magic_info, prompt_manager))
+        if self.magic_info.magic_mode == MagicMode.ZOLTRAAK_LEGACY:
+            # ZOLTRAAK_LEGACYモード(高速生成モード: input ⇒ 要件定義書 ⇒ code)
+            self.converters.append(MarkdownToPythonConverter(magic_info, prompt_manager))
+        else:
+            # 詳細モード
+            self.converters.append(CodeGenerator(magic_info, prompt_manager))
         self.converters.append(CodeBaseGenerator(magic_info, prompt_manager))
         self.converters.append(FileRemover(magic_info, prompt_manager))
 
@@ -60,24 +66,25 @@ class MagicWorkflow:
         """run処理をレイヤを進めながら繰り返す"""
         self.start_workflow()
         for layer in MagicLayer:
-            if self.run_converters(layer):
-                # ZOLTRAAK_LEGACYモードの場合は１回で終了
-                if self.magic_info.magic_mode == MagicMode.ZOLTRAAK_LEGACY:
-                    log(self.get_log("ZOLTRAAK_LEGACYモードにより、convert処理を終了します"))
-                    break
+            self.run_converters(layer)
 
-                # magic_layer_endで終了
-                if self.magic_info.magic_layer == self.magic_info.magic_layer_end:
-                    log(self.get_log("MAGIC_LAYER_ENDに到達したので、CONVERT処理を終了します"))
-                    break
+            # ZOLTRAAK_LEGACYモードの場合は１回で終了
+            if self.magic_info.magic_mode == MagicMode.ZOLTRAAK_LEGACY:
+                log(self.get_log("ZOLTRAAK_LEGACYモードにより、convert処理を終了します"))
+                break
 
-                # 次のレイヤに進む
-                self.magic_info.magic_layer = layer.next()
-                log(self.get_log("end next = " + str(self.magic_info.magic_layer)))
+            # magic_layer_endで終了
+            if self.magic_info.magic_layer == self.magic_info.magic_layer_end:
+                log(self.get_log("MAGIC_LAYER_ENDに到達したので、CONVERT処理を終了します"))
+                break
 
-                # 次のレイヤにprompt_inputを再度渡さないようにモード変更
-                log(self.get_log(f"magic_mode set {self.magic_info.magic_mode} => {MagicMode.GRIMOIRE_ONLY}"))
-                self.magic_info.magic_mode = MagicMode.GRIMOIRE_ONLY
+            # 次のレイヤに進む
+            self.magic_info.magic_layer = layer.next()
+            log(self.get_log("end next = " + str(self.magic_info.magic_layer)))
+
+            # 次のレイヤにprompt_inputを再度渡さないようにモード変更
+            log(self.get_log(f"magic_mode set {self.magic_info.magic_mode} => {MagicMode.GRIMOIRE_ONLY}"))
+            self.magic_info.magic_mode = MagicMode.GRIMOIRE_ONLY
 
         # ループの最後のoutput_file_pathをfinalとして設定して返す
         self.magic_info.file_info.final_output_file_path = self.magic_info.file_info.output_file_path
