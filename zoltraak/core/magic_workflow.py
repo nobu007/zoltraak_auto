@@ -12,6 +12,7 @@ from zoltraak.converter.base_converter import BaseConverter
 from zoltraak.converter.converter import MarkdownToPythonConverter
 from zoltraak.converter.md_converter import MarkdownToMarkdownConverter
 from zoltraak.core.prompt_manager import PromptManager
+from zoltraak.generator.file_analyzer import FileAnalyzer
 from zoltraak.generator.file_remover import FileRemover
 from zoltraak.generator.gencode import CodeGenerator
 from zoltraak.generator.gencodebase import CodeBaseGenerator
@@ -43,6 +44,7 @@ class MagicWorkflow:
 
     @log_inout
     def create_converters(self, magic_info: MagicInfo, prompt_manager: PromptManager) -> None:
+        self.converters.append(FileAnalyzer(magic_info, prompt_manager))
         self.converters.append(MarkdownToMarkdownConverter(magic_info, prompt_manager))
         if self.magic_info.magic_mode == MagicMode.ZOLTRAAK_LEGACY:
             # ZOLTRAAK_LEGACYモード(高速生成モード: input ⇒ 要件定義書 ⇒ code)
@@ -290,7 +292,7 @@ class MagicWorkflow:
 
         # history_infoを更新 例: layer_5_code_gen(main.md ->スキップ(既存＆input変更なし))
         magic_info.history_info = (
-            "    " + magic_info.magic_layer + f"({file_info.target_file_name}{magic_info.history_info})"
+            "    " + magic_info.magic_layer + f"(target: {file_info.target_file_name}{magic_info.history_info})"
         )
         self.workflow_history.append(magic_info.history_info)
 

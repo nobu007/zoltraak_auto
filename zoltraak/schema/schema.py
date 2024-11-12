@@ -53,6 +53,9 @@ MAGIC_LAYER_ORDER = []
 class MagicLayer(str, Enum):
     LAYER_1_REQUEST_GEN = "layer_1_request_gen"  # 生のprompt => ユーザ要求記述書
     LAYER_2_STRUCTURE_GEN = "layer_2_structure_gen"  # 生のprompt => ファイル構造定義書
+    LAYER_2_1_AFFECTED_FILE_LIST_GEN = (
+        "layer_2_1_affected_file_list_gen"  # ユーザ要求記述書 => 影響を受けるファイルリスト
+    )
     LAYER_3_REQUIREMENT_GEN = "layer_3_requirement_gen"  # ユーザ要求記述書 and ファイル構造定義書 => 要件定義書
     LAYER_4_REQUIREMENT_GEN = "layer_4_requirement_gen"  # 要件定義書 => 要件定義書(requirements)
     LAYER_5_CODE_GEN = "layer_5_code_gen"  # 要件定義書(requirements) => Pythonコード（ファイル生成用）＋最終コード

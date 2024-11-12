@@ -65,7 +65,7 @@ class CodeGenerator(BaseConverter):
         if code_base_file_path == code_file_path:
             code_base_file_path += ".md"  # もともと.mdだった場合は.md.mdになる
 
-        # requirement_file_path: 個々の詳細設計書に対応する情報構造体のファイルパス
+        # requirement_file_path: ソースファイルに対する変更要求のファイルパス
         requirement_file_path = os.path.splitext(code_file_path)[0] + "_requirement.md"
 
         # info_structure_file_path: 個々の詳細設計書に対応する情報構造体のファイルパス

@@ -121,6 +121,53 @@ class FileUtil:
         return file_path_list
 
     @staticmethod
+    def read_affected_file_list_content(request_file_path: str, base_dir: str, canonical_name: str) -> list[str]:
+        """
+        ユーザ要求記述書の内容を読み込み、修正対象のファイルパスのリストを返します。
+
+        引数:
+            request_file_path: ユーザ要求記述書のファイルパス。
+            base_dir: 絶対パスに変換するときのベースディレクトリ。
+            canonical_name: アウトプットファイルやフォルダを一意に識別するための正規名称
+
+        戻り値:
+            list[str]: ベースディレクトリに配置されるファイルの絶対パスのリスト。
+        """
+        request_file_content = FileUtil.read_file(request_file_path)
+
+        def get_file_path(line: str) -> str:
+            file_path_rel = line.strip()
+            file_path_rel = re.sub("^- ", "", file_path_rel)  # 先頭の"-"と" "を削除
+            file_path = os.path.abspath(os.path.join(base_dir, file_path_rel))
+            if canonical_name not in file_path:
+                file_path = os.path.abspath(os.path.join(base_dir, canonical_name, file_path_rel))
+            if os.path.isfile(file_path):
+                log("file found file_path= %s", file_path)
+                return file_path
+            log("file not found: %s", file_path)
+            return None
+
+        # request_file_contentから"### 修正対象のファイルパス"に続くファイルパスを取得
+        file_path_list = []
+        is_capturing = False
+        for line in request_file_content.split("\n"):
+            if "### 修正対象のファイルパス" in line:
+                is_capturing = True
+                continue
+            if is_capturing:
+                file_path = get_file_path(line)
+                if file_path:
+                    file_path_list.append(file_path)
+                    log("append file_path= %s", file_path)
+                continue
+            if is_capturing and "###" in line:
+                # 他のセクションに入ったら終了
+                is_capturing = False
+                break
+
+        return file_path_list
+
+    @staticmethod
     def copy_file(src_file_path: str, dis_file_path: str) -> str:
         return shutil.copy(src_file_path, dis_file_path)
 
