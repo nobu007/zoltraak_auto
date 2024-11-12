@@ -93,6 +93,14 @@ class BaseConverter:
             self.magic_info.history_info += " ->スキップ(既存＆input変更なし)"
             return file_info.target_file_path  # --- 処理をスキップし既存のターゲットファイルを返す
 
+        # タイムスタンプ取得
+        source_timestamp = FileUtil.get_timestamp(file_info.source_file_path)
+        target_timestamp = FileUtil.get_timestamp(file_info.target_file_path)
+        if source_timestamp < target_timestamp:
+            log(f"スキップ(ソースより新しい): {file_info.target_file_path}")
+            self.magic_info.history_info += " ->スキップ(ソースより新しい)"
+            return file_info.target_file_path
+
         # レイヤ個別のスキップ処理(要件定義書など複数inputで更新されるものはインプットの一致だけでスキップ)
         if self.magic_info.magic_layer in BaseConverter.SKIP_LAYERS_BY_SOURCE and self.is_same_source_as_past():
             log(f"スキップ(既存ソース): {file_info.target_file_path}")

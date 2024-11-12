@@ -1,3 +1,4 @@
+import datetime
 import os
 import pathlib
 import re
@@ -160,3 +161,12 @@ class FileUtil:
                     dir_paths.append(str(path.resolve()))
 
         return file_paths, dir_paths
+
+    @staticmethod
+    def get_timestamp(file_path: str) -> datetime.datetime:
+        """ファイルのタイムスタンプを取得します"""
+        if os.path.isfile(file_path):
+            timestamp = pathlib.Path(file_path).stat().st_mtime
+            return datetime.datetime.fromtimestamp(timestamp, tz=datetime.timezone.utc)  # noqa: UP017
+        # ファイルが存在しない場合は1970年1月1日に設定
+        return datetime.datetime.fromtimestamp(0, tz=datetime.timezone.utc)  # noqa: UP017
