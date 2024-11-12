@@ -343,19 +343,19 @@ class MagicWorkflow:
                 compiler_path_new = ""
                 if not magic_info.prompt_input:
                     log(self.get_log("コンパイラもプロンプトも未設定のため、一般的なプロンプトを使用します。"))
-                    prompt_input_new = FileUtil.read_grimoire(default_compiler_path)
+                    prompt_input_new = FileUtil.read_file(default_compiler_path)
         elif magic_info.magic_mode is MagicMode.PROMPT_ONLY:
             # プロンプトのみ
             compiler_path_new = ""
             if not magic_info.prompt_input:
                 log(self.get_log("プロンプトが未設定のため、一般的なプロンプトを使用します。"))
-                prompt_input_new = FileUtil.read_grimoire(default_compiler_path)
+                prompt_input_new = FileUtil.read_file(default_compiler_path)
         else:
             # SEARCH_GRIMOIRE or ZOLTRAAK_LEGACY(ノーケア、別のところで処理すること！)
             log(self.get_log("(SEARCH_GRIMOIRE)一般的なプロンプトを使用します。"))
             if not os.path.isfile(compiler_path):
                 compiler_path_new = default_compiler_path
-                prompt_input_new = FileUtil.read_grimoire(default_compiler_path)
+                prompt_input_new = FileUtil.read_file(default_compiler_path)
 
         # prompt_inputを更新
         log_head_diff("prompt_input更新", magic_info.prompt_input, prompt_input_new)

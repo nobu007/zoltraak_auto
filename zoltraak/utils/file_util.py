@@ -46,6 +46,7 @@ class FileUtil:
         target_content: str = "",
         replace_map: dict[str, str] | None = None,
     ) -> str:
+        # TODO: PromptManager版に置き換える
         # グリモアをpromptとlanguageとcontextをreplaceして読み込む
         content = FileUtil.read_file(file_path)
         content = content.replace("{prompt}", prompt)
@@ -63,6 +64,7 @@ class FileUtil:
 
     @staticmethod
     def write_grimoire(md_content: str, file_path_abs: str) -> str:
+        # TODO: PromptManagerに移動する
         # TODO: 何かグリモアに特化した前処理などを追加する
         FileUtil.write_file(file_path_abs, md_content)
         return file_path_abs

@@ -23,6 +23,7 @@ class CodeGenerator(BaseConverter):
         self.magic_info = magic_info
         self.prompt_manager = prompt_manager
         self.acceptable_layers = [
+            MagicLayer.LAYER_4_REQUIREMENT_GEN,
             MagicLayer.LAYER_5_CODE_GEN,
         ]
         self.name = "CodeGenerator"
@@ -42,7 +43,7 @@ class CodeGenerator(BaseConverter):
             code_file_path_list, unit="files", file=sys.stdout, desc=self.magic_info.magic_layer
         ):
             source_target_set = self.prepare_generation_code_file(code_file_path)
-            if source_target_set and source_target_set.target_file_path.endswith(".py"):
+            if source_target_set:
                 self.source_target_set_list.append(source_target_set)
                 log("append source_target_set= %s", source_target_set)
 
@@ -64,6 +65,9 @@ class CodeGenerator(BaseConverter):
         if code_base_file_path == code_file_path:
             code_base_file_path += ".md"  # もともと.mdだった場合は.md.mdになる
 
+        # requirement_file_path: 個々の詳細設計書に対応する情報構造体のファイルパス
+        requirement_file_path = os.path.splitext(code_file_path)[0] + "_requirement.md"
+
         # info_structure_file_path: 個々の詳細設計書に対応する情報構造体のファイルパス
         info_structure_file_path = os.path.splitext(code_file_path)[0] + "_info_structure.md"
         # info_structure_file_path_merged: ディレクトリ単位で集約した情報構造体のファイルパス
@@ -71,13 +75,24 @@ class CodeGenerator(BaseConverter):
         log("info_structure_file_path_merged=%s", info_structure_file_path_merged)
 
         context_file_path = ""
-        if self.magic_info.magic_layer is MagicLayer.LAYER_5_CODE_GEN:
+        if self.magic_info.magic_layer is MagicLayer.LAYER_4_REQUIREMENT_GEN:
+            # MagicLayer.LAYER_4_REQUIREMENT_GEN
+            # 要件定義書 => 要求定義書（ファイル別）
+            source_file_path = self.magic_info.file_info.md_file_path
+            target_file_path = requirement_file_path
+            context_file_path = ""
+            self.magic_info.grimoire_compiler = "dev_request_python.md"
+        elif self.magic_info.magic_layer is MagicLayer.LAYER_5_CODE_GEN:
             # MagicLayer.LAYER_5_CODE_GEN
             # 詳細設計書 => ソースファイル
-            source_file_path = code_base_file_path
+            source_file_path = requirement_file_path
             target_file_path = code_file_path
             context_file_path = info_structure_file_path
-            self.magic_info.grimoire_compiler = "dev_code_python.md"
+            if target_file_path.endswith(".py"):
+                self.magic_info.grimoire_compiler = "dev_code_python.md"
+            else:
+                # mdの場合を想定（README.mdなど）
+                self.magic_info.grimoire_compiler = "general_md.md"
         else:
             # 呼ばれないはず
             source_file_path = ""
@@ -90,7 +105,6 @@ class CodeGenerator(BaseConverter):
 
     def convert(self) -> str:
         """詳細設計書 => ソースファイル"""
-        print("convert")
         return self.convert_one()
 
     @log_inout

@@ -1,11 +1,60 @@
 import os
 import re
+from dataclasses import dataclass
 from enum import Enum
 
-from zoltraak.schema.schema import MagicInfo, MagicLayer
+from zoltraak.schema.schema import MagicInfo, MagicLayer, MagicMode
 from zoltraak.utils.diff_util import DiffUtil
 from zoltraak.utils.file_util import FileUtil
 from zoltraak.utils.log_util import log, log_e, log_inout
+
+
+@dataclass
+class PromptParams:
+    prompt: str = ""
+    language: str = ""
+    compiler_path: str = ""
+    formatter_path: str = ""
+    architect_path: str = ""
+    canonical_name: str = ""
+    source_file_name: str = ""
+    source_file_path: str = ""
+    source_content: str = ""
+    target_file_path: str = ""
+    target_file_name: str = ""
+    target_content: str = ""
+    context_file_path: str = ""
+    context_file_name: str = ""
+    context_content: str = ""
+    requirements_content: str = ""
+    destiny_file_path: str = ""
+
+    def __init__(self, magic_info: MagicInfo):
+        file_info = magic_info.file_info
+
+        self.prompt = magic_info.prompt_goal
+        self.language = magic_info.language
+        self.compiler_path = magic_info.get_compiler_path()
+        self.formatter_path = magic_info.get_formatter_path()
+        self.architect_path = magic_info.get_architect_path()
+        self.canonical_name = magic_info.file_info.canonical_name
+        self.source_file_name = file_info.source_file_name
+        self.source_file_path = file_info.source_file_path
+        self.source_content = FileUtil.read_file(file_info.source_file_path)
+        self.target_file_path = file_info.target_file_path
+        self.target_file_name = file_info.target_file_name
+        self.target_content = FileUtil.read_file(file_info.target_file_path)
+        self.context_file_path = file_info.context_file_path
+        self.context_file_name = file_info.context_file_name
+        self.context_content = FileUtil.read_file(file_info.context_file_path)
+        self.requirements_content = FileUtil.read_file(file_info.md_file_path)  # 要求仕様書
+        self.destiny_file_path = magic_info.file_info.destiny_file_path
+
+    def to_replace_map(self):
+        """PromptParamsのフィールドを辞書に変換する
+        例） {"prompt": prompt, "language": language, ...}
+        """
+        return {f.name: getattr(self, f.name) for f in self.__dataclass_fields__.values()}
 
 
 class PromptEnum(str, Enum):
@@ -105,37 +154,20 @@ class PromptManager:
         - コンテキスト(プロンプトに含める設計)
         - グリモア(compiler, formatter, architect)
         """
-        compiler_path = magic_info.get_compiler_path()
-        formatter_path = magic_info.get_formatter_path()
-        architect_path = magic_info.get_architect_path()
-        language = magic_info.language
-        file_info = magic_info.file_info
-
-        if magic_info.magic_layer == MagicLayer.LAYER_5_CODE_GEN:
+        # PromptParamsを作成
+        prompt_params = PromptParams(magic_info=magic_info)
+        if magic_info.magic_layer == MagicLayer.LAYER_5_CODE_GEN and magic_info.magic_mode == MagicMode.ZOLTRAAK_LEGACY:
             # コード生成時はarchitectを利用する
-            source_content = FileUtil.read_file(file_info.source_file_path)
-            prompt_final = self.create_prompt_architect(
-                source_content=source_content,
-                architect_path=architect_path,
-                # source_file_nameは冒頭のdef_と拡張子の.mdが入るのでcanonical_nameを利用
-                source_file_name=file_info.canonical_name,
-                source_file_path=file_info.source_file_path,
-                destiny_file_path=magic_info.file_info.destiny_file_path,
-            )  # プロンプトを作成
-
+            prompt_final = self.create_prompt_architect(prompt_params)
         else:
             # 通常はcompilerを利用する
-            prompt_final = self.create_prompt(
-                magic_info.prompt_goal, compiler_path, formatter_path, language, magic_info.file_info.destiny_file_path
-            )  # プロンプトを作成
+            prompt_final = self.create_prompt(prompt_params)
         log("prompt_final=\n%s\n...\n%s", prompt_final[:50], prompt_final[-5:])
         magic_info.prompt_final = prompt_final
         return prompt_final
 
     @log_inout
-    def create_prompt(
-        self, goal_prompt: str, compiler_path: str, formatter_path: str, language: str, destiny_file_path: str
-    ):
+    def create_prompt(self, params: PromptParams):
         """
         LLMへの最終的なプロンプト(prompt_final)を生成を作成する関数(compiler版)
 
@@ -143,16 +175,16 @@ class PromptManager:
             str: 作成されたプロンプト
         """
 
-        prompt_final = goal_prompt
-        if os.path.isfile(compiler_path):
+        prompt_final = params.prompt
+        if os.path.isfile(params.compiler_path):
             # コンパイラが存在する場合、コンパイラベースでプロンプトを取得
-            prompt_final = FileUtil.read_grimoire(compiler_path, goal_prompt, language)
+            prompt_final = PromptManager.read_grimoire(params.compiler_path, params.to_replace_map())
             prompt_final += "\n\n"
-        if os.path.exists(formatter_path):
-            prompt_final = self.apply_fomatter(prompt_final, formatter_path, language)
+        if os.path.exists(params.formatter_path):
+            prompt_final = self.apply_fomatter(prompt_final, params.formatter_path, params.language)
 
         # destiny_content
-        destiny_content = FileUtil.read_file(destiny_file_path)
+        destiny_content = FileUtil.read_file(params.destiny_file_path)
         prompt_final = (
             "#### 前提コンテキスト(この内容は重要ではないですが、緩く全体的な判断に活用してください) ####\n"
             + destiny_content
@@ -164,14 +196,7 @@ class PromptManager:
         return prompt_final
 
     @log_inout
-    def create_prompt_architect(
-        self,
-        source_content: str,
-        architect_path: str,
-        source_file_name: str,
-        source_file_path: str,
-        destiny_file_path: str,
-    ):
+    def create_prompt_architect(self, params: PromptParams):
         """
         LLMへの最終的なプロンプト(prompt_final)を生成を作成する関数(architect版)
 
@@ -179,23 +204,18 @@ class PromptManager:
             str: 作成されたプロンプト
         """
 
-        prompt_final = source_content
-        if os.path.isfile(architect_path):
+        prompt_final = params.source_content
+        if os.path.isfile(params.architect_path):
             # コンパイラが存在する場合、コンパイラベースでプロンプトを取得
-            replace_map = {
-                "source_content": source_content,
-                "source_file_name": source_file_name,
-                "source_file_path": source_file_path,
-            }
-            prompt_final = FileUtil.read_grimoire(file_path=architect_path, replace_map=replace_map)
+            prompt_final = self.read_grimoire(file_path=params.architect_path, replace_map=params.to_replace_map())
             prompt_final += "\n\n"
 
         # destiny_content
-        destiny_content = FileUtil.read_file(destiny_file_path)
+        destiny_content = FileUtil.read_file(params.destiny_file_path)
         prompt_final = (
             "#### 前提コンテキスト(この内容は重要ではないですが、緩く全体的な判断に活用してください) ####\n"
             + destiny_content
-            + "#### 前提コンテキスト終了 ####\n\n"
+            + "\n#### 前提コンテキスト終了 ####\n\n"
             + prompt_final
         )
         log("len(prompt_final)=%d", len(prompt_final))
@@ -247,7 +267,8 @@ class PromptManager:
         if formatter_path is None:  # フォーマッタパスが指定されていない場合
             formatter_prompt = ""  # - フォーマッタを空文字列に設定
         elif os.path.exists(formatter_path):  # -- フォーマッタファイルが存在する場合
-            formatter_prompt = FileUtil.read_grimoire(formatter_path, language=language)
+            replace_map = {"language": language}
+            formatter_prompt = PromptManager.read_grimoire(file_path=formatter_path, replace_map=replace_map)
             if language and formatter_path.endswith("_lang.md"):
                 formatter_prompt += f"""\n- You must output everything including code block and diagrams,
                 according to the previous instructions, but make sure you write your response in {language}.
@@ -259,6 +280,33 @@ class PromptManager:
             formatter_prompt = ""  # --- フォーマッタを空文字列に設定
 
         return formatter_prompt
+
+    @staticmethod
+    def read_grimoire(
+        file_path: str,
+        replace_map: dict[str, str] | None = None,
+    ) -> str:
+        # グリモアを読み込む
+        content = FileUtil.read_file(file_path)
+
+        # パターンを準備する
+        def replacement(match):
+            # マッチした3つのグループのうち、None以外のものを使用
+            key = next(group for group in match.groups() if group is not None)
+            return replace_map.get(key, match.group(0))
+
+        # 一度の`re.sub`で全ての置換を行う
+        # 各パターンを()でグループ化し、変数名も()でグループ化
+        pattern = r"{{(\w+)}}|{(\w+)}|$$(\w+)$$"
+        content = re.sub(pattern, replacement, content)
+
+        # if replace_map:
+        #     for key, value in replace_map.items():
+        #         content = content.replace("{{" + key + "}}", value)
+        #         content = content.replace("{" + key + "}", value)
+        #         content = content.replace(f"[{key}]", value)
+        log(f"read_grimoire content[:100]:\n {content[:100]}")
+        return content
 
     def __str__(self) -> str:
         return "PromptManager"
