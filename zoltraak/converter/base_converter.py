@@ -176,21 +176,22 @@ class BaseConverter:
 
         if self.is_need_handle_new_target_file(old_source_content, new_source_content, source_diff):
             # 新規で再作成が必要な場合
-            return self.handle_new_target_file()
+            return self.handle_new_target_file_with_old_context(old_source_content)
 
         # 前回ターゲットと今回ソースの適合度判定
         prompt_final = PromptEnum.FINAL.get_current_prompt(self.magic_info)
         match_rate = self.get_match_rate_source_and_target_file(old_target_content, new_source_content, prompt_final)
-        if match_rate >= BaseConverter.MATCH_RATE_THRESHOLD_OK:
-            # 処理不要につきスキップ
-            log("MATCH_RATE_THRESHOLD_OK 以上のためスキップします。")
-            self.magic_info.history_info += f" ->スキップ(match_rate高={match_rate})"
-            return self.handle_new_target_file()
+        # このブロックは無効化： 適合度が高くても処理不要とは限らないため
+        # if match_rate >= BaseConverter.MATCH_RATE_THRESHOLD_OK:
+        #     # 処理不要につきスキップ
+        #     log("MATCH_RATE_THRESHOLD_OK 以上のためスキップします。")
+        #     self.magic_info.history_info += f" ->スキップ(match_rate高={match_rate})"
+        #     return file_info.target_file_path
         if match_rate < BaseConverter.MATCH_RATE_THRESHOLD_NG:
             # match_rateが低すぎる
             log("MATCH_RATE_THRESHOLD_NG に満たないためターゲットファイルを再作成します。")
             self.magic_info.history_info += f" ->再作成(match_rate不適合={match_rate})"
-            return self.handle_new_target_file()
+            return self.handle_new_target_file_with_old_context(old_source_content)
         # match_rateがMATCH_RATE_THRESHOLD_NG ～ MATCH_RATE_THRESHOLD_OK の場合は処理継続(差分適用モード)
 
         # source_diffを加味したプロンプト(prompt_diff)を作成
@@ -202,7 +203,7 @@ class BaseConverter:
         if len(prompt_diff_order) > BaseConverter.DEF_MAX_PROMPT_SIZE_FOR_DIFF:
             log("prompt_diff_orderが大きすぎるため、target_fileを再作成します。")
             self.magic_info.history_info += " ->再作成(prompt_diff_order過大)"
-            return self.handle_new_target_file()
+            return self.handle_new_target_file_with_old_context(old_source_content)
 
         self.magic_info.prompt_diff_order = prompt_diff_order
 
@@ -414,6 +415,26 @@ class BaseConverter:
             output_file_path = target.process_generated_code(code)
             target.write_code_to_target_file(output_file_path)
         return output_file_path
+
+    @log_inout
+    def handle_new_target_file_with_old_context(self, old_source_content: str) -> str:
+        """旧ソース全体を付与してターゲットファイル(md_fileまたはpy_file)を新規作成する"""
+        file_info = self.magic_info.file_info
+        log_change(
+            f"新ファイル生成中(with_old_context):\n{file_info.target_file_path}を作り直します。少々お時間をいただきます。",
+            file_info.source_file_path,
+            file_info.target_file_path,
+        )
+
+        context_content = FileUtil.read_file(file_info.context_file_path)
+        if old_source_content not in context_content:
+            # 前回ソースをコンテキストに詰め込む
+            context_content += "# 差分適用に失敗しました。再作成お願いします。\n"
+            context_content += f"<old_source_content>\n{old_source_content}\n</old_source_content>"
+            FileUtil.write_file(file_info.context_file_path, context_content)
+
+        # 新規作成
+        return self.handle_new_target_file()
 
     def is_same_source_as_past(self) -> bool:
         file_info = self.magic_info.file_info

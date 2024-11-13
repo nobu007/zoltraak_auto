@@ -33,6 +33,7 @@ class FileAnalyzer(BaseConverter):
         解析の準備を行うメソッド
         """
         # step1: ファイル情報を更新
+        self.source_target_set_list = []
         file_info = self.magic_info.file_info
 
         # affected_file_list

@@ -123,7 +123,10 @@ class MagicWorkflow:
 
             # プログレスバーを初期化
             progress_bar = tqdm_asyncio(
-                total=len(source_target_set_list), unit="files", file=sys.stdout, desc=self.magic_info.magic_layer
+                total=len(source_target_set_list),
+                unit="files",
+                file=sys.stdout,
+                desc=self.magic_info.magic_layer + "(run_converter)",
             )
 
             # 非同期処理を実行

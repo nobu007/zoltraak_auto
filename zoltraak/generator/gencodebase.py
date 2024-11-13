@@ -37,13 +37,17 @@ class CodeBaseGenerator(BaseConverter):
         ターゲットコードベース生成の準備を行うメソッド
         """
         # step1: ファイル情報を更新
+        self.source_target_set_list = []
         file_info = self.magic_info.file_info
         code_file_path_list = FileUtil.read_structure_file_content(
             file_info.structure_file_path, file_info.target_dir, file_info.canonical_name
         )
 
         for code_file_path in tqdm(
-            code_file_path_list, unit="files", file=sys.stdout, desc=self.magic_info.magic_layer
+            code_file_path_list,
+            unit="files",
+            file=sys.stdout,
+            desc=self.magic_info.magic_layer + "(prepare_generation)",
         ):
             if os.path.isfile(code_file_path):
                 source_target_set = self.prepare_generation_code_file(code_file_path)

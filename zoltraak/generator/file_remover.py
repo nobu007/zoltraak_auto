@@ -33,6 +33,7 @@ class FileRemover(BaseConverter):
         ターゲットコードベース生成の準備を行うメソッド
         """
         # step1: ファイル構造定義書を取得
+        self.source_target_set_list = []
         file_info = self.magic_info.file_info
         code_file_path_list = FileUtil.read_structure_file_content(
             file_info.structure_file_path, file_info.target_dir, file_info.canonical_name
