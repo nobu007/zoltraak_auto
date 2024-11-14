@@ -417,7 +417,7 @@ class BaseConverter:
         return output_file_path
 
     @log_inout
-    def handle_new_target_file_with_old_context(self, old_source_content: str) -> str:
+    def handle_new_target_file_with_old_context(self, old_source_content: str) -> str:  # noqa: ARG002
         """旧ソース全体を付与してターゲットファイル(md_fileまたはpy_file)を新規作成する"""
         file_info = self.magic_info.file_info
         log_change(
@@ -426,12 +426,12 @@ class BaseConverter:
             file_info.target_file_path,
         )
 
-        context_content = FileUtil.read_file(file_info.context_file_path)
-        if old_source_content not in context_content:
-            # 前回ソースをコンテキストに詰め込む
-            context_content += "# 差分適用に失敗しました。再作成お願いします。\n"
-            context_content += f"<old_source_content>\n{old_source_content}\n</old_source_content>"
-            FileUtil.write_file(file_info.context_file_path, context_content)
+        # context_content = FileUtil.read_file(file_info.context_file_path)
+        # if old_source_content not in context_content:
+        #     # 前回ソースをコンテキストに詰め込む
+        #     context_content += "# 差分適用に失敗しました。再作成お願いします。\n"
+        #     context_content += f"<old_source_content>\n{old_source_content}\n</old_source_content>"
+        #     FileUtil.write_file(file_info.context_file_path, context_content)
 
         # 新規作成
         return self.handle_new_target_file()
