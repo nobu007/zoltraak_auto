@@ -213,7 +213,7 @@ class LitellmApi:
         fallbacks_dict = self._create_fallbacks_dict(model_config_list)
 
         self._router = Router(
-            model_list=model_config_list_dict, fallbacks=fallbacks_dict, retry_after=3, num_retries=2, max_fallbacks=3
+            model_list=model_config_list_dict, fallbacks=fallbacks_dict, retry_after=10, num_retries=3, max_fallbacks=5
         )
         return self._router
 
