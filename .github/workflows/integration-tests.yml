@@ -41,6 +41,16 @@ jobs:
           python -m pip install --upgrade pip
           poetry install --with test,lint
 
+      - name: Run integration test(test_api_keys)
+        run: |
+          pytest tests/integration_tests/test_api_keys.py
+        env:
+          API_MODELS: ${{ secrets.API_MODELS }}
+          ANTHROPIC_API_KEYS: ${{ secrets.ANTHROPIC_API_KEYS }}
+          GEMINI_API_KEYS: ${{ secrets.GEMINI_API_KEYS }}
+          GROQ_API_KEYS: ${{ secrets.GROQ_API_KEYS }}
+          MISTRAL_API_KEYS: ${{ secrets.MISTRAL_API_KEYS }}
+
       - name: Run integration test(test_performance_first_run)
         run: |
           pytest tests/integration_tests/test_performance_first_run.py
