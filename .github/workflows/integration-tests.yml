@@ -33,8 +33,13 @@ jobs:
         run: |
           pip install poetry
           poetry config virtualenvs.create false # グローバル環境でインストール
+
       - name: Install dependencies
-        run: poetry install --with test,lint
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y graphviz graphviz-dev
+          python -m pip install --upgrade pip
+          poetry install --with test,lint
 
       - name: Run integration test(test_performance_first_run)
         run: |

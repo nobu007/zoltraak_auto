@@ -32,7 +32,11 @@ jobs:                                                                         # 
           pip install poetry                                                  # Poetryをインストール
           poetry config virtualenvs.create false                              # グローバル環境でインストール
       - name: Install dependencies
-        run: poetry install --with test,lint                                  # pyproject.tomlに基づいて依存関係をインストール
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y graphviz graphviz-dev
+          python -m pip install --upgrade pip
+          poetry install --with test,lint
       - name: Set SPLIT_NUM
         run: echo "SPLIT_NUM=10" >> $GITHUB_ENV                               # pytestを何分割して実行するか(4なら4分割してランダムで1つを実行)
       - name: Generate random index (1 to SPLIT_NUM)
