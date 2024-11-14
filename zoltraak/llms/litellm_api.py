@@ -13,9 +13,9 @@ from zoltraak import settings
 from zoltraak.utils.file_util import FileUtil
 from zoltraak.utils.log_util import log, log_head, log_w
 
-# デバッグ用
-os.environ["LITELLM_LOG"] = "DEBUG"
-litellm.suppress_debug_info = True
+# デバッグ用(ローカル環境でのみ利用すること！)
+# os.environ["LITELLM_LOG"] = "ERROR"
+# litellm.suppress_debug_info = False
 
 
 class ModelStatsLogger(CustomLogger):
@@ -155,7 +155,7 @@ def generate_response_raw(
         max_tokens=max_tokens,
         temperature=temperature,
         api_key=api_key,
-        num_retries=3,  # times
+        num_retries=5,  # times
         cooldown_time=30,  # [s]
     )
     response_text = response.choices[0].message.content.strip()
