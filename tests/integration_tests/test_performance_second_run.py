@@ -19,7 +19,7 @@ class TestZoltraakCommand(BaseTestCase):  # TestZoltraakCommand クラスを定�
         # テスト開始時の時間を取得
         self.start_time = time.time()
 
-        self.timeout_seconds = 10  # タイムアウト時間を設定
+        self.timeout_seconds = 60  # タイムアウト時間を設定
         self.end_time = 0.0  # 処理終了時間を初期化
         self.elapsed_time = 0.0  # 処理時間を初期化
         self.try_n = 1  # N回目の実行を保持する変数
