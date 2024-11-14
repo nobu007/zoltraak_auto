@@ -11,9 +11,12 @@ dotenv_path = join(dirname(__file__), ".env")
 load_dotenv(dotenv_path)
 
 
-# api_key
-anthropic_api_key = os.getenv("ANTHROPIC_API_KEY")  # 環境変数からAPI keyを取得
-groq_api_key = os.getenv("GROQ_API_KEY")  # 環境変数からGroqのAPI keyを取得
+# api_key(環境変数からAPI keyを取得)
+api_models = os.getenv("API_MODELS")
+gemini_api_keys = os.getenv("GEMINI_API_KEYS")
+anthropic_api_key = os.getenv("ANTHROPIC_API_KEYS")
+groq_api_keys = os.getenv("GROQ_API_KEYS")
+mistral_api_keys = os.getenv("MISTRAL_API_KEYS")
 
 # model_name
 model_name = os.getenv("MODEL_NAME_DEFAULT", "gemini/gemini-1.5-flash-latest")

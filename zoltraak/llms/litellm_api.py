@@ -6,7 +6,7 @@ from typing import Any
 
 import anyio
 import litellm
-from litellm import ModelResponse, Router
+from litellm import ModelResponse, Router, completion
 from litellm.integrations.custom_logger import CustomLogger
 
 from zoltraak import settings
@@ -140,6 +140,27 @@ async def generate_response_async(
     return await api.generate_response(
         model=model, prompt=prompt, max_tokens=max_tokens, temperature=temperature, is_async=is_async
     )
+
+
+def generate_response_raw(
+    model: str,
+    prompt: str,
+    max_tokens: int = 4000,
+    temperature: float = 0.0,
+    api_key: str = "",
+) -> str:
+    response = completion(
+        model=model,
+        messages=[{"content": prompt, "role": "user"}],
+        max_tokens=max_tokens,
+        temperature=temperature,
+        api_key=api_key,
+        num_retries=3,  # times
+        cooldown_time=30,  # [s]
+    )
+    response_text = response.choices[0].message.content.strip()
+    log_head("response_text", response_text)
+    return response_text
 
 
 def show_used_total_tokens():
