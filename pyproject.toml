@@ -34,13 +34,14 @@ litellm = "^1.51.3"
 networkx = "^3.4.2"
 playwright = "^1.47.0"
 pyautogui = "^0.9.54"
-pydantic = "^2.9.2" 
+pydantic = "^2.9.2"
 pygraphviz = "^1.14"
 pyperclip = "^1.9.0"
 python = ">=3.10,<3.13"
 python-dotenv = "^1.0.1"
 rich = "^13.8.1"
 tenacity = "^8.4.2" # avoid https://github.com/BerriAI/litellm/issues/5690
+langfuse = "^2.53.9"
 
 [tool.poetry.group.test]
 optional = true
