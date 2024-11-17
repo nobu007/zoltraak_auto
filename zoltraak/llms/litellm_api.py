@@ -2,7 +2,8 @@ import os
 from collections import defaultdict
 from contextlib import suppress
 from dataclasses import asdict, dataclass
-from typing import Any
+from datetime import datetime
+from typing import Any, TypedDict
 
 import anyio
 import litellm
@@ -24,6 +25,48 @@ litellm.suppress_debug_info = False
 # langfuse
 litellm.success_callback = ["langfuse"]
 # litellm.failure_callback = ["langfuse"]
+
+
+class EvalMetadata(TypedDict):
+    title: str = ""
+    description: str = ""
+    score: float = 0.0
+
+    @classmethod
+    def new(cls, title: str = "", description: str = "", score: float = 0.0) -> "EvalMetadata":
+        return {"title": title, "description": description, "score": score}
+
+
+class LitellmMetadata(TypedDict):
+    generation_id: str = "generation_id_N"
+    generation_name: str = "generation_name_N"
+    trace_metadata: EvalMetadata = EvalMetadata()
+    score: float = 0.1234
+
+    @classmethod
+    def new(
+        cls,
+        generation_id: str = "",
+        generation_name: str = "",
+        trace_metadata: EvalMetadata = None,
+        score: float = 0.0,
+    ) -> "LitellmMetadata":
+        if trace_metadata is None:
+            trace_metadata = EvalMetadata.new(score=score)
+
+        local_tz = datetime.now().astimezone().tzinfo
+        now_str = datetime.now(tz=local_tz).strftime("%Y%m%d_%H%M%S")
+
+        if not generation_id:
+            generation_id = "litellm-completion_" + now_str
+        if not generation_name:
+            generation_name = "litellm-completion"
+        return {
+            "generation_id": generation_id,
+            "generation_name": generation_name,
+            "trace_metadata": trace_metadata,
+            "score": score,
+        }
 
 
 class ModelStatsLogger(CustomLogger):
@@ -156,7 +199,11 @@ def generate_response_raw(
     max_tokens: int = 4000,
     temperature: float = 0.0,
     api_key: str = "",
+    metadata: LitellmMetadata = None,
 ) -> str:
+    if metadata is None:
+        metadata = LitellmMetadata.new()
+
     response = completion(
         model=model,
         messages=[{"content": prompt, "role": "user"}],
@@ -165,6 +212,7 @@ def generate_response_raw(
         api_key=api_key,
         num_retries=5,  # times
         cooldown_time=30,  # [s]
+        metadata=metadata,
     )
     response_text = response.choices[0].message.content.strip()
     log_head("response_text", response_text)
