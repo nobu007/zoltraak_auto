@@ -15,7 +15,15 @@ from zoltraak.utils.log_util import log, log_head, log_w
 
 # デバッグ用(ローカル環境でのみ利用すること！)
 # os.environ["LITELLM_LOG"] = "ERROR"
-# litellm.suppress_debug_info = False
+# litellm.set_verbose=False
+litellm.suppress_debug_info = False
+
+# athina
+# litellm.success_callback = ["athina"]
+
+# langfuse
+litellm.success_callback = ["langfuse"]
+# litellm.failure_callback = ["langfuse"]
 
 
 class ModelStatsLogger(CustomLogger):
