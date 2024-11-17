@@ -56,6 +56,9 @@ jobs:                                                                         # 
           GEMINI_API_KEYS: ${{ secrets.GEMINI_API_KEYS }}
           GROQ_API_KEYS: ${{ secrets.GROQ_API_KEYS }}
           MISTRAL_API_KEYS: ${{ secrets.MISTRAL_API_KEYS }}
+          LANGFUSE_SECRET_KEY: ${{ secrets.LANGFUSE_SECRET_KEY }}
+          LANGFUSE_PUBLIC_KEY: "pk-lf-e84a69c3-f0c7-49f2-be2a-77109e546a1a"
+          LANGFUSE_HOST: "https://us.cloud.langfuse.com"
 
       # - name: Run test_sample.py                                              # -- test_sample.pyの実行
       #   if: matrix.python-version == '3.11'                                   # --- Python 3.11の場合のみ実行
