@@ -9,6 +9,7 @@ import anyio
 import litellm
 from litellm import ModelResponse, Router, completion
 from litellm.integrations.custom_logger import CustomLogger
+from pydantic import BaseModel
 
 from zoltraak import settings
 from zoltraak.utils.file_util import FileUtil
@@ -200,6 +201,7 @@ def generate_response_raw(
     temperature: float = 0.0,
     api_key: str = "",
     metadata: LitellmMetadata = None,
+    response_format: type[BaseModel] | None = None,
 ) -> str:
     if metadata is None:
         metadata = LitellmMetadata.new()
@@ -213,6 +215,7 @@ def generate_response_raw(
         num_retries=5,  # times
         cooldown_time=30,  # [s]
         metadata=metadata,
+        response_format=response_format,
     )
     response_text = response.choices[0].message.content.strip()
     log_head("response_text", response_text)
