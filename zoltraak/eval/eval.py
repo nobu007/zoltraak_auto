@@ -66,6 +66,30 @@ class CustomAnswerRelevancyMetric(AnswerRelevancyMetric):
         self.using_native_model = False
 
 
+def get_score(src_content: str, dst_content: str, relation="input vs output") -> float:
+    deep_eval = CustomLitellmDeepEval()
+    eval_input = f"""Please judge src_contents vs dst_content(=output).
+The relation of src_content and dst_content is "{relation}".
+
+src_content:
+{src_content}
+"""
+    test_case = LLMTestCase(input=eval_input, actual_output=dst_content)
+    metric = AnswerRelevancyMetric(model=deep_eval)
+    ret = metric.measure(test_case)
+    print("ret=", ret)
+    if ret is None:
+        if "The score is" in metric.reason:
+            score_str = metric.reason.split("The score is")[1].strip()  # "The score is"以降の文字列を取得
+            score_str = score_str.split(" ")[0]  # Get the string up to the space
+            score_str = "".join(filter(lambda c: c.isdigit() or c in ".-", score_str))
+            ret = float(score_str)
+            print("get score from metric.reason=", metric.reason)
+            return ret
+        ret = -1.0
+    return ret
+
+
 if __name__ == "__main__":
 
     class TestScore(BaseModel):
