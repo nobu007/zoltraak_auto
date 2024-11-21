@@ -77,7 +77,12 @@ class BaseConverter:
         # ターゲットファイルが存在しない場合
         return self.handle_new_target_file()  # - 新しいターゲットファイルを処理
 
-    SKIP_LAYERS_BY_SOURCE: ClassVar[list[MagicLayer]] = [MagicLayer.LAYER_7_INFO_STRUCTURE_GEN]
+    # 常に再作成するレイヤ（差分作成は禁止）
+    ALWAYS_FULL_CREATE_LAYERS: ClassVar[list[MagicLayer]] = [
+        MagicLayer.LAYER_1_REQUEST_GEN,
+        MagicLayer.LAYER_2_STRUCTURE_GEN,
+        MagicLayer.LAYER_2_1_AFFECTED_FILE_LIST_GEN,
+    ]
 
     @log_inout
     def handle_existing_target_file(self) -> str:
@@ -102,11 +107,16 @@ class BaseConverter:
             self.magic_info.history_info += " ->スキップ(ソースより新しい)"
             return file_info.target_file_path
 
-        # レイヤ個別のスキップ処理(要件定義書など複数inputで更新されるものはインプットの一致だけでスキップ)
-        if self.magic_info.magic_layer in BaseConverter.SKIP_LAYERS_BY_SOURCE and self.is_same_source_as_past():
-            log(f"スキップ(既存ソース): {file_info.target_file_path}")
-            self.magic_info.history_info += " ->スキップ(既存＆input変更なし)"
-            return file_info.target_file_path  # --- 処理をスキップし既存のターゲットファイルを返す
+        # 差分禁止レイヤは作り直し判定
+        if self.magic_info.magic_layer in BaseConverter.ALWAYS_FULL_CREATE_LAYERS:
+            if self.is_same_source_as_past():
+                log(f"スキップ(差分禁止&ソース変更なし): {file_info.target_file_path}")
+                self.magic_info.history_info += " ->スキップ(差分禁止&ソース変更なし)"
+                return file_info.target_file_path  # --- 処理をスキップし既存のターゲットファイルを返す
+            # ソースが変更された場合は再作成
+            log(f"再作成(差分禁止&ソース変更あり): {file_info.target_file_path}")
+            self.magic_info.history_info += " ->再作成(差分禁止&ソース変更あり)"
+            return self.handle_new_target_file()
 
         # プロンプトの差分表示(デバッグ用)
         self.prompt_manager.show_diff_prompt(self.magic_info, PromptEnum.FINAL)
