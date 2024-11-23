@@ -59,9 +59,9 @@ class LitellmMetadata(TypedDict):
         now_str = datetime.now(tz=local_tz).strftime("%Y%m%d_%H%M%S")
 
         if not generation_id:
-            generation_id = "litellm-completion_" + now_str
+            generation_id = now_str + "_litellm"
         if not generation_name:
-            generation_name = "litellm-completion"
+            generation_name = "litellm"
         return {
             "generation_id": generation_id,
             "generation_name": generation_name,
@@ -381,6 +381,7 @@ class LitellmApi:
             messages=[{"content": prompt, "role": "user"}],
             max_tokens=max_tokens,
             temperature=temperature,
+            metadata=LitellmMetadata.new(),
         )
         log_head("prompt", prompt, 1000)
         return await anyio.to_thread.run_sync(self._process_response, response, prompt)
@@ -400,6 +401,7 @@ class LitellmApi:
             messages=[{"content": prompt, "role": "user"}],
             max_tokens=max_tokens,
             temperature=temperature,
+            metadata=LitellmMetadata.new(),
         )
         return self._process_response(response=response, prompt=prompt, is_first_try=is_first_try)
 
