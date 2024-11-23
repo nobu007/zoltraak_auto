@@ -145,6 +145,7 @@ class ModelConfig:
     litellm_params: LitellmParams
 
 
+# 旧方式
 def flexible_run(async_func: callable, *args, **kwargs) -> Any:
     """
     コンテキストに応じて適切な方法で非同期関数を実行する
@@ -163,6 +164,7 @@ def flexible_run(async_func: callable, *args, **kwargs) -> Any:
         raise
 
 
+# 旧方式
 def generate_response(
     model: str,
     prompt: str,
@@ -181,6 +183,7 @@ def generate_response(
     )
 
 
+# 旧方式
 async def generate_response_async(
     model: str,
     prompt: str,
@@ -340,7 +343,24 @@ class LitellmApi:
         #     {LitellmApi.DEFAULT_MODEL_GEMINI: ["mistral_group", "groq_group"]},  # 上手くFallbackが効かないので暫定
         # ]
 
-    async def generate_response(
+    def generate_response(self, *args, **kwargs) -> Any:
+        """
+        コンテキストに応じて適切な方法でgenerate_response_asyncを実行する
+        """
+        try:
+            with suppress(RuntimeError):
+                # 現在のイベントループでのタスクを取得しようとする
+                anyio.get_current_task()
+                return anyio.from_thread.run(self.generate_response_async, *args, **kwargs)
+
+            # イベントループが存在しない場合は、新しいイベントループを作成して非同期関数を実行する
+            return anyio.run(self.generate_response_async, *args, **kwargs)
+        except Exception as e:
+            # エラーハンドリング
+            print(f"Error executing async function: {e}")
+            raise
+
+    async def generate_response_async(
         self,
         model: str,
         prompt: str,

@@ -8,7 +8,6 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
 
-import zoltraak.llms.litellm_api as litellm
 from zoltraak import settings
 from zoltraak.schema.schema import MagicInfo
 from zoltraak.utils.subprocess_util import SubprocessUtil
@@ -224,26 +223,24 @@ def _add_row_relpath(table: Table, key: str, path: str, base_path: str) -> None:
 
 
 def generate_response_with_spinner(
-    magic_info: MagicInfo, model_name: str, prompt: str, max_tokens: int = 4000, temperature: float = 0.0
+    magic_info: MagicInfo,
+    generate_response_fn: callable,
+    model_name: str,
+    prompt: str,
+    max_tokens: int = 4000,
+    temperature: float = 0.0,
 ):
     """
     スピナーを表示しながらコマンドを実行し、結果を表示します。
     """
     if magic_info.is_async:
         # 非同期モードではスピナーを表示しない
-        result = generate_response(model_name, prompt, max_tokens, temperature)
+        result = generate_response_fn(model_name, prompt, max_tokens, temperature)
     else:
         result = run_function_with_spinner(
-            magic_info, generate_response, magic_info.model_name, prompt, max_tokens, temperature
+            magic_info, generate_response_fn, magic_info.model_name, prompt, max_tokens, temperature
         )
     if result is None:
         return "グリモアの展開に失敗しました"
 
     return result
-
-
-def generate_response(model_name: str, prompt: str, max_tokens: int = 4000, temperature: float = 0.0) -> str:
-    """
-    promptを指定してllmからのレスポンスを生成する関数
-    """
-    return litellm.generate_response(model=model_name, prompt=prompt, max_tokens=max_tokens, temperature=temperature)

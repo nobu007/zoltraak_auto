@@ -5,6 +5,7 @@ from zoltraak import settings
 from zoltraak.core.prompt_manager import PromptEnum, PromptManager
 from zoltraak.eval.eval import get_score
 from zoltraak.gencode import TargetCodeGenerator
+from zoltraak.llms.litellm_api import LitellmApi
 from zoltraak.schema.schema import EMPTY_CONTEXT_FILE, MagicInfo, MagicLayer, SourceTargetSet
 from zoltraak.utils.diff_util import DiffUtil
 from zoltraak.utils.file_util import FileUtil
@@ -50,6 +51,7 @@ class BaseConverter:
         self.acceptable_layers = []
         self.name = "BaseConverter"
         self.source_target_set_list: list[SourceTargetSet] = []
+        self.litellm_api = LitellmApi()
 
     def prepare(self) -> None:
         """converter共通の初期化処理"""
@@ -502,6 +504,7 @@ class BaseConverter:
         # LLM呼び出し
         response = generate_response_with_spinner(
             magic_info=self.magic_info,
+            generate_response_fn=self.litellm_api.generate_response,
             model_name=model_name,
             prompt=prompt,
             max_tokens=max_tokens,
