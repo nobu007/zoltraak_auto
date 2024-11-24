@@ -30,8 +30,6 @@ class CustomLitellmDeepEval(DeepEvalBaseLLM):
             api_key=self.gemini_api_key,
             response_format=schema,
         )
-        print("type generate resp=", type(resp))
-        print("generate resp=", resp)
         if schema and hasattr(schema, "model_validate_json") and callable(schema.model_validate_json):
             return schema.model_validate_json(resp)
         return resp
