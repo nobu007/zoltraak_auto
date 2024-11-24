@@ -70,6 +70,32 @@ class LitellmMetadata(TypedDict):
         }
 
 
+class LitellmMessage(TypedDict):
+    content: str  # prompt
+    role: str  # "user" or "system"
+
+    @classmethod
+    def new(cls, prompt: str) -> "LitellmMessage":
+        return cls(content=prompt, role="user")
+
+
+class LitellmParams(TypedDict):
+    model: str
+    messages: list[LitellmMessage]
+    max_tokens: int
+    temperature: float
+    metadata: LitellmMetadata
+
+    @classmethod
+    def new(
+        cls, prompt: str, model: str = settings.model_name, max_tokens: int = 4000, temperature=1.0, metadata=None
+    ) -> "LitellmParams":
+        if metadata is None:
+            metadata = LitellmMetadata.new()
+        messages = [LitellmMessage.new(prompt)]
+        return cls(model=model, messages=messages, max_tokens=max_tokens, temperature=temperature, metadata=metadata)
+
+
 class ModelStatsLogger(CustomLogger):
     def __init__(self):
         self.stats = defaultdict(lambda: {"count": 0, "total_tokens": 0, "start_time": None, "end_time": None})
@@ -132,7 +158,7 @@ TPM_LIMITS: dict = {
 
 
 @dataclass
-class LitellmParams:
+class LitellmModelParams:
     model: str
     api_key: str
     rpm: str
@@ -142,26 +168,26 @@ class LitellmParams:
 @dataclass
 class ModelConfig:
     model_name: str
-    litellm_params: LitellmParams
+    litellm_params: LitellmModelParams
 
 
 # 旧方式
-def flexible_run(async_func: callable, *args, **kwargs) -> Any:
-    """
-    コンテキストに応じて適切な方法で非同期関数を実行する
-    """
-    try:
-        with suppress(RuntimeError):
-            # 現在のイベントループでのタスクを取得しようとする
-            anyio.get_current_task()
-            return anyio.from_thread.run(async_func, *args, **kwargs)
+# def flexible_run(async_func: callable, *args, **kwargs) -> Any:
+#     """
+#     コンテキストに応じて適切な方法で非同期関数を実行する
+#     """
+#     try:
+#         with suppress(RuntimeError):
+#             # 現在のイベントループでのタスクを取得しようとする
+#             anyio.get_current_task()
+#             return anyio.from_thread.run(async_func, *args, **kwargs)
 
-        # イベントループが存在しない場合は、新しいイベントループを作成して非同期関数を実行する
-        return anyio.run(async_func, *args, **kwargs)
-    except Exception as e:
-        # エラーハンドリング
-        print(f"Error executing async function: {e}")
-        raise
+#         # イベントループが存在しない場合は、新しいイベントループを作成して非同期関数を実行する
+#         return anyio.run(async_func, *args, **kwargs)
+#     except Exception as e:
+#         # エラーハンドリング
+#         print(f"Error executing async function: {e}")
+#         raise
 
 
 # 旧方式
@@ -173,14 +199,9 @@ def generate_response(
     *,
     is_async: bool = False,
 ) -> str:
-    return flexible_run(
-        generate_response_async,
-        model,
-        prompt,
-        max_tokens,
-        temperature,
-        is_async,
-    )
+    api = LitellmApi()
+    litellm_params = LitellmParams.new(prompt=prompt, model=model, max_tokens=max_tokens, temperature=temperature)
+    return api.generate_response(litellm_params=litellm_params, is_async=is_async)
 
 
 # 旧方式
@@ -192,9 +213,9 @@ async def generate_response_async(
     is_async: bool = False,  # noqa: FBT001
 ) -> str:
     api = LitellmApi()
-    return await api.generate_response(
-        model=model, prompt=prompt, max_tokens=max_tokens, temperature=temperature, is_async=is_async
-    )
+    litellm_params = LitellmParams.new(prompt=prompt, model=model, max_tokens=max_tokens, temperature=temperature)
+    print("litellm_params=", litellm_params)
+    return await api.generate_response_async(litellm_params=litellm_params, is_async=is_async)
 
 
 def generate_response_raw(
@@ -284,7 +305,7 @@ class LitellmApi:
         # ベースモデルの設定
         base_model = ModelConfig(
             model_name="main",
-            litellm_params=LitellmParams(
+            litellm_params=LitellmModelParams(
                 model=primary_model,
                 api_key="",
                 rpm=RPM_LIMITS["other"],
@@ -343,7 +364,7 @@ class LitellmApi:
         #     {LitellmApi.DEFAULT_MODEL_GEMINI: ["mistral_group", "groq_group"]},  # 上手くFallbackが効かないので暫定
         # ]
 
-    def generate_response(self, *args, **kwargs) -> Any:
+    def generate_response(self, litellm_params: LitellmParams, is_async: bool = False) -> Any:  # noqa: FBT001
         """
         コンテキストに応じて適切な方法でgenerate_response_asyncを実行する
         """
@@ -351,10 +372,10 @@ class LitellmApi:
             with suppress(RuntimeError):
                 # 現在のイベントループでのタスクを取得しようとする
                 anyio.get_current_task()
-                return anyio.from_thread.run(self.generate_response_async, *args, **kwargs)
+                return anyio.from_thread.run(self.generate_response_async, litellm_params, is_async)
 
             # イベントループが存在しない場合は、新しいイベントループを作成して非同期関数を実行する
-            return anyio.run(self.generate_response_async, *args, **kwargs)
+            return anyio.run(self.generate_response_async, litellm_params, is_async)
         except Exception as e:
             # エラーハンドリング
             print(f"Error executing async function: {e}")
@@ -362,26 +383,26 @@ class LitellmApi:
 
     async def generate_response_async(
         self,
-        model: str,
-        prompt: str,
-        max_tokens: int = 4000,
-        temperature: float = 0.0,
-        *,
-        is_async: bool = False,
+        litellm_params: LitellmParams,
+        is_async: bool = False,  # noqa: FBT001
     ) -> str:
         """同期と非同期を共通の関数で呼べるようにした"""
-        if not await anyio.to_thread.run_sync(self._validate_input, prompt, max_tokens):
+        if not await anyio.to_thread.run_sync(self._validate_input, litellm_params):
             return ""
 
         log("is_async=%s", is_async)
         if is_async:
             # Async call
-            return await self._generate_async(model, prompt, max_tokens, temperature)
+            return await self._generate_async(litellm_params)
         # Sync call
-        return await anyio.to_thread.run_sync(self._generate_sync, model, prompt, max_tokens, temperature)
+        return await anyio.to_thread.run_sync(self._generate_sync, litellm_params)
 
-    def _validate_input(self, prompt: str, max_tokens: int) -> bool:
+    def _validate_input(self, litellm_params: LitellmParams) -> bool:
         """Validate input parameters."""
+        print("litellm_params=", litellm_params)
+        prompt = litellm_params["messages"][0]["content"]
+        max_tokens = litellm_params["max_tokens"]
+
         if not prompt.strip():
             log_w("Empty prompt received")
             return False
@@ -393,49 +414,41 @@ class LitellmApi:
 
         return True
 
-    async def _generate_async(self, model: str, prompt: str, max_tokens: int, temperature: float) -> str:
+    async def _generate_async(self, litellm_params: LitellmParams) -> str:
         """Handle async response generation."""
-        router = self._get_router(model)
-        response = await router.acompletion(
-            model="main",  # TODO: 正しく更新する。現在はmainグループを常に指定する。
-            messages=[{"content": prompt, "role": "user"}],
-            max_tokens=max_tokens,
-            temperature=temperature,
-            metadata=LitellmMetadata.new(),
-        )
-        log_head("prompt", prompt, 1000)
-        return await anyio.to_thread.run_sync(self._process_response, response, prompt)
+        router = self._get_router(litellm_params["model"])
+        response = await router.acompletion(**litellm_params)
+        return await anyio.to_thread.run_sync(self._process_response, response, litellm_params)
 
     def _generate_sync(
         self,
-        model: str,
-        prompt: str,
-        max_tokens: int,
-        temperature: float,
+        litellm_params: LitellmParams,
         is_first_try: bool = True,  # noqa: FBT001
     ) -> str:
         """Handle sync response generation."""
-        router = self._get_router(model)
-        response = router.completion(
-            model="main",  # TODO: 正しく更新する。現在はmainグループを常に指定する。
-            messages=[{"content": prompt, "role": "user"}],
-            max_tokens=max_tokens,
-            temperature=temperature,
-            metadata=LitellmMetadata.new(),
-        )
-        return self._process_response(response=response, prompt=prompt, is_first_try=is_first_try)
+        # router = self._get_router(litellm_params["model"])
+        # response = router.completion(
+        response = litellm.completion(**litellm_params)
+        return self._process_response(response=response, litellm_params=litellm_params, is_first_try=is_first_try)
 
-    def _process_response(self, response: ModelResponse, prompt: str, is_first_try: bool = True) -> str:  # noqa: FBT001
+    def _process_response(
+        self,
+        response: ModelResponse,
+        litellm_params: LitellmParams,
+        is_first_try: bool = True,  # noqa: FBT001
+    ) -> str:  # noqa: FBT001
         """Process and validate response."""
         if not response.choices or not response.choices[0].message or not response.choices[0].message.content:
             log_w("Invalid response received.")
             # 最後の手段で別modelで再度リクエストを送る
+            litellm_params_copy = litellm_params.copy()
+            litellm_params_copy["model"] = self.DEFAULT_MODEL_ANTHROPIC
+            litellm_params_copy["max_tokens"] = settings.max_tokens_claude_haiku
+            litellm_params_copy["metadata"]["generation_name"] = "retry"
             if is_first_try:
                 log_w("Invalid response is handled by retry with model: %s", self.DEFAULT_MODEL_ANTHROPIC)
-                return self._generate_sync(
-                    self.DEFAULT_MODEL_ANTHROPIC, prompt, settings.max_tokens_claude_haiku, 1.0, False
-                )
-            log_w("Invalid response is not recovered. prompt: %s", prompt)
+                return self._generate_sync(litellm_params_copy, False)
+            log_w("Invalid response is not recovered. prompt: %s", litellm_params["messages"][0]["content"])
             return ""
         response_text = response.choices[0].message.content.strip()
         log_head("response_text", response_text, 1000)

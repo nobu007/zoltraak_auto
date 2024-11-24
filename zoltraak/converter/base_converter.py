@@ -5,7 +5,7 @@ from zoltraak import settings
 from zoltraak.core.prompt_manager import PromptEnum, PromptManager
 from zoltraak.eval.eval import get_score
 from zoltraak.gencode import TargetCodeGenerator
-from zoltraak.llms.litellm_api import LitellmApi
+from zoltraak.llms.litellm_api import LitellmApi, LitellmMetadata, LitellmParams
 from zoltraak.schema.schema import EMPTY_CONTEXT_FILE, MagicInfo, MagicLayer, SourceTargetSet
 from zoltraak.utils.diff_util import DiffUtil
 from zoltraak.utils.file_util import FileUtil
@@ -501,14 +501,20 @@ class BaseConverter:
         # promptをファイルに保存
         self.save_prompt(prompt, prompt_enum)
 
+        # litellm_metadata
+        litellm_metadata = LitellmMetadata.new(generation_name=prompt_enum.name)
+        litellm_metadata["magic_layer"] = self.magic_info.magic_layer
+
+        # litellm_params
+        litellm_params = LitellmParams.new(
+            prompt=prompt, model=model_name, max_tokens=max_tokens, temperature=temperature, metadata=litellm_metadata
+        )
+
         # LLM呼び出し
         response = generate_response_with_spinner(
             magic_info=self.magic_info,
             generate_response_fn=self.litellm_api.generate_response,
-            model_name=model_name,
-            prompt=prompt,
-            max_tokens=max_tokens,
-            temperature=temperature,
+            litellm_params=litellm_params,
         )
         log("response=%s", len(response))
 
