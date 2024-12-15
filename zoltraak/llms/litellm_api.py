@@ -326,6 +326,11 @@ class LitellmApi:
                     )
                     self.api_key_dict[model_name] = api_key
 
+        # primary_modelのapi_keyが存在しない場合はデフォルトを設定
+        if primary_model not in self.api_key_dict:
+            primary_model = self.DEFAULT_MODEL_GEMINI
+            self.api_key_dict[primary_model] = self.api_key_dict["gemini"]
+
         # ベースモデルの設定
         base_model = ModelConfig(
             model_name="main",
