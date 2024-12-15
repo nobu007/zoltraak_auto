@@ -27,6 +27,10 @@ jobs:
         with:
           submodules: recursive
 
+      - name: Install dependencies
+        run: |
+          poetry install
+
       - name: Run integration test(test_api_keys)
         run: |
           pytest tests/integration_tests/test_api_keys.py
