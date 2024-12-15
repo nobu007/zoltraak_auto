@@ -30,9 +30,6 @@ USER appuser
 # Poetryのパスを環境変数に追加
 ENV PATH="/home/appuser/.local/bin:/app/.venv/bin:$PATH"
 
-# PYTHONPATHを追加(InstantPromptBox用)
-ENV PYTHONPATH=.
-
 # Poetryのインストール
 RUN pip install poetry
 
@@ -46,6 +43,17 @@ RUN poetry config virtualenvs.create true && \
 
 # ユーザーの切り替え
 USER root
+
+# Poetryのパスを環境変数に追加
+ENV PATH="/root/.local/bin:/app/.venv/bin:$PATH"
+
+# Poetryのインストール
+RUN pip install poetry
+
+# Poetryの設定と依存関係のインストール
+RUN poetry config virtualenvs.create true && \
+    poetry config virtualenvs.in-project true && \
+    poetry install --with test,lint --no-interaction --no-ansi
 
 # デフォルトコマンド
 CMD ["bash"]
