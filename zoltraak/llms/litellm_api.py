@@ -312,12 +312,13 @@ class LitellmApi:
             api_keys = os.getenv(keys_env_name)
             if api_keys:
                 for i, api_key in enumerate(api_keys.split(",")):
+                    api_key_without_new_line = api_key.replace("\n", "")
                     fallback_models.append(  # noqa: PERF401
                         ModelConfig(
                             model_name=f"{model_name}_group_{i}",
                             litellm_params=LitellmParams(
                                 model=getattr(self, f"DEFAULT_MODEL_{model_name.upper()}", "unknown"),
-                                api_key=api_key,
+                                api_key=api_key_without_new_line,
                                 rpm=RPM_LIMITS["other"],
                                 tpm=TPM_LIMITS["other"],
                             ),
