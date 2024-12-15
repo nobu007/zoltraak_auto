@@ -15,6 +15,13 @@ on:                                                                           # 
 jobs:                                                                         # ジョブの定義
   test:                                                                       # テストジョブ
     runs-on: ubuntu-latest                                                    # - Ubuntu最新版で実行
+    container:
+      image: ghcr.io/${{ github.repository }}/ci-base:latest
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    permissions:
+      packages: read
     environment: dev
     strategy:
       matrix:
