@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: ghcr.io/${{ github.repository }}/ci-base:latest
-      options: --user appuser:appuser
+      # options: --user appuser:appuser
     environment: dev
     steps:
       - uses: Kesin11/actions-timeline@v2
