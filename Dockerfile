@@ -19,6 +19,11 @@ WORKDIR /app
 # ディレクトリの所有権変更
 RUN chown -R appuser:appuser /app
 
+# appuserに/tmpを開放
+RUN rm -rf /tmp
+RUN mkdir /tmp
+RUN chown appuser:appuser /tmp
+
 # ユーザーの切り替え
 USER appuser
 
@@ -38,6 +43,9 @@ COPY --chown=appuser:appuser . .
 RUN poetry config virtualenvs.create true && \
     poetry config virtualenvs.in-project true && \
     poetry install --with test,lint --no-interaction --no-ansi
+
+# ユーザーの切り替え
+USER root
 
 # デフォルトコマンド
 CMD ["bash"]
