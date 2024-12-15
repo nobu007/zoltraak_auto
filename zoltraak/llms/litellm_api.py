@@ -16,8 +16,8 @@ from zoltraak.utils.file_util import FileUtil
 from zoltraak.utils.log_util import log, log_head, log_w
 
 # デバッグ用(ローカル環境でのみ利用すること！)
-# os.environ["LITELLM_LOG"] = "ERROR"
-# litellm.set_verbose=False
+os.environ["LITELLM_LOG"] = "ERROR"
+litellm.set_verbose = False
 litellm.suppress_debug_info = False
 
 # athina
