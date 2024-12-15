@@ -424,7 +424,7 @@ class BaseConverter:
         if self.magic_info.magic_layer == MagicLayer.LAYER_5_CODE_GEN:
             log("ソースコード(py_file)を作成しました。実行を開始します。")
             code = FileUtil.read_file(output_file_path)
-            target = TargetCodeGenerator(self.magic_info)
+            target = TargetCodeGenerator(self.magic_info, self.litellm_api)
             output_file_path = target.process_generated_code(code)
             target.write_code_to_target_file(output_file_path)
         return output_file_path

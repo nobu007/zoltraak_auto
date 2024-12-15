@@ -1,7 +1,7 @@
 from instant_prompt_box import InstantPromptBox
 
-import zoltraak.llms.litellm_api as litellm
 from zoltraak import settings
+from zoltraak.llms.litellm_api import LitellmApi
 from zoltraak.schema.schema import MagicInfo
 from zoltraak.utils.file_util import FileUtil
 from zoltraak.utils.log_util import log, log_inout
@@ -9,12 +9,13 @@ from zoltraak.utils.subprocess_util import SubprocessUtil
 
 
 class TargetCodeGenerator:
-    def __init__(self, magic_info: MagicInfo):
+    def __init__(self, magic_info: MagicInfo, litellm_api: LitellmApi):
         self.magic_info = magic_info
         self.file_info = magic_info.file_info
         self.first_code = ""
         self.last_code = ""
         self.last_exception = None
+        self.litellm_api = litellm_api
 
     def process_generated_code(self, code) -> str:
         """
@@ -126,7 +127,7 @@ class TargetCodeGenerator:
     @log_inout
     def get_fixed_code(self, code: str, fix_code_prompt: str) -> str:
         """コードエラーを解消する処理"""
-        code = litellm.generate_response(
+        code = self.litellm_api.generate_response(
             model=settings.model_name,
             prompt=fix_code_prompt,
             max_tokens=settings.max_tokens_generate_code_fix,
@@ -147,7 +148,7 @@ class TargetCodeGenerator:
         推論が発散しないように、簡潔な説明をお願いします。
         プログラムコードを回答する場合は関数単位やブロック単位で完全なコードを記載してください。
         """
-        error_reason = litellm.generate_response(
+        error_reason = self.litellm_api.generate_response(
             model=settings.model_name,
             prompt=error_reason_prompt,
             max_tokens=settings.max_tokens_generate_error_reason,

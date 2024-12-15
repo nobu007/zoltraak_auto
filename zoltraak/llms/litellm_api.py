@@ -24,7 +24,7 @@ litellm.suppress_debug_info = False
 # litellm.success_callback = ["athina"]
 
 # langfuse
-litellm.success_callback = ["langfuse"]
+# litellm.success_callback = ["langfuse"]
 # litellm.failure_callback = ["langfuse"]
 
 
@@ -214,7 +214,6 @@ async def generate_response_async(
 ) -> str:
     api = LitellmApi()
     litellm_params = LitellmParams.new(prompt=prompt, model=model, max_tokens=max_tokens, temperature=temperature)
-    print("litellm_params=", litellm_params)
     return await api.generate_response_async(litellm_params=litellm_params, is_async=is_async)
 
 
@@ -283,6 +282,7 @@ class LitellmApi:
     def __init__(self, logger: ModelStatsLogger = logger_):
         self.logger = logger
         self._router: Router | None = None
+        self.api_key_dict = {}
 
     def _get_router(self, model: str) -> Router:
         """Initialize and return a router with proper configuration."""
@@ -302,16 +302,6 @@ class LitellmApi:
 
     def _create_model_list(self, primary_model: str) -> list[ModelConfig]:
         """Create model list configuration including fallbacks."""
-        # ベースモデルの設定
-        base_model = ModelConfig(
-            model_name="main",
-            litellm_params=LitellmModelParams(
-                model=primary_model,
-                api_key="",
-                rpm=RPM_LIMITS["other"],
-                tpm=TPM_LIMITS["other"],
-            ),
-        )
 
         # モデルとAPIキーの設定を動的に生成
         fallback_models = []
@@ -333,10 +323,18 @@ class LitellmApi:
                             ),
                         )
                     )
+                    self.api_key_dict[model_name] = api_key
 
-                    # プライマリモデルのAPIキーを設定(1つ目のモデルを採用)
-                    if model_name in primary_model and not base_model.litellm_params.api_key:
-                        base_model.litellm_params.api_key = api_key
+        # ベースモデルの設定
+        base_model = ModelConfig(
+            model_name="main",
+            litellm_params=LitellmModelParams(
+                model=primary_model,
+                api_key=self.api_key_dict[primary_model],
+                rpm=RPM_LIMITS["other"],
+                tpm=TPM_LIMITS["other"],
+            ),
+        )
 
         # 全モデルをリストにして返す
         return [base_model, *fallback_models]
@@ -399,7 +397,6 @@ class LitellmApi:
 
     def _validate_input(self, litellm_params: LitellmParams) -> bool:
         """Validate input parameters."""
-        print("litellm_params=", litellm_params)
         prompt = litellm_params["messages"][0]["content"]
         max_tokens = litellm_params["max_tokens"]
 

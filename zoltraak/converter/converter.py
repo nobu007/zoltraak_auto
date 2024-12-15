@@ -97,7 +97,7 @@ class MarkdownToPythonConverter(BaseConverter):
         """要件定義書(md_file) => my or pyの１ファイルを変換する"""
         if FileUtil.has_content(self.magic_info.file_info.target_file_path):
             output_file_path = self.handle_existing_target_file_py()
-            target = TargetCodeGenerator(self.magic_info)
+            target = TargetCodeGenerator(self.magic_info, self.litellm_api)
             target.last_code = FileUtil.read_file(output_file_path)  # converterの更新結果を最終コードとして採用
             # TODO: このタイミングでprocess_generated_code()する？
             target.write_code_to_target_file(output_file_path)  # HASHを埋め込む
