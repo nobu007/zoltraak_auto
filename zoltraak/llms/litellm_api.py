@@ -423,9 +423,8 @@ class LitellmApi:
         is_first_try: bool = True,  # noqa: FBT001
     ) -> str:
         """Handle sync response generation."""
-        # router = self._get_router(litellm_params["model"])
-        # response = router.completion(
-        response = litellm.completion(**litellm_params)
+        router = self._get_router(litellm_params["model"])
+        response = router.completion(**litellm_params)
         return self._process_response(response=response, litellm_params=litellm_params, is_first_try=is_first_try)
 
     def _process_response(
