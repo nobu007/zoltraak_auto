@@ -16,8 +16,13 @@ class TestZoltraakCommand(BaseTestCase):  # TestZoltraakCommand クラスを定�
 
         for i, gemini_api_key in enumerate(gemini_api_keys.split(",")):
             print("i=", i)
+            gemini_api_key_no_new_line = gemini_api_key.replace("\n", "")
             response = litellm.generate_response_raw(
-                model=model_name, prompt=prompt, max_tokens=max_tokens, temperature=temperature, api_key=gemini_api_key
+                model=model_name,
+                prompt=prompt,
+                max_tokens=max_tokens,
+                temperature=temperature,
+                api_key=gemini_api_key_no_new_line,
             )
 
             # レスポンスが文字列であることを確認
