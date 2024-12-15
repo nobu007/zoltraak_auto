@@ -10,7 +10,7 @@ jobs:
   build-and-push:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
       packages: write
 
     steps:
@@ -53,6 +53,7 @@ jobs:
         # https://github.com/softprops/action-gh-release
         uses: softprops/action-gh-release@v2
         with:
+          token: ${{ secrets.GITHUB_TOKEN }}
           tag_name: docker-${{ steps.meta.outputs.version }}
           name: Weekly Docker Image ${{ steps.meta.outputs.version }}
           body: |
