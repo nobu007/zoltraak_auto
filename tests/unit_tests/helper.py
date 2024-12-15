@@ -15,7 +15,9 @@ class MockManager:
 
     def _init_default_mocks(self):
         # llm呼び出しを無効化するfixtureを生成
-        self._set_mock("fixture_litellm_api_generate_response_ok", "zoltraak.llms.litellm_api.generate_response", "ok")
+        self._set_mock(
+            "fixture_litellm_api_generate_response_ok", "zoltraak.llms.litellm_api.LitellmApi.generate_response", "ok"
+        )
 
     def _set_mock(self, mock_name: str, mock_target: str, return_value: Any = ""):
         # モックを生成してreturn_valueを設定
