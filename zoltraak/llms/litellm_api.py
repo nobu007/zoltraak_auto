@@ -18,7 +18,7 @@ from zoltraak.utils.log_util import log, log_head, log_w
 # デバッグ用(ローカル環境でのみ利用すること！)
 os.environ["LITELLM_LOG"] = "ERROR"
 litellm.set_verbose = False
-litellm.suppress_debug_info = False
+litellm.suppress_debug_info = True
 
 # athina
 # litellm.success_callback = ["athina"]
@@ -159,7 +159,7 @@ TPM_LIMITS: dict = {
 
 @dataclass
 class LitellmModelParams:
-    model: str
+    model: str  # model name
     api_key: str
     rpm: str
     tpm: str
@@ -167,7 +167,7 @@ class LitellmModelParams:
 
 @dataclass
 class ModelConfig:
-    model_name: str
+    model_name: str  # model_group name
     litellm_params: LitellmModelParams
 
 
@@ -282,7 +282,8 @@ class LitellmApi:
     def __init__(self, logger: ModelStatsLogger = logger_):
         self.logger = logger
         self._router: Router | None = None
-        self.api_key_dict = {}
+        self.api_key_dict = {}  # llm_provider => api_key
+        self.model_group_dict = {}  # model_group => model
 
     def _get_router(self, model: str) -> Router:
         """Initialize and return a router with proper configuration."""
@@ -293,10 +294,14 @@ class LitellmApi:
 
         model_config_list = self._create_model_list(primary_model=model)
         model_config_list_dict = [asdict(model) for model in model_config_list]
-        fallbacks_dict = self._create_fallbacks_dict(model_config_list)
+        fallback_rule_list = self._create_fallback_rule_list(model_config_list)
 
         self._router = Router(
-            model_list=model_config_list_dict, fallbacks=fallbacks_dict, retry_after=10, num_retries=3, max_fallbacks=5
+            model_list=model_config_list_dict,
+            fallbacks=fallback_rule_list,
+            retry_after=10,
+            num_retries=3,
+            max_fallbacks=5,
         )
         return self._router
 
@@ -305,31 +310,40 @@ class LitellmApi:
 
         # モデルとAPIキーの設定を動的に生成
         fallback_models = []
-        model_names = os.getenv("API_MODELS").split(",")
+        llm_providers = os.getenv("API_MODELS").split(",")
 
-        for model_name in model_names:
-            keys_env_name = f"{model_name.upper()}_API_KEYS"
+        for llm_provider in llm_providers:
+            keys_env_name = f"{llm_provider.upper()}_API_KEYS"
             api_keys = os.getenv(keys_env_name)
+            model_group = llm_provider
             if api_keys:
                 for i, api_key in enumerate(api_keys.split(",")):
                     api_key_without_new_line = api_key.replace("\n", "")
+                    model = getattr(self, f"DEFAULT_MODEL_{llm_provider.upper()}", "unknown")
                     fallback_models.append(  # noqa: PERF401
                         ModelConfig(
-                            model_name=f"{model_name}_group_{i}",
+                            model_name=f"{llm_provider}_group_{i}",
                             litellm_params=LitellmParams(
-                                model=getattr(self, f"DEFAULT_MODEL_{model_name.upper()}", "unknown"),
+                                model=model,
                                 api_key=api_key_without_new_line,
                                 rpm=RPM_LIMITS["other"],
                                 tpm=TPM_LIMITS["other"],
                             ),
                         )
                     )
-                    self.api_key_dict[model_name] = api_key
+                    self.api_key_dict[model] = api_key
+                    self.model_group_dict[model] = model_group
+
+                # 念のため最後のAPIキーをデフォルトとして設定
+                self.api_key_dict[llm_provider] = api_keys[-1]
 
         # primary_modelのapi_keyが存在しない場合はデフォルトを設定
         if primary_model not in self.api_key_dict:
             primary_model = self.DEFAULT_MODEL_GEMINI
             self.api_key_dict[primary_model] = self.api_key_dict["gemini"]
+
+        # primary_modelのmodel_group_dictを設定
+        self.model_group_dict[primary_model] = "main"
 
         # ベースモデルの設定
         base_model = ModelConfig(
@@ -345,27 +359,39 @@ class LitellmApi:
         # 全モデルをリストにして返す
         return [base_model, *fallback_models]
 
-    @staticmethod
-    def _create_fallbacks_dict(model_config_list: list[ModelConfig]) -> list[dict]:
+    def _create_fallback_rule_list(self, model_config_list: list[ModelConfig]) -> list[dict]:
         """Create fallback configuration.
         Fallbacks are done in-order ["model_a", "model_b", "model_c"], will do 'model_a' first, then 'model_b', etc.
         https://docs.litellm.ai/docs/routing
+
+        # TODO: model_groupといいつつ実態はmodelと1:1対応している単純なエイリアス（別名）になっている。
+        # geminiだけのグループとかを作った方がいいのかもしれない
         """
 
         # フォールバックリストを作成
+        fallback_rule_list = []
 
-        fallback_models = []
+        # for main
+        fallback_model_groups_main = []
         for model_config in model_config_list:
-            fallback_models.append(model_config.model_name)  # noqa: PERF401
-        return [{"main": fallback_models}]
+            if model_config.model_name != "main":
+                fallback_model_groups_main.append(model_config.model_name)  # noqa: PERF401
+        fallback_rule_list.append({"main": fallback_model_groups_main})
+
+        # for xx_group
+        for model_group in fallback_model_groups_main:
+            fallback_models_xx = fallback_model_groups_main.copy()
+            fallback_models_xx.remove(model_group)
+            fallback_rule_list.append({model_group: fallback_models_xx})
+
+        return fallback_rule_list
 
         # サンプル
         # return [
         #     {"main": ["gemini_group1", "gemini_group2", "mistral_group", "groq_group"]},
-        #     {"gemini_group1": ["mistral_group", "groq_group"]},
-        #     {"gemini_group2": ["mistral_group", "groq_group"]},
-        #     {"gemini/gemini-1.5-flash": ["mistral_group", "groq_group"]},  # 上手くFallbackが効かないので暫定
-        #     {LitellmApi.DEFAULT_MODEL_GEMINI: ["mistral_group", "groq_group"]},  # 上手くFallbackが効かないので暫定
+        #     {"gemini_group1": ["gemini_group2", "mistral_group", "groq_group"]},
+        #     {"gemini_group2": ["gemini_group1", "mistral_group", "groq_group"]},
+        #     ...
         # ]
 
     def generate_response(self, litellm_params: LitellmParams, is_async: bool = False) -> Any:  # noqa: FBT001
@@ -406,10 +432,16 @@ class LitellmApi:
         prompt = litellm_params["messages"][0]["content"]
         max_tokens = litellm_params["max_tokens"]
 
+        # skip empty
         if not prompt.strip():
             log_w("Empty prompt received")
             return False
 
+        # replace model_group
+        if litellm_params["model"] in self.model_group_dict:
+            litellm_params["model"] = self.model_group_dict[litellm_params["model"]]
+
+        # warning prompt length
         prompt_length = len(prompt)
         if int(prompt_length * 0.5) > max_tokens:
             log_w("WARN: max_tokens might be too small. prompt len=%s, max_tokens=%d", prompt_length, max_tokens)
@@ -471,14 +503,21 @@ class LitellmApi:
 if __name__ == "__main__":
 
     async def main():
-        model_ = "claude-3-haiku-20240307"
+        model_ = "gemini/gemini-1.5-flash-latest"
+        model_ = "main"
         prompt_ = "今日の晩御飯を提案して"
+        messages_ = [LitellmMessage.new(prompt_)]
         max_tokens_ = 100
         temperature_ = 0.8
 
         llm = LitellmApi()
-        response_ = await generate_response_async(model_, prompt_, max_tokens_, temperature_, is_async=True)
-        print(response_)
+        litellm_params = LitellmParams(
+            model=model_, messages=messages_, max_tokens=max_tokens_, temperature=temperature_
+        )
+        for i in range(30):
+            print("i=", i)
+            response_ = await llm.generate_response_async(litellm_params, is_async=True)
+            print(response_)
         llm.show_stats()
 
     anyio.run(main)
