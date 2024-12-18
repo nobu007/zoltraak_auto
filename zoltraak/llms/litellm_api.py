@@ -290,8 +290,11 @@ class LitellmApi:
 
         # TODO: primary_modelによって動的にルーターを切り替える必要がありそう
         if self._router:
-            return self._router
-
+            if model in self.model_group_dict.values():
+                return self._router
+            # 対応してないモデルでは生のlitellmを使う
+            return litellm
+        # self._routerを初期化
         model_config_list = self._create_model_list(primary_model=model)
         model_config_list_dict = [asdict(model) for model in model_config_list]
         fallback_rule_list = self._create_fallback_rule_list(model_config_list)
