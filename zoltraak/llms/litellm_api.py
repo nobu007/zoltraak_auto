@@ -6,26 +6,33 @@ from datetime import datetime
 from typing import Any, TypedDict
 
 import anyio
-import litellm
-from litellm import ModelResponse, Router, completion
-from litellm.integrations.custom_logger import CustomLogger
 from pydantic import BaseModel
 
 from zoltraak import settings
 from zoltraak.utils.file_util import FileUtil
 from zoltraak.utils.log_util import log, log_head, log_w
 
-# デバッグ用(ローカル環境でのみ利用すること！)
-os.environ["LITELLM_LOG"] = "ERROR"
-litellm.set_verbose = False
-litellm.suppress_debug_info = True
 
-# athina
-# litellm.success_callback = ["athina"]
+def import_litellm():
+    # litellmのログレベル（importする前に指定すること！）
+    os.environ["LITELLM_LOG"] = "ERROR"
 
-# langfuse
-# litellm.success_callback = ["langfuse"]
-# litellm.failure_callback = ["langfuse"]
+    import litellm
+
+    # デバッグ用(ローカル環境でのみ利用すること！)
+    litellm.set_verbose = False
+    litellm.suppress_debug_info = True
+
+    # athina
+    # litellm.success_callback = ["athina"]
+
+    # langfuse
+    # litellm.success_callback = ["langfuse"]
+    # litellm.failure_callback = ["langfuse"]
+    return litellm
+
+
+litellm = import_litellm()
 
 
 class EvalMetadata(TypedDict):
@@ -96,7 +103,7 @@ class LitellmParams(TypedDict):
         return cls(model=model, messages=messages, max_tokens=max_tokens, temperature=temperature, metadata=metadata)
 
 
-class ModelStatsLogger(CustomLogger):
+class ModelStatsLogger(litellm.integrations.custom_logger.CustomLogger):
     def __init__(self):
         self.stats = defaultdict(lambda: {"count": 0, "total_tokens": 0, "start_time": None, "end_time": None})
 
@@ -229,7 +236,7 @@ def generate_response_raw(
     if metadata is None:
         metadata = LitellmMetadata.new()
 
-    response = completion(
+    response = litellm.completion(
         model=model,
         messages=[{"content": prompt, "role": "user"}],
         max_tokens=max_tokens,
@@ -281,11 +288,11 @@ class LitellmApi:
 
     def __init__(self, logger: ModelStatsLogger = logger_):
         self.logger = logger
-        self._router: Router | None = None
+        self._router: litellm.Router | None = None
         self.api_key_dict = {}  # llm_provider => api_key
         self.model_group_dict = {}  # model_group => model
 
-    def _get_router(self, model: str) -> Router:
+    def _get_router(self, model: str) -> litellm.Router:
         """Initialize and return a router with proper configuration."""
 
         # TODO: primary_modelによって動的にルーターを切り替える必要がありそう
@@ -299,7 +306,7 @@ class LitellmApi:
         model_config_list_dict = [asdict(model) for model in model_config_list]
         fallback_rule_list = self._create_fallback_rule_list(model_config_list)
 
-        self._router = Router(
+        self._router = litellm.Router(
             model_list=model_config_list_dict,
             fallbacks=fallback_rule_list,
             retry_after=10,
@@ -470,7 +477,7 @@ class LitellmApi:
 
     def _process_response(
         self,
-        response: ModelResponse,
+        response: litellm.ModelResponse,
         litellm_params: LitellmParams,
         is_first_try: bool = True,  # noqa: FBT001
     ) -> str:  # noqa: FBT001
