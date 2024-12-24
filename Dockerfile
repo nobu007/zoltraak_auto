@@ -31,7 +31,7 @@ USER appuser
 ENV PATH="/home/appuser/.local/bin:/app/.venv/bin:$PATH"
 
 # Poetryのインストール
-RUN pip install poetry
+RUN pip install --no-cache-dir poetry
 
 # プロジェクトのソースコードをコピー
 COPY --chown=appuser:appuser . .
@@ -48,7 +48,7 @@ USER root
 ENV PATH="/root/.local/bin:/app/.venv/bin:$PATH"
 
 # Poetryのインストール
-RUN pip install poetry
+RUN pip install --no-cache-dir poetry
 
 # Poetryの設定と依存関係のインストール
 RUN poetry config virtualenvs.create true && \
