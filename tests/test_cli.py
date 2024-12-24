@@ -375,7 +375,7 @@ class TestGenerateResponse(unittest.TestCase):
             "groq/llama3-70b-8192",
             "groq/llama-3.1-8b-instant",
             "groq/mixtral-8x7b-32768",
-            "groq/gemma-7b-it",
+            "groq/gemma2-9b-it",
         ]
         prompt = "これはテストプロンプトです。"
 
