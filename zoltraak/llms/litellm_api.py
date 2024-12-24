@@ -289,15 +289,15 @@ class LitellmApi:
     def __init__(self, logger: ModelStatsLogger = logger_):
         self.logger = logger
         self._router: litellm.Router | None = None
-        self.api_key_dict = {}  # llm_provider => api_key
-        self.model_group_dict = {}  # model_group => model
+        self.api_key_dict = {}  # key: llm_provider => api_key
+        self.model_group2model_dict = {}  # key: model_group => model
 
     def _get_router(self, model: str) -> litellm.Router:
         """Initialize and return a router with proper configuration."""
 
         # TODO: primary_modelによって動的にルーターを切り替える必要がありそう
         if self._router:
-            if model in self.model_group_dict.values():
+            if model in self.model_group2model_dict.values():
                 return self._router
             # 対応してないモデルでは生のlitellmを使う
             return litellm
@@ -306,6 +306,8 @@ class LitellmApi:
         model_config_list = self._create_model_list(primary_model=model)
         model_config_list_dict = [asdict(model) for model in model_config_list]
         fallback_rule_list = self._create_fallback_rule_list(model_config_list)
+        # print("model_config_list=", model_config_list)
+        # print("fallback_rule_list=", fallback_rule_list)
 
         self._router = litellm.Router(
             model_list=model_config_list_dict,
@@ -345,7 +347,7 @@ class LitellmApi:
                         )
                     )
                     self.api_key_dict[model] = api_key
-                    self.model_group_dict[model] = model_group
+                    self.model_group2model_dict[model_group] = model
 
                 # 念のため最後のAPIキーをデフォルトとして設定
                 self.api_key_dict[llm_provider] = api_keys[-1]
@@ -356,7 +358,7 @@ class LitellmApi:
             self.api_key_dict[primary_model] = self.api_key_dict["gemini"]
 
         # primary_modelのmodel_group_dictを設定
-        self.model_group_dict[primary_model] = "main"
+        self.model_group2model_dict[primary_model] = "main"
 
         # ベースモデルの設定
         base_model = ModelConfig(
@@ -450,9 +452,10 @@ class LitellmApi:
             log_w("Empty prompt received")
             return False
 
-        # replace model_group
-        if litellm_params["model"] in self.model_group_dict:
-            litellm_params["model"] = self.model_group_dict[litellm_params["model"]]
+        # modelがrouterに登録されていたら、model_group名に"main"を指定して実行する
+        target_model = litellm_params["model"]
+        if target_model in self.model_group2model_dict.values():
+            litellm_params["model"] = "main"
 
         # warning prompt length
         prompt_length = len(prompt)
