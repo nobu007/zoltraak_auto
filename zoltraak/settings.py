@@ -19,18 +19,22 @@ groq_api_keys = os.getenv("GROQ_API_KEYS")
 mistral_api_keys = os.getenv("MISTRAL_API_KEYS")
 
 # api_key(api_keysから取得して環境変数に反映)
-gemini_api_key = gemini_api_keys.split(",")[0]
-if gemini_api_key and not os.getenv("GEMINI_API_KEY"):
-    os.environ["GEMINI_API_KEY"] = gemini_api_key
-anthropic_api_key = anthropic_api_keys.split(",")[0]
-if anthropic_api_key and not os.getenv("ANTHROPIC_API_KEY"):
-    os.environ["ANTHROPIC_API_KEY"] = anthropic_api_key
-groq_api_key = groq_api_keys.split(",")[0]
-if groq_api_key and not os.getenv("GROQ_API_KEY"):
-    os.environ["GROQ_API_KEY"] = groq_api_key
-mistral_api_key = mistral_api_keys.split(",")[0]
-if mistral_api_key and not os.getenv("MISTRAL_API_KEY"):
-    os.environ["MISTRAL_API_KEY"] = mistral_api_key
+if gemini_api_keys:
+    gemini_api_key = gemini_api_keys.split(",")[0]
+    if gemini_api_key and not os.getenv("GEMINI_API_KEY"):
+        os.environ["GEMINI_API_KEY"] = gemini_api_key
+if anthropic_api_keys:
+    anthropic_api_key = anthropic_api_keys.split(",")[0]
+    if anthropic_api_key and not os.getenv("ANTHROPIC_API_KEY"):
+        os.environ["ANTHROPIC_API_KEY"] = anthropic_api_key
+if groq_api_keys:
+    groq_api_key = groq_api_keys.split(",")[0]
+    if groq_api_key and not os.getenv("GROQ_API_KEY"):
+        os.environ["GROQ_API_KEY"] = groq_api_key
+if mistral_api_keys:
+    mistral_api_key = mistral_api_keys.split(",")[0]
+    if mistral_api_key and not os.getenv("MISTRAL_API_KEY"):
+        os.environ["MISTRAL_API_KEY"] = mistral_api_key
 
 # model_name
 model_name = os.getenv("MODEL_NAME_DEFAULT", "gemini/gemini-1.5-flash-latest")
