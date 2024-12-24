@@ -301,6 +301,7 @@ class LitellmApi:
                 return self._router
             # 対応してないモデルでは生のlitellmを使う
             return litellm
+
         # self._routerを初期化
         model_config_list = self._create_model_list(primary_model=model)
         model_config_list_dict = [asdict(model) for model in model_config_list]
@@ -313,7 +314,9 @@ class LitellmApi:
             num_retries=3,
             max_fallbacks=5,
         )
-        return self._router
+
+        # self._routerを利用できるか再チェック
+        return self._get_router(model)
 
     def _create_model_list(self, primary_model: str) -> list[ModelConfig]:
         """Create model list configuration including fallbacks."""
