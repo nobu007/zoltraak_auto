@@ -3,6 +3,8 @@ import re
 from dataclasses import dataclass
 from enum import Enum
 
+import pandas as pd
+
 from zoltraak.schema.schema import MagicInfo, MagicLayer, MagicMode
 from zoltraak.utils.diff_util import DiffUtil
 from zoltraak.utils.file_util import FileUtil
@@ -90,6 +92,13 @@ class PromptEnum(str, Enum):
 
 
 class PromptManager:
+    def __init__(self):
+        self.df = pd.DataFrame()
+        self.prompt_len_list = []
+        self.prompt_output_path_list = []
+        self.prompt_head_list = []
+        self.prompt_tail_list = []
+
     @log_inout
     def save_prompts(self, magic_info: MagicInfo) -> None:
         # work_dirからの相対パス取得
@@ -111,6 +120,24 @@ class PromptManager:
         # プロンプトを保存
         FileUtil.write_prompt(prompt, prompt_output_path)
         log("プロンプトを保存しました↓ %s:\n%s", prompt_enum, prompt_output_path)
+
+        # csvに保存
+        prompt_str = str(prompt).strip()
+        prompt_len = len(prompt_str)
+        if prompt_len > 0:
+            self.prompt_len_list.append(prompt_len)
+            self.prompt_output_path_list.append(prompt_output_path)
+            self.prompt_head_list.append(prompt_str[:100])
+            self.prompt_tail_list.append(prompt_str[-100:])
+            self.df = pd.DataFrame(
+                data={
+                    "prompt_len": self.prompt_len_list,
+                    "prompt_output_path": self.prompt_output_path_list,
+                    "prompt_head": self.prompt_head_list,
+                    "prompt_tail": self.prompt_tail_list,
+                }
+            )
+            self.df.to_csv("prompt.csv")
 
     @log_inout
     def load_prompt(self, magic_info: MagicInfo, prompt_enum: PromptEnum = PromptEnum.INPUT) -> str:
