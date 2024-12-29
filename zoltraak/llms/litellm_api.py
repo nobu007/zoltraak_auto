@@ -306,8 +306,6 @@ class LitellmApi:
         model_config_list = self._create_model_list(primary_model=model)
         model_config_list_dict = [asdict(model) for model in model_config_list]
         fallback_rule_list = self._create_fallback_rule_list(model_config_list)
-        # print("model_config_list=", model_config_list)
-        # print("fallback_rule_list=", fallback_rule_list)
 
         self._router = litellm.Router(
             model_list=model_config_list_dict,
@@ -348,9 +346,10 @@ class LitellmApi:
                     )
                     self.api_key_dict[model] = api_key
                     self.model_group2model_dict[model_group] = model
+                    api_key_default = api_key_without_new_line
 
                 # 念のため最後のAPIキーをデフォルトとして設定
-                self.api_key_dict[llm_provider] = api_keys[-1]
+                self.api_key_dict[llm_provider] = api_key_default
 
         # primary_modelのapi_keyが存在しない場合はデフォルトを設定
         if primary_model not in self.api_key_dict:
@@ -454,7 +453,9 @@ class LitellmApi:
 
         # modelがrouterに登録されていたら、model_group名に"main"を指定して実行する
         target_model = litellm_params["model"]
+        print("_validate_input target_model=", target_model)
         if target_model in self.model_group2model_dict.values():
+            print("_validate_input use main. target_model=", target_model)
             litellm_params["model"] = "main"
 
         # warning prompt length
@@ -520,7 +521,6 @@ if __name__ == "__main__":
 
     async def main():
         model_ = "gemini/gemini-1.5-flash-latest"
-        model_ = "main"
         prompt_ = "今日の晩御飯を提案して"
         messages_ = [LitellmMessage.new(prompt_)]
         max_tokens_ = 100
@@ -530,7 +530,7 @@ if __name__ == "__main__":
         litellm_params = LitellmParams(
             model=model_, messages=messages_, max_tokens=max_tokens_, temperature=temperature_
         )
-        for i in range(30):
+        for i in range(2):
             print("i=", i)
             response_ = await llm.generate_response_async(litellm_params, is_async=True)
             print(response_)
