@@ -80,7 +80,7 @@ class MarkdownToPythonConverter(BaseConverter):
             file_info.update_source_target(file_info.structure_file_path, file_info.dependency_file_path)
 
     @log_inout
-    def convert(self) -> str:
+    def convert(self) -> float:
         """要件定義書(md_file) => Pythonコード"""
 
         # LAYER_4_REQUIREMENT_GEN
@@ -93,7 +93,7 @@ class MarkdownToPythonConverter(BaseConverter):
         return self.convert_one_dependency()
 
     @log_inout
-    def convert_one_md_py(self) -> str:
+    def convert_one_md_py(self) -> float:
         """要件定義書(md_file) => my or pyの１ファイルを変換する"""
         if FileUtil.has_content(self.magic_info.file_info.target_file_path):
             output_file_path = self.handle_existing_target_file_py()
@@ -105,15 +105,15 @@ class MarkdownToPythonConverter(BaseConverter):
         return self.handle_new_target_file()
 
     @log_inout
-    def convert_one_dependency(self) -> str:
+    def convert_one_dependency(self) -> float:
         """dependencyファイルを作成"""
         dm = DependencyManagerPy(self.magic_info.file_info.target_dir)
         dm.scan_project()
         dm.write_dependency_file(self.magic_info.file_info.dependency_file_path)
-        return self.magic_info.file_info.dependency_file_path
+        return 1.0
 
     @log_inout
-    def handle_existing_target_file_py(self) -> str:  # noqa: PLR0911
+    def handle_existing_target_file_py(self) -> float:  # noqa: PLR0911
         file_info = self.magic_info.file_info
         with open(file_info.target_file_path, encoding="utf-8") as target_file:
             lines = target_file.readlines()
@@ -131,7 +131,7 @@ class MarkdownToPythonConverter(BaseConverter):
                     ):  # -- 前回と同じプロンプトの場合
                         log("過去のターゲットファイルと同一のためコード生成をスキップします。")
                         self.magic_info.history_info += " ->コード生成をスキップ"
-                        return file_info.target_file_path
+                        return 1.0
 
                     # 前回のプロンプトと異なる場合は再適用してコード生成
                     output_file_path = self.handle_existing_target_file()
@@ -140,7 +140,7 @@ class MarkdownToPythonConverter(BaseConverter):
                     SubprocessUtil.run(["python", output_file_path], check=False)
                     log("コード生成プロセスが完了しました。")
                     self.magic_info.history_info += " ->コード生成完了"
-                    return file_info.target_file_path  # TODO: サブプロセスで作った別ファイルの情報は不要？
+                    return 1.0  # TODO: サブプロセスで作った別ファイルの情報は不要？
 
                     # TODO: ハッシュ運用検討
                     # source が同じでもコンパイラやプロンプトの更新でtarget が変わる可能性もある？

@@ -64,12 +64,12 @@ class BaseConverter:
             log(f"コンテキストファイル更新(空):  {context_file_path}")
             FileUtil.write_file(context_file_path, "")
 
-    def convert(self) -> str:
+    def convert(self) -> float:
         """生成処理"""
         return self.convert_one()
 
     @log_inout
-    def convert_one(self) -> str:
+    def convert_one(self) -> float:
         """生成処理を１回実行する"""
         file_info = self.magic_info.file_info
 
@@ -87,7 +87,7 @@ class BaseConverter:
     ]
 
     @log_inout
-    def handle_existing_target_file(self) -> str:
+    def handle_existing_target_file(self) -> float:
         """ターゲットファイルが存在する場合の処理
 
         Returns:
@@ -99,7 +99,7 @@ class BaseConverter:
         if self.prompt_manager.is_same_prompt(self.magic_info, PromptEnum.FINAL):  # -- 前回と同じプロンプトの場合
             log(f"スキップ(既存＆input変更なし): {file_info.target_file_path}")
             self.magic_info.history_info += " ->スキップ(既存＆input変更なし)"
-            return file_info.target_file_path  # --- 処理をスキップし既存のターゲットファイルを返す
+            return 1.0  # --- 処理をスキップし既存のターゲットファイルを返す
 
         # タイムスタンプ取得
         source_timestamp = FileUtil.get_timestamp(file_info.source_file_path)
@@ -107,14 +107,14 @@ class BaseConverter:
         if source_timestamp < target_timestamp:
             log(f"スキップ(ソースより新しい): {file_info.target_file_path}")
             self.magic_info.history_info += " ->スキップ(ソースより新しい)"
-            return file_info.target_file_path
+            return 1.0
 
         # 差分禁止レイヤは作り直し判定
         if self.magic_info.magic_layer in BaseConverter.ALWAYS_FULL_CREATE_LAYERS:
             if self.is_same_source_as_past():
                 log(f"スキップ(差分禁止&ソース変更なし): {file_info.target_file_path}")
                 self.magic_info.history_info += " ->スキップ(差分禁止&ソース変更なし)"
-                return file_info.target_file_path  # --- 処理をスキップし既存のターゲットファイルを返す
+                return 1.0  # --- 処理をスキップし既存のターゲットファイルを返す
             # ソースが変更された場合は再作成
             log(f"再作成(差分禁止&ソース変更あり): {file_info.target_file_path}")
             self.magic_info.history_info += " ->再作成(差分禁止&ソース変更あり)"
@@ -174,7 +174,7 @@ class BaseConverter:
         return False
 
     @log_inout
-    def update_target_file_from_source_diff(self) -> str:
+    def update_target_file_from_source_diff(self) -> float:
         """ターゲットファイルをソースファイルの差分から更新する処理
 
         Returns:
@@ -292,7 +292,7 @@ class BaseConverter:
             match_rate = 0
         return match_rate
 
-    def update_target_file_propose_and_apply(self, target_file_path: str, prompt_diff_order: str) -> str:
+    def update_target_file_propose_and_apply(self, target_file_path: str, prompt_diff_order: str) -> float:
         """
         ターゲットファイルの変更差分を提案して適用する関数
 
@@ -358,7 +358,7 @@ class BaseConverter:
             log_e("論理異常： choice=%d", choice)
             choice = "1"
 
-        return target_file_path
+        return 1.0
 
     @log_inout
     def apply_diff_to_target_file(self, target_file_path: str, target_diff: str) -> str:
@@ -402,7 +402,7 @@ class BaseConverter:
         return new_target_file_path
 
     @log_inout
-    def handle_new_target_file(self):
+    def handle_new_target_file(self) -> float:
         """ターゲットファイル(md_fileまたはpy_file)を新規作成する"""
         file_info = self.magic_info.file_info
         log_change(
@@ -416,7 +416,7 @@ class BaseConverter:
         return self.generate_md_from_prompt()
 
     @log_inout
-    def handle_new_target_file_py(self) -> str:
+    def handle_new_target_file_py(self) -> float:
         """ソースコード(py_file)を新規作成する"""
         log("高級言語コンパイル中: ソースコード(py_file)を新規作成しています。")
         output_file_path = self.generate_py_from_prompt()
@@ -427,10 +427,10 @@ class BaseConverter:
             target = TargetCodeGenerator(self.magic_info, self.litellm_api)
             output_file_path = target.process_generated_code(code)
             target.write_code_to_target_file(output_file_path)
-        return output_file_path
+        return 1.0
 
     @log_inout
-    def handle_new_target_file_with_old_context(self, old_target_content: str) -> str:  # noqa: ARG002
+    def handle_new_target_file_with_old_context(self, old_target_content: str) -> float:  # noqa: ARG002
         """旧ソース全体を付与してターゲットファイル(md_fileまたはpy_file)を新規作成する"""
         file_info = self.magic_info.file_info
         log_change(
@@ -460,7 +460,7 @@ class BaseConverter:
             log("スコアが低いため、old_target_contentに戻します。")
             FileUtil.write_file(file_info.target_file_path, old_target_content)
 
-        return file_info.target_file_path
+        return score
 
     def is_same_source_as_past(self) -> bool:
         file_info = self.magic_info.file_info
@@ -531,7 +531,7 @@ class BaseConverter:
         # promptをファイルに保存
         self.prompt_manager.save_prompt(self.magic_info, prompt, target_file_path_rel, prompt_enum)
 
-    def generate_md_from_prompt(self) -> str:
+    def generate_md_from_prompt(self) -> float:
         """
         prompt_finalから任意のマークダウンファイルを生成する関数
         """
@@ -548,7 +548,7 @@ class BaseConverter:
             md_content, target_file_path
         )  # 生成された要件定義書の内容をファイルに保存
         self.print_generation_result(output_file_path)  # 生成結果を出力
-        return output_file_path
+        return 1.0
 
     def generate_py_from_prompt(self) -> str:
         """

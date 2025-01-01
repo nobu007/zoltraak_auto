@@ -71,7 +71,7 @@ class MarkdownToMarkdownConverter(BaseConverter):
             file_info.update_source_target(file_info.request_file_path, file_info.md_file_path)
 
     @log_inout
-    def convert(self) -> str:
+    def convert(self) -> float:
         """prompt + ユーザ要求記述書(pre_md_file) => 要件定義書(md_file)"""
 
         # step5: 変換処理

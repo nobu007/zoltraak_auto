@@ -68,7 +68,8 @@ class MagicWorkflow:
         """run処理をレイヤを進めながら繰り返す"""
         self.start_workflow()
         for layer in MagicLayer:
-            self.run_converters(layer)
+            is_called, score_list = self.run_converters(layer)
+            log("is_called=%s, score_list=%s", is_called, score_list)
 
             # ZOLTRAAK_LEGACYモードの場合は１回で終了
             if self.magic_info.magic_mode == MagicMode.ZOLTRAAK_LEGACY:
@@ -96,19 +97,21 @@ class MagicWorkflow:
         return self.magic_info.file_info.final_output_file_path
 
     @log_inout
-    def run_converters(self, layer: MagicLayer) -> bool:
+    def run_converters(self, layer: MagicLayer) -> tuple[bool, list[float]]:
         log(self.get_log("check layer = " + str(layer)))
         is_called = False
+        score_list = []
         for converter in self.converters:
             if layer in converter.acceptable_layers and layer == self.magic_info.magic_layer:
                 log_i(self.get_log(str(converter) + " convert layer = " + str(layer)))
                 converter.prepare()
-                self.run_converter(converter)
+                is_gen, score = self.run_converter(converter)
                 is_called = True
-        return is_called
+                score_list.append(score)
+        return is_called, score_list
 
     @log_inout
-    def run_converter(self, converter: BaseConverter) -> bool:
+    def run_converter(self, converter: BaseConverter) -> tuple[bool, float]:
         is_gen = False
         if hasattr(converter, "prepare_generation") and callable(converter.prepare_generation):
             # ジェネレータ
@@ -116,7 +119,7 @@ class MagicWorkflow:
             if not source_target_set_list:
                 log("source_target_set_list empty")
                 self.workflow_history.append(self.magic_info.magic_layer + "(source_target_set_list empty)")
-                return True
+                return True, -1.0
 
             # 非同期用の設定に変更
             self.magic_info.is_async = True
@@ -130,8 +133,8 @@ class MagicWorkflow:
             )
 
             # 非同期処理を実行
-            anyio.run(self.process_source_target_sets, converter, source_target_set_list, progress_bar)
-            log("process_source_target_sets are completed")
+            score = anyio.run(self.process_source_target_sets, converter, source_target_set_list, progress_bar)
+            log("process_source_target_sets are completed score=%f", score)
 
             progress_bar.close()
 
@@ -146,8 +149,8 @@ class MagicWorkflow:
         else:
             # コンバーター
             log(self.get_log(f"run Converter target_file_path = {self.file_info.target_file_path}"))
-            self.run(converter.convert, self.magic_info)
-        return is_gen
+            score = self.run(converter.convert, self.magic_info)
+        return is_gen, score
 
     async def process_source_target_sets(
         self, converter: BaseConverter, source_target_set_list: list[SourceTargetSet], progress_bar: tqdm
@@ -233,13 +236,13 @@ class MagicWorkflow:
         # プロセスを実行する
         # 超重要: このメソッドは、並列処理をするためmagic_infoを引き回す。self.magic_infoなどは使用禁止！
         self.pre_process(magic_info)
-        output_file_path = func()
-        log(self.get_log(f"output_file_path= {output_file_path}"))
+        score = func()
+        log(self.get_log(f"score= {score}"))
+        magic_info.score = score
         display_magic_info_intermediate(magic_info)
-        self.file_info.output_file_path = output_file_path
         self.post_process(magic_info)
         self.display_result(magic_info)
-        return output_file_path
+        return score
 
     @log_inout
     def pre_process(self, magic_info: MagicInfo):

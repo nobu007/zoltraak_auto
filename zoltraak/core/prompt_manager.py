@@ -95,6 +95,7 @@ class PromptManager:
     def __init__(self):
         self.df = pd.DataFrame()
         self.prompt_len_list = []
+        self.score_list = []
         self.prompt_output_path_list = []
         self.prompt_head_list = []
         self.prompt_tail_list = []
@@ -126,12 +127,14 @@ class PromptManager:
         prompt_len = len(prompt_str)
         if prompt_len > 0:
             self.prompt_len_list.append(prompt_len)
+            self.score_list.append(magic_info.score)
             self.prompt_output_path_list.append(prompt_output_path)
             self.prompt_head_list.append(prompt_str[:100])
             self.prompt_tail_list.append(prompt_str[-100:])
             self.df = pd.DataFrame(
                 data={
                     "prompt_len": self.prompt_len_list,
+                    "score": self.score_list,
                     "prompt_output_path": self.prompt_output_path_list,
                     "prompt_head": self.prompt_head_list,
                     "prompt_tail": self.prompt_tail_list,

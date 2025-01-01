@@ -427,6 +427,7 @@ class MagicInfo(BaseModel):
 
     is_debug: bool = Field(default=True, description="デバッグモード(グリモア情報を逐次出力)")
     is_async: bool = Field(default=False, description="非同期モード(一部の同期処理をスキップする)")
+    score: float = Field(default=1.0, description="スコア(0.0:悪い、1.0:良い)")
 
     def update(self, **kwargs):
         for key, value in kwargs.items():

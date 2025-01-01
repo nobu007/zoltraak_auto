@@ -68,7 +68,7 @@ class TestBaseConverter(BaseTestCase):
     def test_convert_one_source_true_target_true(self):
         self.set_mock_return_value(MOCK_HANDLE_NEW_TARGET_FILE)
         result = self.base_converter.convert_one()
-        self.assertEqual(result, "")
+        self.assertEqual(result, 1.0)
         self.check_mock_call_count(ALL_MOCK_HANDLE_EXISTING_TARGET_FILE, 1)
         self.check_mock_call_count(MOCK_HANDLE_NEW_TARGET_FILE, 0)
         self.assertIn(PROMPT_KEYWORD_NO_SOURCE, self.base_converter.magic_info.prompt_input)
@@ -78,7 +78,7 @@ class TestBaseConverter(BaseTestCase):
         self.set_mock_return_value(MOCK_HANDLE_NEW_TARGET_FILE)
         os.remove("./pre.md")  # source ファイルを削除
         result = self.base_converter.convert_one()
-        self.assertEqual(result, "")
+        self.assertEqual(result, 1.0)
         self.check_mock_call_count(ALL_MOCK_HANDLE_EXISTING_TARGET_FILE, 1)
         self.check_mock_call_count(MOCK_HANDLE_NEW_TARGET_FILE, 0)
         self.assertNotIn(PROMPT_KEYWORD, self.base_converter.magic_info.prompt_input)
@@ -88,7 +88,7 @@ class TestBaseConverter(BaseTestCase):
         self.set_mock_return_value(MOCK_HANDLE_NEW_TARGET_FILE)
         os.remove("./output.md")  # target ファイルを削除
         result = self.base_converter.convert_one()
-        self.assertEqual(result, "")
+        self.assertEqual(result, 1.0)
         self.check_mock_call_count(ALL_MOCK_HANDLE_EXISTING_TARGET_FILE, 0)
         self.check_mock_call_count(MOCK_HANDLE_NEW_TARGET_FILE, 1)
         self.assertIn(PROMPT_KEYWORD_NO_SOURCE, self.base_converter.magic_info.prompt_input)
@@ -99,7 +99,7 @@ class TestBaseConverter(BaseTestCase):
         os.remove("./pre.md")  # source ファイルを削除
         os.remove("./output.md")  # target ファイルを削除
         result = self.base_converter.convert_one()
-        self.assertEqual(result, "")
+        self.assertEqual(result, 1.0)
         self.check_mock_call_count(ALL_MOCK_HANDLE_EXISTING_TARGET_FILE, 0)
         self.check_mock_call_count(MOCK_HANDLE_NEW_TARGET_FILE, 1)
         self.assertNotIn(PROMPT_KEYWORD, self.base_converter.magic_info.prompt_input)

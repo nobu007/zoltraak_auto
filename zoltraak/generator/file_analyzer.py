@@ -82,10 +82,10 @@ class FileAnalyzer(BaseConverter):
             source_file_path=source_file_path, target_file_path=target_file_path, context_file_path=context_file_path
         )
 
-    def convert(self) -> str:
+    def convert(self) -> float:
         """詳細設計書 => ソースファイル"""
         # 変換処理の実体なし（TODO: 例外処理で何かするかも）
-        return self.magic_info.file_info.target_file_path
+        return 1.0
 
 
 if __name__ == "__main__":  # このスクリプトが直接実行された場合にのみ、以下のコードを実行します。

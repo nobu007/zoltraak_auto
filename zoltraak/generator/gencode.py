@@ -108,12 +108,12 @@ class CodeGenerator(BaseConverter):
             source_file_path=source_file_path, target_file_path=target_file_path, context_file_path=context_file_path
         )
 
-    def convert(self) -> str:
+    def convert(self) -> float:
         """詳細設計書 => ソースファイル"""
         return self.convert_one()
 
     @log_inout
-    def convert_one(self) -> str:
+    def convert_one(self) -> float:
         """生成処理を１回実行する"""
         file_info = self.magic_info.file_info
 
