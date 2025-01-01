@@ -99,7 +99,7 @@ class BaseConverter:
         if self.prompt_manager.is_same_prompt(self.magic_info, PromptEnum.FINAL):  # -- 前回と同じプロンプトの場合
             log(f"スキップ(既存＆input変更なし): {file_info.target_file_path}")
             self.magic_info.history_info += " ->スキップ(既存＆input変更なし)"
-            return 1.0  # --- 処理をスキップし既存のターゲットファイルを返す
+            return 1.0  # --- 処理をスキップし既存のターゲットファイルを使う
 
         # タイムスタンプ取得
         source_timestamp = FileUtil.get_timestamp(file_info.source_file_path)
@@ -107,14 +107,14 @@ class BaseConverter:
         if source_timestamp < target_timestamp:
             log(f"スキップ(ソースより新しい): {file_info.target_file_path}")
             self.magic_info.history_info += " ->スキップ(ソースより新しい)"
-            return 1.0
+            return 1.0  # --- 処理をスキップし既存のターゲットファイルを使う
 
         # 差分禁止レイヤは作り直し判定
         if self.magic_info.magic_layer in BaseConverter.ALWAYS_FULL_CREATE_LAYERS:
             if self.is_same_source_as_past():
                 log(f"スキップ(差分禁止&ソース変更なし): {file_info.target_file_path}")
                 self.magic_info.history_info += " ->スキップ(差分禁止&ソース変更なし)"
-                return 1.0  # --- 処理をスキップし既存のターゲットファイルを返す
+                return 1.0  # --- 処理をスキップし既存のターゲットファイルを使う
             # ソースが変更された場合は再作成
             log(f"再作成(差分禁止&ソース変更あり): {file_info.target_file_path}")
             self.magic_info.history_info += " ->再作成(差分禁止&ソース変更あり)"
@@ -358,7 +358,7 @@ class BaseConverter:
             log_e("論理異常： choice=%d", choice)
             choice = "1"
 
-        return 1.0
+        return self.get_score_from_target_content()
 
     @log_inout
     def apply_diff_to_target_file(self, target_file_path: str, target_diff: str) -> str:
@@ -427,7 +427,7 @@ class BaseConverter:
             target = TargetCodeGenerator(self.magic_info, self.litellm_api)
             output_file_path = target.process_generated_code(code)
             target.write_code_to_target_file(output_file_path)
-        return 1.0
+        return self.get_score_from_target_content()
 
     @log_inout
     def handle_new_target_file_with_old_context(self, old_target_content: str) -> float:  # noqa: ARG002
@@ -447,8 +447,8 @@ class BaseConverter:
         #     FileUtil.write_file(file_info.context_file_path, context_content)
 
         # 新規作成
-        output_path = self.handle_new_target_file()
-        new_target_content = FileUtil.read_file(output_path)
+        score_org = self.handle_new_target_file()
+        new_target_content = FileUtil.read_file(file_info.target_file_path)
 
         # スコア算出
         score = get_score(old_target_content, new_target_content)
@@ -456,8 +456,8 @@ class BaseConverter:
 
         # スコアが低い場合はold_target_contentに戻す
         min_score_threshold = 0.5
-        if score < min_score_threshold:
-            log("スコアが低いため、old_target_contentに戻します。")
+        if score_org < min_score_threshold or score < min_score_threshold:
+            log("スコアが低いため、old_target_contentに戻します。score_org=%s, score=%s", score_org, score)
             FileUtil.write_file(file_info.target_file_path, old_target_content)
 
         return score
@@ -548,7 +548,7 @@ class BaseConverter:
             md_content, target_file_path
         )  # 生成された要件定義書の内容をファイルに保存
         self.print_generation_result(output_file_path)  # 生成結果を出力
-        return 1.0
+        return self.get_score_from_target_content()
 
     def generate_py_from_prompt(self) -> str:
         """
@@ -583,6 +583,14 @@ class BaseConverter:
         """
         print()
         log(f"\033[32m魔法術式を構築しました: {output_file_path}\033[0m")  # 要件定義書の生成完了メッセージを緑色で表示
+
+    def get_score_from_target_content(
+        self, relation="The input and output of automatic program generation system"
+    ) -> float:
+        file_info = self.magic_info.file_info
+        source_content = FileUtil.read_file(file_info.source_file_path)
+        target_content = FileUtil.read_file(file_info.target_file_path)
+        return get_score(source_content, target_content, relation)
 
     def __str__(self) -> str:
         return f"{self.name}({self.magic_info.magic_layer})"

@@ -110,7 +110,7 @@ class MarkdownToPythonConverter(BaseConverter):
         dm = DependencyManagerPy(self.magic_info.file_info.target_dir)
         dm.scan_project()
         dm.write_dependency_file(self.magic_info.file_info.dependency_file_path)
-        return 1.0
+        return self.get_score_from_target_content()
 
     @log_inout
     def handle_existing_target_file_py(self) -> float:  # noqa: PLR0911
@@ -131,7 +131,7 @@ class MarkdownToPythonConverter(BaseConverter):
                     ):  # -- 前回と同じプロンプトの場合
                         log("過去のターゲットファイルと同一のためコード生成をスキップします。")
                         self.magic_info.history_info += " ->コード生成をスキップ"
-                        return 1.0
+                        return self.get_score_from_target_content()
 
                     # 前回のプロンプトと異なる場合は再適用してコード生成
                     output_file_path = self.handle_existing_target_file()
@@ -140,7 +140,7 @@ class MarkdownToPythonConverter(BaseConverter):
                     SubprocessUtil.run(["python", output_file_path], check=False)
                     log("コード生成プロセスが完了しました。")
                     self.magic_info.history_info += " ->コード生成完了"
-                    return 1.0  # TODO: サブプロセスで作った別ファイルの情報は不要？
+                    return self.get_score_from_target_content()  # TODO: サブプロセスで作った別ファイルの情報は不要？
 
                     # TODO: ハッシュ運用検討
                     # source が同じでもコンパイラやプロンプトの更新でtarget が変わる可能性もある？
