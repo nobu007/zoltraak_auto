@@ -22,6 +22,7 @@ ALL_MOCK_UPDATE_TARGET_FILE_PROPOSE_AND_APPLY = (
 ALL_MOCK_UPDATE_TARGET_FILE_FROM_SOURCE_DIFF = (
     "zoltraak.converter.base_converter.BaseConverter.update_target_file_from_source_diff"
 )
+ALL_MOCK_GET_SCORE_FROM_TARGET_CONTENT = "zoltraak.converter.base_converter.BaseConverter.get_score_from_target_content"
 MOCK_HANDLE_NEW_TARGET_FILE = "zoltraak.converter.base_converter.BaseConverter.handle_new_target_file"
 MOCK_GENERATE_MD_FROM_PROMPT = "zoltraak.converter.base_converter.BaseConverter.generate_md_from_prompt"
 
@@ -42,9 +43,10 @@ class TestBaseConverter(BaseTestCase):
         self.magic_info.update()
         self.prompt_manager = self.magic_workflow.prompt_manager
         self.base_converter = BaseConverter(self.magic_info, self.prompt_manager)
-        self.set_mock_return_value(ALL_MOCK_HANDLE_EXISTING_TARGET_FILE)
-        self.set_mock_return_value(ALL_MOCK_UPDATE_TARGET_FILE_PROPOSE_AND_APPLY)
-        self.set_mock_return_value(ALL_MOCK_UPDATE_TARGET_FILE_FROM_SOURCE_DIFF)
+        self.set_mock_return_value(ALL_MOCK_HANDLE_EXISTING_TARGET_FILE, return_value=1.0)
+        self.set_mock_return_value(ALL_MOCK_UPDATE_TARGET_FILE_PROPOSE_AND_APPLY, return_value=1.0)
+        self.set_mock_return_value(ALL_MOCK_UPDATE_TARGET_FILE_FROM_SOURCE_DIFF, return_value=1.0)
+        self.set_mock_return_value(ALL_MOCK_GET_SCORE_FROM_TARGET_CONTENT, return_value=1.0)
 
     def set_up_files(self):
         # テスト全体で使用するファイルのセットアップ
@@ -66,7 +68,7 @@ class TestBaseConverter(BaseTestCase):
     # source: True, target: True
     # -> handle_existing_target_file()が呼ばれる
     def test_convert_one_source_true_target_true(self):
-        self.set_mock_return_value(MOCK_HANDLE_NEW_TARGET_FILE)
+        self.set_mock_return_value(MOCK_HANDLE_NEW_TARGET_FILE, return_value=1.0)
         result = self.base_converter.convert_one()
         self.assertEqual(result, 1.0)
         self.check_mock_call_count(ALL_MOCK_HANDLE_EXISTING_TARGET_FILE, 1)
@@ -75,7 +77,7 @@ class TestBaseConverter(BaseTestCase):
 
     # source: False, target: True
     def test_convert_one_source_false_target_true(self):
-        self.set_mock_return_value(MOCK_HANDLE_NEW_TARGET_FILE)
+        self.set_mock_return_value(MOCK_HANDLE_NEW_TARGET_FILE, return_value=1.0)
         os.remove("./pre.md")  # source ファイルを削除
         result = self.base_converter.convert_one()
         self.assertEqual(result, 1.0)
@@ -85,7 +87,7 @@ class TestBaseConverter(BaseTestCase):
 
     # source: True, target: False
     def test_convert_one_source_true_target_false(self):
-        self.set_mock_return_value(MOCK_HANDLE_NEW_TARGET_FILE)
+        self.set_mock_return_value(MOCK_HANDLE_NEW_TARGET_FILE, return_value=1.0)
         os.remove("./output.md")  # target ファイルを削除
         result = self.base_converter.convert_one()
         self.assertEqual(result, 1.0)
@@ -95,7 +97,7 @@ class TestBaseConverter(BaseTestCase):
 
     # source: False, target: False
     def test_convert_one_source_false_target_false(self):
-        self.set_mock_return_value(MOCK_HANDLE_NEW_TARGET_FILE)
+        self.set_mock_return_value(MOCK_HANDLE_NEW_TARGET_FILE, return_value=1.0)
         os.remove("./pre.md")  # source ファイルを削除
         os.remove("./output.md")  # target ファイルを削除
         result = self.base_converter.convert_one()
@@ -109,7 +111,7 @@ class TestBaseConverter(BaseTestCase):
     # is_source_changed: True, past_source: True
     def test_handle_existing_target_file_source_true_past_true(self):
         result = self.base_converter.handle_existing_target_file()
-        self.assertEqual(result, "")
+        self.assertEqual(result, 1.0)
         self.check_mock_call_count(ALL_MOCK_UPDATE_TARGET_FILE_FROM_SOURCE_DIFF, 0)
         self.check_mock_call_count(ALL_MOCK_UPDATE_TARGET_FILE_PROPOSE_AND_APPLY, 0)
         self.assertNotIn(PROMPT_KEYWORD, self.base_converter.magic_info.prompt_input)

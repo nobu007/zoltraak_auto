@@ -79,7 +79,7 @@ class TestMarkdownToPythonConverter(TestBaseConverter):
     def test_handle_new_target_file(self):
         self.magic_info.prompt_input = ""
         result = self.converter.handle_new_target_file()
-        self.assertEqual(result, os.path.abspath("output.md"))
+        self.assertEqual(result, 1.0)
         self.check_mock_call_count_llm_generate_response(1)
 
     def test_apply_diff_to_target_file(self):
