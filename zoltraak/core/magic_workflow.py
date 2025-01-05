@@ -67,9 +67,13 @@ class MagicWorkflow:
     def run_loop(self) -> str:
         """run処理をレイヤを進めながら繰り返す"""
         self.start_workflow()
-        while self.magic_info.magic_layer != self.magic_info.magic_layer_end:
+        while True:
             is_called, score_list = self.run_converters(self.magic_info.magic_layer)
             log("is_called=%s, score_list=%s", is_called, score_list)
+
+            # ループ終了条件
+            if self.magic_info.magic_layer == self.magic_info.magic_layer_end:
+                break
 
             # 次のレイヤに進む
             self.magic_info.magic_layer = self.magic_info.magic_layer.next()
