@@ -97,8 +97,8 @@ class BaseConverter:
 
         # 最終プロンプトによる分岐
         if self.prompt_manager.is_same_prompt(self.magic_info, PromptEnum.FINAL):  # -- 前回と同じプロンプトの場合
-            log(f"スキップ(既存＆input変更なし): {file_info.target_file_path}")
-            self.magic_info.history_info += " ->スキップ(既存＆input変更なし)"
+            log(f"スキップ(既存＆PromptFinal変更なし): {file_info.target_file_path}")
+            self.magic_info.history_info += " ->スキップ(既存＆PromptFinal変更なし)"
             return 1.0  # --- 処理をスキップし既存のターゲットファイルを使う
 
         # タイムスタンプ取得
@@ -109,13 +109,14 @@ class BaseConverter:
             self.magic_info.history_info += " ->スキップ(ソースより新しい)"
             return 1.0  # --- 処理をスキップし既存のターゲットファイルを使う
 
-        # 差分禁止レイヤは作り直し判定
+        # 作り直し判定
+        if self.is_same_source_as_past():
+            log(f"スキップ(差分禁止&ソース変更なし): {file_info.target_file_path}")
+            self.magic_info.history_info += " ->スキップ(差分禁止&ソース変更なし)"
+            return 1.0  # --- 処理をスキップし既存のターゲットファイルを使う
+
+        # ソースが変更された場合は再作成
         if self.magic_info.magic_layer in BaseConverter.ALWAYS_FULL_CREATE_LAYERS:
-            if self.is_same_source_as_past():
-                log(f"スキップ(差分禁止&ソース変更なし): {file_info.target_file_path}")
-                self.magic_info.history_info += " ->スキップ(差分禁止&ソース変更なし)"
-                return 1.0  # --- 処理をスキップし既存のターゲットファイルを使う
-            # ソースが変更された場合は再作成
             log(f"再作成(差分禁止&ソース変更あり): {file_info.target_file_path}")
             self.magic_info.history_info += " ->再作成(差分禁止&ソース変更あり)"
             return self.handle_new_target_file()
@@ -220,7 +221,7 @@ class BaseConverter:
 
         self.magic_info.prompt_diff_order = prompt_diff_order
 
-        return self.update_target_file_propose_and_apply(file_info.target_file_path, prompt_diff_order)
+        return self.update_target_file_from_target_and_prompt(file_info.target_file_path, prompt_diff_order)
 
     def get_match_rate_source_and_target_file(self, old_target_lines: str, new_source_lines: str, prompt: str) -> int:
         """
@@ -292,8 +293,64 @@ class BaseConverter:
             match_rate = 0
         return match_rate
 
+    def update_target_file_from_target_and_prompt(self, target_file_path: str, prompt_diff_order: str) -> float:
+        """
+        ターゲットファイルを変更する用する関数
+
+        Args:
+            target_file_path (str): 現在のターゲットファイルのパス
+            prompt_diff_order (str): ソースファイルの差分などターゲットファイルに適用するべき作業指示を含むprompt
+        """
+        # プロンプトにターゲットファイルの内容を変数として追加
+        current_target_code = FileUtil.read_file(target_file_path)
+
+        prompt_apply = f"""
+以下の指示に従って、最終的なターゲットファイルの内容のみを出力してください。
+手順
+　1. 現在のターゲットファイルの内容を確認してください。
+  2. 変更内容(依頼内容)を確認してください。
+  3. 基本的に現在の内容を尊重して情報を追加する方向で検討してください。
+  4. 最終的なターゲットファイルの内容のみを出力してください。他の出力は一切不要です。
+
+現在のターゲットファイルの内容:
+{current_target_code}
+
+変更内容(依頼内容):
+{prompt_diff_order}
+
+出力内容指示(再掲):
+最終的なターゲットファイルの内容のみを出力してください。他の出力は一切不要です。
+        """
+        response = self.generate_response(
+            prompt_enum=PromptEnum.APPLY,
+            prompt=prompt_apply,
+            max_tokens=settings.max_tokens_propose_diff,
+            temperature=settings.max_tokens_generate_code_fix,
+            model_name=settings.model_name_lite,
+        )
+        target_diff = response.strip()
+        # ターゲットファイルの差分を表示
+        log_head("ターゲットファイルの差分", target_diff)
+
+        # ユーザーに適用方法を尋ねる
+        log("差分をどのように適用しますか?")
+        log("1. AIで適用する")
+        choice = "1"
+
+        while True:
+            if choice == "1":
+                # 差分をターゲットファイルに自動で適用
+                self.apply_diff_to_target_file(target_file_path, target_diff)
+                log(f"{target_file_path}に差分を自動で適用しました。")
+                break
+            log_e("論理異常： choice=%d", choice)
+            choice = "1"
+
+        return self.get_score_from_target_content()
+
     def update_target_file_propose_and_apply(self, target_file_path: str, prompt_diff_order: str) -> float:
         """
+        NOTE: 一気に最終outputを出力する方針としたため本関数は廃止する
         ターゲットファイルの変更差分を提案して適用する関数
 
         Args:
