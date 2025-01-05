@@ -67,22 +67,12 @@ class MagicWorkflow:
     def run_loop(self) -> str:
         """run処理をレイヤを進めながら繰り返す"""
         self.start_workflow()
-        for layer in MagicLayer:
-            is_called, score_list = self.run_converters(layer)
+        while self.magic_info.magic_layer != self.magic_info.magic_layer_end:
+            is_called, score_list = self.run_converters(self.magic_info.magic_layer)
             log("is_called=%s, score_list=%s", is_called, score_list)
 
-            # ZOLTRAAK_LEGACYモードの場合は１回で終了
-            if self.magic_info.magic_mode == MagicMode.ZOLTRAAK_LEGACY:
-                log(self.get_log("ZOLTRAAK_LEGACYモードにより、convert処理を終了します"))
-                break
-
-            # magic_layer_endで終了
-            if self.magic_info.magic_layer == self.magic_info.magic_layer_end:
-                log(self.get_log("MAGIC_LAYER_ENDに到達したので、CONVERT処理を終了します"))
-                break
-
             # 次のレイヤに進む
-            self.magic_info.magic_layer = layer.next()
+            self.magic_info.magic_layer = self.magic_info.magic_layer.next()
             log(self.get_log("end next = " + str(self.magic_info.magic_layer)))
 
             # 次のレイヤにprompt_inputを再度渡さないようにモード変更

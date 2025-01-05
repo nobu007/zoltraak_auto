@@ -289,7 +289,10 @@ def process_markdown_file(params: ZoltraakParams) -> MagicInfo:
     magic_info = MagicInfo()
     magic_info.magic_mode = params.magic_mode
     magic_info.magic_layer = MagicLayer.new(params.magic_layer)
-    magic_info.magic_layer_end = MagicLayer.new(params.magic_layer_end)
+    magic_info.magic_layer_end = MagicLayer.new(params.magic_layer_end)  # ZOLTRAAK_LEGACYモードの場合は１回で終了
+    if magic_info.magic_mode == MagicMode.ZOLTRAAK_LEGACY:
+        magic_info.magic_layer = MagicLayer.LAYER_4_REQUIREMENT_GEN
+        magic_info.magic_layer_end = MagicLayer.LAYER_5_CODE_GEN
     magic_info.model_name = settings.model_name
     magic_info.prompt_input = params.prompt
     magic_info.current_grimoire_name = canonical_name
