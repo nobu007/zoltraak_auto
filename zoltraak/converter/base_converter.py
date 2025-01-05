@@ -128,7 +128,7 @@ class BaseConverter:
         return self.update_target_file_from_source_diff()
 
     # ソースファイルの差分比率のしきい値（超えると差分では処理できないので再作成）
-    SOURCE_DIFF_RATIO_THRESHOLD = 0.1
+    SOURCE_DIFF_RATIO_THRESHOLD = 0.3
 
     # match_rateのしきい値
     MATCH_RATE_THRESHOLD_OK = 90  # 高いと処理スキップ(低いと差分適用)
@@ -167,7 +167,7 @@ class BaseConverter:
         # source_diffを加味したプロンプト(prompt_diff)を作成
         if source_diff_ratio > BaseConverter.SOURCE_DIFF_RATIO_THRESHOLD:
             # 差分が大きすぎる
-            log(f"再作成(ソース差分過大): {file_info.target_file_path}")
+            log(f"再作成(ソース差分過大): {file_info.target_file_path}, ratio:{source_diff_ratio}")
             self.magic_info.history_info += " ->再作成(ソース差分過大)"
             return True
 
