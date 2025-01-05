@@ -96,6 +96,7 @@ class PromptManager:
         self.df = pd.DataFrame()
         self.prompt_len_list = []
         self.score_list = []
+        self.is_same_prompt_list = []
         self.prompt_output_path_list = []
         self.prompt_head_list = []
         self.prompt_tail_list = []
@@ -122,12 +123,19 @@ class PromptManager:
         FileUtil.write_prompt(prompt, prompt_output_path)
         log("プロンプトを保存しました↓ %s:\n%s", prompt_enum, prompt_output_path)
 
+        # 既存のpromptと差分有無を確認
+        is_same_prompt = False
+        prompt_pre = FileUtil.read_file(prompt_output_path)
+        if prompt_pre == prompt:
+            is_same_prompt = True
+
         # csvに保存
         prompt_str = str(prompt).strip()
         prompt_len = len(prompt_str)
         if prompt_len > 0:
             self.prompt_len_list.append(prompt_len)
             self.score_list.append(magic_info.score)
+            self.is_same_prompt_list.append(is_same_prompt)
             self.prompt_output_path_list.append(prompt_output_path)
             self.prompt_head_list.append(prompt_str[:100])
             self.prompt_tail_list.append(prompt_str[-100:])
@@ -135,6 +143,7 @@ class PromptManager:
                 data={
                     "prompt_len": self.prompt_len_list,
                     "score": self.score_list,
+                    "is_same_prompt": self.is_same_prompt_list,
                     "prompt_output_path": self.prompt_output_path_list,
                     "prompt_head": self.prompt_head_list,
                     "prompt_tail": self.prompt_tail_list,
