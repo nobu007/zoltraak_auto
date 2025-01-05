@@ -97,6 +97,8 @@ class PromptManager:
         self.prompt_len_list = []
         self.score_list = []
         self.is_same_prompt_list = []
+        self.prompt_layer_name_list = []
+        self.prompt_output_filename_list = []
         self.prompt_output_path_list = []
         self.prompt_head_list = []
         self.prompt_tail_list = []
@@ -129,6 +131,12 @@ class PromptManager:
         if prompt_pre == prompt:
             is_same_prompt = True
 
+        # prompt_output_filename
+        prompt_output_filename = os.path.basename(prompt_output_path)
+
+        # prompt_layer_name(prompt_output_pathからlayer_xxxxの部分を取得)
+        prompt_layer_name = re.search(r"layer_\d+", prompt_output_path).group(0)
+
         # csvに保存
         prompt_str = str(prompt).strip()
         prompt_len = len(prompt_str)
@@ -136,6 +144,8 @@ class PromptManager:
             self.prompt_len_list.append(prompt_len)
             self.score_list.append(magic_info.score)
             self.is_same_prompt_list.append(is_same_prompt)
+            self.prompt_layer_name_list.append(prompt_layer_name)
+            self.prompt_output_filename_list.append(prompt_output_filename)
             self.prompt_output_path_list.append(prompt_output_path)
             self.prompt_head_list.append(prompt_str[:100])
             self.prompt_tail_list.append(prompt_str[-100:])
@@ -144,6 +154,8 @@ class PromptManager:
                     "prompt_len": self.prompt_len_list,
                     "score": self.score_list,
                     "is_same_prompt": self.is_same_prompt_list,
+                    "prompt_layer_name": self.prompt_layer_name_list,
+                    "prompt_output_filename": self.prompt_output_filename_list,
                     "prompt_output_path": self.prompt_output_path_list,
                     "prompt_head": self.prompt_head_list,
                     "prompt_tail": self.prompt_tail_list,
