@@ -60,16 +60,23 @@ class FileAnalyzer(BaseConverter):
         request_file_path = self.magic_info.file_info.request_file_path
         request_file_content = FileUtil.read_file(request_file_path)
 
-        # info_structure_file_path: 個々の詳細設計書に対応する情報構造体のファイルパス
+        # requirement_file_content: 個々の詳細設計書に対応する情報構造体のファイルパス
         requirement_file_content = FileUtil.read_file(requirement_file_path)
-        requirement_file_content += "\n\n更新要求がありました。\n\n"
-        requirement_file_content += request_file_content
-        FileUtil.write_file(requirement_file_path, requirement_file_content)
+
+        # merged_requirement_file_content: 要求定義書（全体）+ 個々の詳細設計書
+        merged_requirement_file_content = "＜要求定義書（全体）＞\n"
+        merged_requirement_file_content += request_file_content
+        merged_requirement_file_content += "\n\n＜ファイル単位の要求定義書＞\n"
+        merged_requirement_file_content += requirement_file_content
+
+        # merged_requirement_file_path に保存
+        merged_requirement_file_path = os.path.splitext(code_file_path)[0] + "_merged_requirement.md"
+        FileUtil.write_file(merged_requirement_file_path, merged_requirement_file_content)
 
         if self.magic_info.magic_layer is MagicLayer.LAYER_2_1_AFFECTED_FILE_LIST_GEN:
             # MagicLayer.LAYER_2_1_AFFECTED_FILE_LIST_GEN
             # 変更要求 => 要求定義書（ファイル別）
-            source_file_path = request_file_path
+            source_file_path = merged_requirement_file_path
             target_file_path = requirement_file_path
             context_file_path = ""
         else:
@@ -79,7 +86,9 @@ class FileAnalyzer(BaseConverter):
             context_file_path = ""
 
         return SourceTargetSet(
-            source_file_path=source_file_path, target_file_path=target_file_path, context_file_path=context_file_path
+            source_file_path=source_file_path,
+            target_file_path=target_file_path,
+            context_file_path=context_file_path,
         )
 
     def convert(self) -> float:

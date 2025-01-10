@@ -18,6 +18,8 @@ class DiffUtil:
 
     @staticmethod
     def diff0_ignore_space(content1: str, content2: str) -> str:
+        content1 = content1.strip()
+        content2 = content2.strip()
         content1_ignored_list = DiffUtil.get_strip_space(content1)
         content2_ignored_list = DiffUtil.get_strip_space(content2)
         return DiffUtil.diff0(content1_ignored_list, content2_ignored_list)

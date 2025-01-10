@@ -1,3 +1,4 @@
+import difflib
 import os
 import re
 from dataclasses import dataclass
@@ -102,6 +103,7 @@ class PromptManager:
         self.prompt_output_path_list = []
         self.prompt_head_list = []
         self.prompt_tail_list = []
+        self.prompt_diff_list = []
 
     @log_inout
     def save_prompts(self, magic_info: MagicInfo) -> None:
@@ -121,21 +123,25 @@ class PromptManager:
         # フォルダがない場合は作成
         os.makedirs(os.path.dirname(prompt_output_path), exist_ok=True)
 
+        # 既存のpromptと差分有無を確認
+        is_same_prompt = True
+        prompt_diff = "None"
+        prompt_pre = FileUtil.read_file(prompt_output_path)
+        prompt_pre = prompt_pre.strip()
+        prompt = prompt.strip()
+        if prompt_pre != prompt:
+            is_same_prompt = False
+            prompt_diff = "".join(difflib.unified_diff(prompt_pre.splitlines(), prompt.splitlines()))
+
         # プロンプトを保存
         FileUtil.write_prompt(prompt, prompt_output_path)
         log("プロンプトを保存しました↓ %s:\n%s", prompt_enum, prompt_output_path)
-
-        # 既存のpromptと差分有無を確認
-        is_same_prompt = False
-        prompt_pre = FileUtil.read_file(prompt_output_path)
-        if prompt_pre == prompt:
-            is_same_prompt = True
 
         # prompt_output_filename
         prompt_output_filename = os.path.basename(prompt_output_path)
 
         # prompt_layer_name(prompt_output_pathからlayer_xxxxの部分を取得)
-        prompt_layer_name = re.search(r"layer_\d+", prompt_output_path).group(0)
+        prompt_layer_name = re.search(r"layer_[\d_]+", prompt_output_path).group(0)
 
         # csvに保存
         prompt_str = str(prompt).strip()
@@ -149,6 +155,7 @@ class PromptManager:
             self.prompt_output_path_list.append(prompt_output_path)
             self.prompt_head_list.append(prompt_str[:100])
             self.prompt_tail_list.append(prompt_str[-100:])
+            self.prompt_diff_list.append(prompt_diff)
             self.df = pd.DataFrame(
                 data={
                     "prompt_len": self.prompt_len_list,
@@ -159,6 +166,7 @@ class PromptManager:
                     "prompt_output_path": self.prompt_output_path_list,
                     "prompt_head": self.prompt_head_list,
                     "prompt_tail": self.prompt_tail_list,
+                    "prompt_diff": self.prompt_diff_list,
                 }
             )
             self.df.to_csv("prompt.csv")
