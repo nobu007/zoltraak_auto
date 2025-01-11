@@ -129,7 +129,7 @@ class PromptManager:
         prompt_pre = FileUtil.read_file(prompt_output_path)
         prompt_pre = prompt_pre.strip()
         prompt = prompt.strip()
-        if prompt_pre != prompt:
+        if self.is_same_prompt_str(prompt_pre, prompt):
             is_same_prompt = False
             prompt_diff = "".join(difflib.unified_diff(prompt_pre.splitlines(), prompt.splitlines()))
 
@@ -188,10 +188,17 @@ class PromptManager:
         log("PromptEnum=" + prompt_enum + " past_prompt(末尾100文字)=\n%s", past_prompt[-100:])
         diff_content = DiffUtil.diff0_ignore_space(current_prompt, past_prompt)
 
-        if diff_content.strip() == "":
+        if self.is_same_prompt_str(current_prompt, past_prompt):
             log("PromptEnum=" + prompt_enum + " プロンプトが同じです")
             return True
         log("PromptEnum=" + prompt_enum + " プロンプトが異なります diff=\n%s", diff_content)
+        return False
+
+    def is_same_prompt_str(self, prompt1: str, prompt2: str) -> bool:
+        diff_content = DiffUtil.diff0_ignore_space(prompt1, prompt2)
+
+        if diff_content.strip() == "":
+            return True
         return False
 
     @log_inout

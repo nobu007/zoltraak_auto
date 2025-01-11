@@ -17,6 +17,7 @@ from zoltraak.generator.file_remover import FileRemover
 from zoltraak.generator.gencode import CodeGenerator
 from zoltraak.generator.gencodebase import CodeBaseGenerator
 from zoltraak.schema.schema import FileInfo, MagicInfo, MagicLayer, MagicMode, MagicWorkflowInfo, SourceTargetSet
+from zoltraak.utils.diff_util import DiffUtil
 from zoltraak.utils.file_util import FileUtil
 from zoltraak.utils.grimoires_util import GrimoireUtil
 from zoltraak.utils.log_util import log, log_change, log_head_diff, log_i, log_inout, log_progress
@@ -249,10 +250,11 @@ class MagicWorkflow:
         # ソースファイルをprompt_goalに詰め込み
         prompt_goal = magic_info.prompt_input
         source_file_path = file_info.source_file_path
+
         if FileUtil.has_content(source_file_path):
             source_content = FileUtil.read_file(source_file_path)
             # prompt_inputがsource_content由来の場合に備えて同一チェック
-            if prompt_goal.strip() != source_content.strip():
+            if not DiffUtil.is_contain_ignore_space(prompt_goal, source_content):
                 log(self.get_log(f"ソースファイル読込:  {file_info.source_file_path}"))
                 prompt_goal += f"\n\n<<追加情報>>\n{source_content}"
         else:
