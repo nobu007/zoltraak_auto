@@ -1,3 +1,4 @@
+import math
 import os
 from typing import ClassVar
 
@@ -44,6 +45,8 @@ class BaseConverter:
     """
 
     DEF_MAX_PROMPT_SIZE_FOR_DIFF = 5000  # 大きすぎるdiffは破綻しがちなので制限
+
+    NO_CHECK_SCORE: ClassVar[float] = 1.0  # スキップされたケースのスコアは再評価しない
 
     def __init__(self, magic_info: MagicInfo, prompt_manager: PromptManager):
         self.magic_info = magic_info
@@ -507,9 +510,10 @@ class BaseConverter:
         score_org = self.handle_new_target_file()
         new_target_content = FileUtil.read_file(file_info.target_file_path)
 
-        # スコア算出
-        score = get_score(old_target_content, new_target_content)
-        log(f"スコア: {score}")
+        # llmによるスコア算出
+        if not math.isclose(score_org, BaseConverter.NO_CHECK_SCORE, rel_tol=1e-9):
+            score = get_score(old_target_content, new_target_content)
+            log(f"スコア: {score}")
 
         # スコアが低い場合はold_target_contentに戻す
         min_score_threshold = 0.5
