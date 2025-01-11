@@ -49,8 +49,11 @@ class CodeGenerator(BaseConverter):
         ):
             source_target_set = self.prepare_generation_code_file(code_file_path)
             if source_target_set:
-                self.source_target_set_list.append(source_target_set)
-                log("append source_target_set= %s", source_target_set)
+                file_extension = os.path.splitext(source_target_set.target_file_path)[1]
+                if file_extension != "":
+                    # 拡張子なしのファイルはスキップ
+                    self.source_target_set_list.append(source_target_set)
+                    log("append source_target_set= %s", source_target_set)
 
         # コンテキストには
         # step2: グリモア更新
