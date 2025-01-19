@@ -23,7 +23,7 @@ class CustomLitellmDeepEval(DeepEvalBaseLLM):
     def load_model(self, *args, **kwargs):
         """dummy"""
 
-    def generate(self, prompt: str, schema: BaseModel = SchemaStatements) -> str:  # noqa: W0221
+    def generate(self, prompt: str, schema: type[BaseModel] = SchemaStatements) -> str:  # noqa: W0221
         resp = litellm.generate_response_raw(
             model=self.model_name,
             prompt=prompt,
@@ -34,7 +34,7 @@ class CustomLitellmDeepEval(DeepEvalBaseLLM):
             return schema.model_validate_json(resp)
         return resp
 
-    async def a_generate(self, prompt: str, schema: BaseModel = SchemaStatements) -> str:  # noqa: W0221
+    async def a_generate(self, prompt: str, schema: type[BaseModel] = SchemaStatements) -> str:  # noqa: W0221
         return self.generate(prompt, schema)
 
     def get_model_name(self) -> str:  # noqa: W0221
